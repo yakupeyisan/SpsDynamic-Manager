@@ -654,6 +654,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Clear caches
     this.columnOptionsCache.clear();
     this.columnOptionsLoading.clear();
+    this.gridDataSourceCache.clear();
+    this.gridDataSourceFormDataCache.clear();
   }
 
   get totalPages(): number {
@@ -2722,25 +2724,35 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.cdr.markForCheck();
   }
   
+  // Track last active tab to prevent unnecessary reloads
+  private lastActiveFormTab: number = -1;
+
   /**
    * Handle form tab change - reload nested grids when switching to a tab with grids
    */
   onFormTabChange(tabIndex: number) {
+    // Only reload if tab actually changed
+    if (this.lastActiveFormTab === tabIndex) {
+      this.cdr.markForCheck();
+      return;
+    }
+    
+    this.lastActiveFormTab = tabIndex;
     this.activeFormTab = tabIndex;
     
     // Check if the new tab has grids
     if (this.formTabs && this.formTabs[tabIndex] && this.formTabs[tabIndex].grids && this.formTabs[tabIndex].grids!.length > 0) {
-      // Wait for view to update, then reload nested grids
+      // Wait for view to update, then reload nested grids only once
       setTimeout(() => {
         if (this.nestedGrids) {
           this.nestedGrids.forEach((grid: DataTableComponent) => {
-            // Reload grid by calling its loadDataSource method if available
-            if (grid.dataSource && typeof grid.dataSource === 'function') {
+            // Only reload if grid has dataSource and is not already loading
+            if (grid.dataSource && typeof grid.dataSource === 'function' && !grid.isLoading) {
               grid.loadDataSource();
             }
           });
         }
-      }, 0);
+      }, 100); // Slightly longer delay to ensure view is updated
     }
     
     this.cdr.markForCheck();
@@ -2880,8 +2892,13 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return columns;
   }
   
+  // Cache for grid dataSource functions to prevent unnecessary reloads
+  private gridDataSourceCache = new Map<string, (params: any) => Observable<GridResponse>>();
+  private gridDataSourceFormDataCache = new Map<string, any>();
+
   /**
    * Get grid dataSource with form data injected
+   * Memoized to prevent unnecessary reloads when formData hasn't changed
    */
   getGridDataSourceWithFormData(grid: FormTabGrid): ((params: any) => Observable<GridResponse>) | undefined {
     const baseDataSource = this.getGridDataSourceForGrid(grid);
@@ -2889,12 +2906,31 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return undefined;
     }
     
-    // Return a wrapper function that injects form data into params
-    return (params: any) => {
+    // Create cache key based on grid ID
+    const cacheKey = grid.id || 'default';
+    
+    // Check if formData has changed for this grid
+    const cachedFormData = this.gridDataSourceFormDataCache.get(cacheKey);
+    const formDataKey = JSON.stringify(this.formData);
+    const formDataChanged = cachedFormData !== formDataKey;
+    
+    // If formData hasn't changed and we have a cached function, return it
+    if (!formDataChanged && this.gridDataSourceCache.has(cacheKey)) {
+      return this.gridDataSourceCache.get(cacheKey);
+    }
+    
+    // Create new wrapper function that injects form data into params
+    const wrapperFunction = (params: any) => {
       // Build params with form data
       const enrichedParams = this.buildGridDataSourceParams(grid, params);
       return baseDataSource(enrichedParams);
     };
+    
+    // Cache the function and formData key
+    this.gridDataSourceCache.set(cacheKey, wrapperFunction);
+    this.gridDataSourceFormDataCache.set(cacheKey, formDataKey);
+    
+    return wrapperFunction;
   }
   
   /**
@@ -4230,11 +4266,23 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return [];
   }
   
+  // Track last formData to prevent unnecessary reloads
+  private lastFormDataForDynamicOptions: any = null;
+
   /**
    * Load dynamic field options that depend on formData (e.g., SubscriptionCard depends on EmployeeID)
    * Called when form is opened and formData is set
    */
   private loadDynamicFieldOptions(): void {
+    // Check if formData has actually changed
+    const formDataKey = JSON.stringify(this.formData);
+    if (this.lastFormDataForDynamicOptions === formDataKey) {
+      // FormData hasn't changed, skip loading
+      return;
+    }
+    
+    this.lastFormDataForDynamicOptions = formDataKey;
+    
     // Use setTimeout to ensure formData is fully set and change detection has run
     setTimeout(() => {
       // Find all columns with load functions that depend on formData
@@ -4263,19 +4311,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         
         // Only load if required data is available
         if (employeeId != null && employeeId !== undefined) {
-          console.log(`Loading dynamic options for ${column.field} with EmployeeID:`, employeeId);
-          // Clear any existing cache for this field to force reload
-          const cacheKeyPrefix = `${column.field}_${column.load!.url}`;
-          // Clear all cache entries for this field (different EmployeeIDs)
-          Array.from(this.columnOptionsCache.keys()).forEach(key => {
-            if (key.startsWith(cacheKeyPrefix)) {
-              this.columnOptionsCache.delete(key);
-            }
-          });
-          // Clear column.options to force reload
-          column.options = undefined;
-          // Load options
-          this.loadColumnOption(column);
+          // Build cache key to check if already loaded for this EmployeeID
+          const cacheKey = `${column.field}_${column.load!.url}_${employeeId}`;
+          
+          // Only load if not already cached
+          if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
+            console.log(`Loading dynamic options for ${column.field} with EmployeeID:`, employeeId);
+            // Clear column.options to force reload
+            column.options = undefined;
+            // Load options
+            this.loadColumnOption(column);
+          } else {
+            console.log(`Skipping ${column.field} - already cached or loading for EmployeeID:`, employeeId);
+          }
         } else {
           console.log(`Skipping ${column.field} - EmployeeID is null or undefined`);
         }

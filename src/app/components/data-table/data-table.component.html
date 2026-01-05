@@ -1,4 +1,11 @@
 <div class="ui-data-table">
+  <!-- Loading Spinner Overlay -->
+  <div *ngIf="isLoading" class="ui-data-table-loading-overlay">
+    <div class="ui-data-table-spinner">
+      <div class="spinner"></div>
+    </div>
+  </div>
+  
   <div *ngIf="shouldShowToolbar()" class="ui-table-toolbar">
     <div class="ui-toolbar-left">
       <!-- Custom Toolbar Items - Only reload on left -->

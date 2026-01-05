@@ -270,7 +270,27 @@ export const formTabs: FormTab[] = [
       },
       toolbar: {
         items: [
-          // Toolbar items will be added in component using TranslateService
+          {
+            id: 'formatla',
+            type: 'button' as const,
+            text: 'Formatla', // Will be translated in component
+            tooltip: 'Kartı Formatla', // Will be translated in component
+            onClick: null as any // Will be set in component
+          },
+          {
+            id: 'transfer',
+            type: 'button' as const,
+            text: 'Transfer', // Will be translated in component
+            tooltip: 'Kartı Transfer Et', // Will be translated in component
+            onClick: null as any // Will be set in component
+          },
+          {
+            id: 'sifirla',
+            type: 'button' as const,
+            text: 'Sıfırla', // Will be translated in component
+            tooltip: 'Kartı Sıfırla', // Will be translated in component
+            onClick: null as any // Will be set in component
+          }
         ],
         show: {
           reload: true,

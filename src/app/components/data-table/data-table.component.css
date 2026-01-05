@@ -7,6 +7,42 @@
   position: relative;
 }
 
+/* Loading Spinner Overlay */
+.ui-data-table-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.ui-data-table-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-data-table-spinner .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--ui-gray-200, #e5e7eb);
+  border-top-color: var(--ui-primary, #007bff);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Options Menu */
 .ui-toolbar-right {
   display: flex;

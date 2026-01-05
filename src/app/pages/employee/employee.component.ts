@@ -51,7 +51,7 @@ export class EmployeeComponent implements OnInit {
   
   // Form configuration
   formFields: TableColumn[] = formFields;
-  formTabs = formTabs;
+  formTabs: FormTab[] = JSON.parse(JSON.stringify(formTabs)); // Deep copy to allow modification
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
@@ -464,6 +464,25 @@ export class EmployeeComponent implements OnInit {
     console.log('Export to Excel:', event, item);
   }
 
+  // Card operation handlers
+  onCardFormat(event: MouseEvent, item: any) {
+    console.log('Formatla clicked', event, item);
+    // TODO: Formatla işlemi - seçili kartları formatla
+    // Seçili kartları al ve formatla API'sine gönder
+  }
+
+  onCardTransfer(event: MouseEvent, item: any) {
+    console.log('Transfer clicked', event, item);
+    // TODO: Transfer işlemi - seçili kartları transfer et
+    // Seçili kartları al ve transfer API'sine gönder
+  }
+
+  onCardReset(event: MouseEvent, item: any) {
+    console.log('Sıfırla clicked', event, item);
+    // TODO: Sıfırla işlemi - seçili kartları sıfırla
+    // Seçili kartları al ve sıfırla API'sine gönder
+  }
+
   /**
    * Reload a nested grid by ID in the main data table
    */
@@ -538,6 +557,49 @@ export class EmployeeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Component initialized
+    // Initialize toolbar items for EmployeeCardGrid with translations and handlers
+    this.initializeCardGridToolbar();
+  }
+
+  /**
+   * Initialize toolbar items for EmployeeCardGrid
+   */
+  private initializeCardGridToolbar(): void {
+    // Find the CardGrid in formTabs
+    const cardTab = this.formTabs.find(tab => 
+      tab.grids && tab.grids.some(grid => grid.id === 'EmployeeCardGrid')
+    );
+    
+    if (cardTab && cardTab.grids) {
+      const cardGrid = cardTab.grids.find(grid => grid.id === 'EmployeeCardGrid');
+      if (cardGrid && cardGrid.toolbar && cardGrid.toolbar.items) {
+        // Update toolbar items with translations and onClick handlers
+        cardGrid.toolbar.items = cardGrid.toolbar.items.map(item => {
+          if (item.id === 'formatla') {
+            return {
+              ...item,
+              text: this.translate.instant('card.format'),
+              tooltip: this.translate.instant('card.formatTooltip'),
+              onClick: (event: MouseEvent, item: any) => this.onCardFormat(event, item)
+            };
+          } else if (item.id === 'transfer') {
+            return {
+              ...item,
+              text: this.translate.instant('card.transfer'),
+              tooltip: this.translate.instant('card.transferTooltip'),
+              onClick: (event: MouseEvent, item: any) => this.onCardTransfer(event, item)
+            };
+          } else if (item.id === 'sifirla') {
+            return {
+              ...item,
+              text: this.translate.instant('card.reset'),
+              tooltip: this.translate.instant('card.resetTooltip'),
+              onClick: (event: MouseEvent, item: any) => this.onCardReset(event, item)
+            };
+          }
+          return item;
+        });
+      }
+    }
   }
 }
