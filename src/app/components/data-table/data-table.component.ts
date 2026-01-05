@@ -3088,20 +3088,23 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           const isSuccess = response && (response.error === false || response.error === undefined || response.status === 'success');
           
           if (isSuccess) {
-            // Emit event for parent component to handle BEFORE closing form
-            if (wasEditMode) {
-              this.edit.emit(submitData as TableRow);
-            } else {
-              this.add.emit();
-            }
-            
-            // Close form only on success
+            // Close form FIRST to prevent it from reopening
             this.closeFormModal();
             
             // Reload data
             if (this.dataSource) {
               this.loadDataSource();
             }
+            
+            // Emit event for parent component to handle AFTER closing form
+            // Use setTimeout to ensure form is closed before emitting
+            setTimeout(() => {
+              if (wasEditMode) {
+                this.edit.emit(submitData as TableRow);
+              } else {
+                this.add.emit();
+              }
+            }, 0);
           } else {
             // Keep form open on error so user can fix and retry
             // Error message is already shown by onSave callback
