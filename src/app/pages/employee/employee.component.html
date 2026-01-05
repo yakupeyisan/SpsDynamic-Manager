@@ -76,3 +76,77 @@
     </div>
   </div>
 </div>
+
+<!-- Format Modal -->
+<ui-modal
+  [title]="translate.instant('card.format')"
+  [show]="showFormatModal"
+  [size]="'md'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="showFormatModal = $event"
+  (closed)="closeFormatModal()">
+  
+  <!-- Modal Body: Reader List -->
+  <div class="reader-list-container">
+    <div *ngIf="isLoadingReaders" class="loading-container">
+      <div class="spinner"></div>
+      <p>{{ translate.instant('common.loading') }}</p>
+    </div>
+    
+    <div *ngIf="!isLoadingReaders && readers.length === 0" class="empty-container">
+      <p>{{ translate.instant('common.noData') }}</p>
+    </div>
+    
+    <ul *ngIf="!isLoadingReaders && readers.length > 0" class="reader-list">
+      <li 
+        *ngFor="let reader of readers" 
+        class="reader-item"
+        [class.reader-connected]="getReaderStatus(reader) === 'connected'"
+        [class.reader-disconnected]="getReaderStatus(reader) === 'disconnected'"
+        [class.reader-checking]="getReaderStatus(reader) === 'checking'"
+        [class.reader-selectable]="isReaderSelectable(reader)"
+        (click)="onReaderItemClick(reader, $event)">
+        <div class="reader-status-indicator">
+          <span 
+            class="status-dot"
+            [class.status-connected]="getReaderStatus(reader) === 'connected'"
+            [class.status-disconnected]="getReaderStatus(reader) === 'disconnected'"
+            [class.status-checking]="getReaderStatus(reader) === 'checking'">
+          </span>
+        </div>
+        <div class="reader-info">
+          <span class="reader-name">{{ reader.ReaderName || reader.name || reader.Name || 'Reader ' + (reader.ReaderID || reader.id) }}</span>
+          <div class="reader-details">
+            <span *ngIf="reader.SerialNumber" class="reader-detail-item">
+              <strong>Seri No:</strong> {{ reader.SerialNumber }}
+            </span>
+            <span *ngIf="reader.IpAddress" class="reader-detail-item">
+              <strong>IP:</strong> {{ reader.IpAddress }}
+            </span>
+            <span *ngIf="reader.ReaderType" class="reader-detail-item">
+              <strong>Tip:</strong> {{ reader.ReaderType }}
+            </span>
+            <span *ngIf="reader.ReaderPort" class="reader-detail-item">
+              <strong>Port:</strong> {{ reader.ReaderPort }}
+            </span>
+            <span *ngIf="getReaderMessage(reader)" class="reader-detail-item reader-message">
+              <strong>Durum:</strong> {{ getReaderMessage(reader) }}
+            </span>
+          </div>
+        </div>
+        <span class="reader-id">ID: {{ reader.ReaderID || reader.id }}</span>
+      </li>
+    </ul>
+  </div>
+  
+  <!-- Modal Footer -->
+  <div slot="footer" class="modal-footer-actions">
+    <button 
+      type="button" 
+      class="btn btn-secondary"
+      (click)="closeFormatModal()">
+      {{ translate.instant('common.cancel') }}
+    </button>
+  </div>
+</ui-modal>

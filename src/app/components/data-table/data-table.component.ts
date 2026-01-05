@@ -118,6 +118,7 @@ export interface FormTab {
   label: string;
   fields?: string[]; // Form fields for this tab
   grids?: FormTabGrid[]; // Nested grids for this tab
+  showInAdd?: boolean; // If false, hide this tab in add mode (default: true)
 }
 
 export interface TableColumn {
@@ -515,7 +516,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // Debug: Log params to verify filter is included
     if (this.activeFilter) {
-      console.log('[loadDataSource] Loading with filter:', JSON.stringify(this.activeFilter, null, 2));
+      // Filter is included in params
     }
     
     
@@ -1414,7 +1415,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           // Check if clicked element is an img or inside a span containing an img
           const img = target.tagName === 'IMG' ? target : target.querySelector('img') || target.closest('img');
           if (img) {
-            console.log('Picture cell mousedown detected, allowing click event - setting up for mouseup handler');
             isPictureCell = true;
             // Set up range selecting state so onDocumentMouseUp can handle the picture click
             // But don't start row selection - let onDocumentMouseUp handle it
@@ -1530,7 +1530,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // If it's a picture click, handle it here
       if (isPictureClick && pictureColumn && pictureRow && pictureRowIndex >= 0 && pictureColumnIndex >= 0) {
         const pictureId = pictureRow[pictureColumn.field] || '';
-        console.log('Picture clicked in onDocumentMouseUp, emitting pictureClick event', { pictureId });
         
         // Open picture overlay
         this.openPictureOverlay(pictureId, pictureColumn);
@@ -1623,13 +1622,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   onCellClick(event: MouseEvent, row: TableRow, column: TableColumn, rowIndex: number, colIndex: number) {
     const target = event.target as HTMLElement;
-    console.log('onCellClick called', { 
-      columnType: column.type, 
-      field: column.field, 
-      targetTag: target.tagName,
-      targetClass: target.className,
-      isImg: target.tagName === 'IMG'
-    });
     
     // Check if clicked element is an img (picture) - handle this first
     const isImg = target.tagName === 'IMG';
@@ -1673,14 +1665,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
     }
     
-    console.log('Column after update:', { type: column.type, field: column.field, clickedColumnIndex, isImg, hasImg: !!img });
-    
     // Check if this is a picture column and the click target is an image
     // If clicked element is an img, check if the column is a picture column
     if (img && this.displayColumns[clickedColumnIndex]?.type === 'picture') {
       const actualColumn = this.displayColumns[clickedColumnIndex];
       const pictureId = row[actualColumn.field] || '';
-      console.log('Picture cell clicked (img element), emitting pictureClick event', { pictureId });
       
       // Open picture overlay
       this.openPictureOverlay(pictureId, actualColumn);
@@ -1702,7 +1691,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Also check if column type is picture (for clicks on the cell, not just the img)
     if (column.type === 'picture' && img) {
       const pictureId = row[column.field] || '';
-      console.log('Picture cell clicked, emitting pictureClick event', { pictureId });
       
       // Open picture overlay
       this.openPictureOverlay(pictureId, column);
@@ -1937,22 +1925,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   getFormattedFormValue(column: TableColumn): string {
     const value = this.formData[column.field];
     
-    // Debug logging
-    if (column.field === 'TotalPrice') {
-      console.log('getFormattedFormValue for TotalPrice:', {
-        value,
-        type: typeof value,
-        formData: this.formData,
-        columnType: column.type,
-        columnDisabled: column.disabled
-      });
-    }
-    
     // Handle null, undefined, or empty string
     if (value == null || value === '') {
-      if (column.field === 'TotalPrice') {
-        console.log('TotalPrice value is null or empty');
-      }
       return '';
     }
     
@@ -1961,15 +1935,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Format even if value is 0
       const numValue = typeof value === 'string' ? parseFloat(value) : value;
       if (isNaN(numValue)) {
-        if (column.field === 'TotalPrice') {
-          console.log('TotalPrice value is NaN:', value);
-        }
         return '';
       }
       const formatted = this.formatCurrency(numValue, column);
-      if (column.field === 'TotalPrice') {
-        console.log('TotalPrice formatted:', formatted);
-      }
       return formatted;
     }
     
@@ -2814,14 +2782,32 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
+   * Get visible form tabs based on add/edit mode
+   */
+  getVisibleFormTabs(): FormTab[] {
+    if (!this.formTabs || this.formTabs.length === 0) {
+      return [];
+    }
+    
+    // In add mode, filter out tabs with showInAdd === false
+    if (!this.isEditMode) {
+      return this.formTabs.filter(tab => tab.showInAdd !== false);
+    }
+    
+    // In edit mode, show all tabs
+    return this.formTabs;
+  }
+  
+  /**
    * Get columns for specific tab
    */
   getColumnsForTab(tabIndex: number): TableColumn[] {
     const allColumns = this.getEditableColumns();
     
-    // If formTabs is provided, use it to determine which fields belong to which tab
-    if (this.formTabs && this.formTabs.length > 0 && tabIndex < this.formTabs.length) {
-      const tab = this.formTabs[tabIndex];
+    // Get visible tabs first
+    const visibleTabs = this.getVisibleFormTabs();
+    if (visibleTabs.length > 0 && tabIndex < visibleTabs.length) {
+      const tab = visibleTabs[tabIndex];
       // If tab has fields, return columns for those fields
       if (tab.fields && tab.fields.length > 0) {
         return allColumns.filter(col => tab.fields?.includes(col.field));
@@ -2840,8 +2826,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Check if tab has grids
    */
   tabHasGrids(tabIndex: number): boolean {
-    if (this.formTabs && this.formTabs.length > 0 && tabIndex < this.formTabs.length) {
-      const tab = this.formTabs[tabIndex];
+    const visibleTabs = this.getVisibleFormTabs();
+    if (visibleTabs.length > 0 && tabIndex < visibleTabs.length) {
+      const tab = visibleTabs[tabIndex];
       return !!(tab.grids && tab.grids.length > 0);
     }
     return false;
@@ -2851,8 +2838,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Get grids for specific tab
    */
   getGridsForTab(tabIndex: number): FormTabGrid[] {
-    if (this.formTabs && this.formTabs.length > 0 && tabIndex < this.formTabs.length) {
-      const tab = this.formTabs[tabIndex];
+    const visibleTabs = this.getVisibleFormTabs();
+    if (visibleTabs.length > 0 && tabIndex < visibleTabs.length) {
+      const tab = visibleTabs[tabIndex];
       return tab.grids || [];
     }
     return [];
@@ -2941,14 +2929,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       ...baseParams,
     };
     
-    // Debug: log formData state
-    console.log('buildGridDataSourceParams - formData:', this.formData);
-    console.log('buildGridDataSourceParams - grid.data:', grid.data);
-    
     // If grid has data function, call it with formData to get additional params
     if (grid.data && typeof grid.data === 'function') {
       const additionalData = grid.data(this.formData);
-      console.log('buildGridDataSourceParams - additionalData from grid.data:', additionalData);
       // Merge additionalData into params, ensuring EmployeeID is included
       Object.assign(params, additionalData);
     } else if (grid.data && typeof grid.data === 'object') {
@@ -2969,10 +2952,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Ensure EmployeeID is always included if formData has it
     if (this.formData && (this.formData['recid'])) {
       params.EmployeeID = this.formData['EmployeeID'] || this.formData['recid'];
-      console.log('buildGridDataSourceParams - Added EmployeeID from formData fallback:', params.EmployeeID);
     }
-    
-    console.log('buildGridDataSourceParams - final params:', params);
     
     return params;
   }
@@ -4101,7 +4081,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       
       // If EmployeeID is required but not available, skip loading
       if (employeeId == null || employeeId === undefined) {
-        console.log(`Skipping ${column.field} - EmployeeID is null or undefined (form not opened yet)`);
         return;
       }
       
@@ -4147,7 +4126,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         // Apply map function if provided
         if (column.load?.map && typeof column.load.map === 'function') {
           const mapped = column.load.map(response);
-          console.log(`Mapped options for ${column.field}:`, mapped);
           return mapped;
         }
         // Default mapping: assume response has records array
@@ -4172,13 +4150,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         return of([]);
       })
     ).subscribe(options => {
-      console.log(`Loaded options for ${column.field}:`, options);
       // Filter out null/undefined values and convert to TableColumnOption format
       const validOptions = options
         .map((opt: any): TableColumnOption | null => {
           const optValue = opt.id !== undefined ? opt.id : (opt.value !== undefined ? opt.value : null);
           if (optValue === null || optValue === undefined) {
-            console.warn('Skipping option with null/undefined value:', opt);
             return null;
           }
           return {
@@ -4188,8 +4164,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         })
         .filter((opt: TableColumnOption | null): opt is TableColumnOption => opt !== null);
       
-      console.log(`Valid options for ${column.field}:`, validOptions);
-      
       // Always cache the result (even if empty) to prevent duplicate requests
       // This prevents infinite loops when API returns empty arrays
       this.columnOptionsCache.set(cacheKey, validOptions);
@@ -4197,12 +4171,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Update column options
       if (column) {
         column.options = validOptions;
-      }
-      
-      if (validOptions.length > 0) {
-        console.log(`Cached ${validOptions.length} options for ${column.field}`);
-      } else {
-        console.log(`Cached empty options for ${column.field} to prevent duplicate requests`);
       }
       
       this.columnOptionsLoading.set(cacheKey, false);
@@ -4233,7 +4201,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         
         // If EmployeeID is required but not available, return empty array (don't load)
         if (employeeId == null || employeeId === undefined) {
-          console.log(`getColumnOptions: Skipping ${column.field} - EmployeeID is null or undefined (form not opened yet)`);
           return [];
         }
         
@@ -4298,16 +4265,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         col.field
       );
       
-      console.log('loadDynamicFieldOptions - formData:', this.formData);
-      console.log('loadDynamicFieldOptions - dynamicColumns:', dynamicColumns.map(c => c.field));
-      
       // Load options for each dynamic column
       dynamicColumns.forEach(column => {
         // Check if formData has required values (e.g., EmployeeID for SubscriptionCard)
         const dynamicData = column.load!.data!(this.formData);
         const employeeId = dynamicData?.EmployeeID;
-        
-        console.log(`Checking ${column.field} - EmployeeID:`, employeeId, 'dynamicData:', dynamicData);
         
         // Only load if required data is available
         if (employeeId != null && employeeId !== undefined) {
@@ -4316,16 +4278,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           
           // Only load if not already cached
           if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
-            console.log(`Loading dynamic options for ${column.field} with EmployeeID:`, employeeId);
             // Clear column.options to force reload
             column.options = undefined;
             // Load options
             this.loadColumnOption(column);
-          } else {
-            console.log(`Skipping ${column.field} - already cached or loading for EmployeeID:`, employeeId);
           }
-        } else {
-          console.log(`Skipping ${column.field} - EmployeeID is null or undefined`);
         }
       });
       
@@ -4337,7 +4294,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Handle form field change - update formData and trigger onFormDataChange
    */
   onFormFieldChange(fieldName: string, value: any): void {
-    console.log('onFormFieldChange called:', fieldName, value);
     // Update formData
     this.formData[fieldName] = value;
     // Trigger onFormDataChange with the changed field
@@ -4348,16 +4304,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Handle form data change - emit to parent component and call callback
    */
   onFormDataChange(formData: any): void {
-    console.log('onFormDataChange called with:', formData);
-    console.log('Current formData before update:', this.formData);
-    
     // Check if EmployeeID changed - if so, reload SubscriptionCard options
     const previousEmployeeId = this.formData?.['EmployeeID'];
     const newEmployeeId = formData?.['EmployeeID'];
     
     // Update internal formData
     this.formData = { ...this.formData, ...formData };
-    console.log('Updated formData:', this.formData);
     
     // If EmployeeID changed, reload SubscriptionCard field options
     if (previousEmployeeId !== newEmployeeId && newEmployeeId != null) {
@@ -4387,10 +4339,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.formChange.emit(formData);
     // Call onFormChange callback if provided
     if (this.onFormChange) {
-      console.log('Calling onFormChange callback');
       this.onFormChange(formData);
-    } else {
-      console.log('onFormChange callback is not provided');
     }
   }
 

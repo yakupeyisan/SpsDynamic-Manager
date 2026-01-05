@@ -2,7 +2,7 @@
 // NOTE: This component requires DataTableComponent to be created
 // The component structure is ready but DataTableComponent needs to be implemented
 
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
@@ -12,6 +12,9 @@ import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map, finalize } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { WebSocketService } from 'src/app/services/websocket.service';
+import { Subscription } from 'rxjs';
 
 // Import configurations
 import { joinOptions } from './employee-config';
@@ -39,12 +42,13 @@ import {
     CommonModule, 
     TablerIconsModule,
     TranslateModule,
-    DataTableComponent
+    DataTableComponent,
+    ModalComponent
   ],
   templateUrl: './employee.component.html',
   styleUrls: ['./employee.component.scss']
 })
-export class EmployeeComponent implements OnInit {
+export class EmployeeComponent implements OnInit, OnDestroy {
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
@@ -58,6 +62,21 @@ export class EmployeeComponent implements OnInit {
   imageUploadUrl = imageUploadUrl;
   imageField = imageField;
   imagePreviewUrl = imagePreviewUrl;
+  
+  // Format modal state
+  showFormatModal = false;
+  readers: any[] = [];
+  isLoadingReaders = false;
+  selectedCardIdsForFormat: number[] = [];
+  
+  // WebSocket subscriptions
+  private wsMessageSubscription?: Subscription;
+  private wsConnectionSubscription?: Subscription;
+  
+  // Reader status tracking
+  readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
+  // Reader messages tracking
+  readerMessages: Map<string, string> = new Map();
   
   // Data source function for table
   tableDataSource = (params: any) => {
@@ -464,23 +483,442 @@ export class EmployeeComponent implements OnInit {
     console.log('Export to Excel:', event, item);
   }
 
+  /**
+   * Get selected card IDs from EmployeeCardGrid
+   */
+  private getSelectedCardIds(): number[] {
+    if (!this.dataTableComponent) {
+      console.warn('DataTableComponent not found');
+      return [];
+    }
+
+    // Find EmployeeCardGrid in nested grids
+    if (!this.dataTableComponent.nestedGrids) {
+      console.warn('Nested grids not found');
+      return [];
+    }
+
+    const cardGrid = this.dataTableComponent.nestedGrids.find(
+      (grid: DataTableComponent) => grid.id === 'EmployeeCardGrid'
+    );
+
+    if (!cardGrid) {
+      console.warn('EmployeeCardGrid not found');
+      return [];
+    }
+
+    // Get selected row IDs from the grid
+    const selectedRowIds = Array.from(cardGrid.selectedRows);
+    
+    // Get actual CardID values from the data
+    const cardIds: number[] = [];
+    const recidField = cardGrid.recid || 'CardID';
+    
+    // Use filteredData or internalData depending on dataSource
+    const dataSource = cardGrid.dataSource ? cardGrid.filteredData : cardGrid.data;
+    
+    selectedRowIds.forEach((rowId: any) => {
+      const row = dataSource.find((r: any) => {
+        const id = r['recid'] ?? r[recidField] ?? r['CardID'] ?? r['id'];
+        return id === rowId;
+      });
+      
+      if (row) {
+        const cardId = row['CardID'] ?? row[recidField] ?? row['recid'] ?? rowId;
+        if (cardId != null) {
+          cardIds.push(cardId);
+        }
+      }
+    });
+    return cardIds;
+  }
+
   // Card operation handlers
   onCardFormat(event: MouseEvent, item: any) {
-    console.log('Formatla clicked', event, item);
-    // TODO: Formatla işlemi - seçili kartları formatla
-    // Seçili kartları al ve formatla API'sine gönder
+    const selectedCardIds = this.getSelectedCardIds();
+    
+    if (selectedCardIds.length === 0) {
+      this.toastr.warning('Lütfen formatlamak için en az bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    // Store selected card IDs
+    this.selectedCardIdsForFormat = selectedCardIds;
+    
+    // Open modal and load readers
+    this.showFormatModal = true;
+    this.loadReaders();
+  }
+
+  /**
+   * Setup WebSocket listeners
+   */
+  private setupWebSocketListeners(): void {
+    // Listen to WebSocket messages
+    this.wsMessageSubscription = this.wsService.getMessages().subscribe((message: any) => {
+      this.handleWebSocketMessage(message);
+    });
+
+    // Listen to connection status
+    this.wsConnectionSubscription = this.wsService.getConnectionStatus().subscribe((connected: boolean) => {
+      if (!connected && this.showFormatModal) {
+        // Connection lost while modal is open
+        this.toastr.warning('WebSocket bağlantısı kesildi', 'Uyarı');
+      }
+    });
+  }
+
+  /**
+   * Handle WebSocket messages
+   * PHP server sends messages in format: { type: 'xxx', status: true/false, data: {...}, ... }
+   */
+  private handleWebSocketMessage(message: any): void {
+    // Handle checkReader response (could come as RC2XXDeviceStatus or custom format)
+    if (message.type === 'checkReader' || message.type === 'RC2XXDeviceStatus') {
+      
+      // Handle different response formats from PHP server
+      if (message.data && message.data.readers && Array.isArray(message.data.readers)) {
+        // Format: { type: 'checkReader', data: { readers: [{ isConnected: false, readerSerial: '210551988', message: '...', ... }] } }
+        message.data.readers.forEach((reader: any) => {
+          const serial = reader.readerSerial || reader.SerialNumber || reader.serialNumber;
+          if (serial) {
+            const status = reader.isConnected === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(String(serial), status);
+            // Store message if available
+            if (reader.message) {
+              this.readerMessages.set(String(serial), reader.message);
+            }
+          }
+        });
+      } else if (message.data && typeof message.data === 'object') {
+        // Format: { subType: 'checkReader', data: { '210551988': true, ... } }
+        Object.keys(message.data).forEach((serial: string) => {
+          const result = message.data[serial];
+          if (typeof result === 'boolean') {
+            const status = result === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          } else if (typeof result === 'object' && result !== null) {
+            // Format: { subType: 'checkReader', data: { '210551988': { connected: true, ... } } }
+            const status = result.connected || result.isConnected === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          }
+        });
+      } else if (message.results && Array.isArray(message.results)) {
+        // Format: { subType: 'checkReader', results: [{ serialNumber: 'xxx', connected: true }, ...] }
+        message.results.forEach((result: any) => {
+          const serial = result.serialNumber || result.SerialNumber || result.deviceSerial;
+          if (serial) {
+            const status = result.connected || result.isConnected === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          }
+        });
+      } else if (message.deviceSerials && Array.isArray(message.deviceSerials)) {
+        // Format: { subType: 'checkReader', deviceSerials: ['xxx', 'yyy'], 'xxx': true, 'yyy': false }
+        message.deviceSerials.forEach((serial: string) => {
+          const result = message[serial];
+          if (result !== undefined) {
+            const status = result === true || result === 'connected' ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          } else {
+            // If no result for this serial, mark as disconnected
+            this.readerStatuses.set(serial, 'disconnected');
+          }
+        });
+      } else if (message.status !== undefined && message.readerSerial) {
+        // Format: { subType: 'checkReader', status: true, readerSerial: '210551988' }
+        const serial = String(message.readerSerial);
+        const status = message.status === true ? 'connected' : 'disconnected';
+        this.readerStatuses.set(serial, status);
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  /**
+   * Load readers from API
+   */
+  loadReaders(): void {
+    this.isLoadingReaders = true;
+    this.readers = [];
+    this.readerStatuses.clear();
+    
+    const url = `${environment.apiUrl}/api/Terminals/GetDefinitionReaders`;
+    
+    this.http.post<any>(url, {}).pipe(
+      catchError(error => {
+        this.isLoadingReaders = false;
+        this.toastr.error('Reader\'lar yüklenirken bir hata oluştu', 'Hata');
+        return of({ status: 'error', records: [] });
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isLoadingReaders = false;
+        if (response && response.status === 'success' && response.records) {
+          this.readers = response.records;
+          // Initialize all readers as disconnected initially
+          this.readers.forEach((reader: any) => {
+            const serial = reader.SerialNumber || reader.serialNumber;
+            if (serial) {
+              this.readerStatuses.set(serial, 'disconnected');
+            }
+          });
+          // Send checkReader message via WebSocket
+          this.checkReaderConnections();
+        } else if (response && Array.isArray(response)) {
+          // If response is directly an array
+          this.readers = response;
+          this.readers.forEach((reader: any) => {
+            const serial = reader.SerialNumber || reader.serialNumber;
+            if (serial) {
+              this.readerStatuses.set(serial, 'disconnected');
+            }
+          });
+          this.checkReaderConnections();
+        } else if (response && response.readers && Array.isArray(response.readers)) {
+          // If response has readers property
+          this.readers = response.readers;
+          this.readers.forEach((reader: any) => {
+            const serial = reader.SerialNumber || reader.serialNumber;
+            if (serial) {
+              this.readerStatuses.set(serial, 'disconnected');
+            }
+          });
+          this.checkReaderConnections();
+        } else {
+          this.readers = [];
+          this.toastr.warning('Reader bulunamadı', 'Uyarı');
+        }
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.isLoadingReaders = false;
+        this.toastr.error('Reader\'lar yüklenirken bir hata oluştu', 'Hata');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /**
+   * Check reader connections via WebSocket
+   * PHP server expects: { type: 'checkReader', data: { deviceSerials: [...] } }
+   */
+  private checkReaderConnections(): void {
+    if (!this.wsService.isConnected()) {
+      this.toastr.warning('WebSocket bağlantısı yok', 'Uyarı');
+      return;
+    }
+
+    const deviceSerials = this.readers
+      .map((reader: any) => reader.SerialNumber || reader.serialNumber)
+      .filter((serial: any) => serial);
+
+    if (deviceSerials.length === 0) {
+      return;
+    }
+
+    // PHP server format: type: 'checkReader'
+    const message = {
+      type: 'checkReader',
+      data: {
+        deviceSerials: deviceSerials
+      }
+    };
+
+    // Set all readers to checking status
+    deviceSerials.forEach((serial: string) => {
+      this.readerStatuses.set(serial, 'checking');
+    });
+    this.cdr.markForCheck();
+
+    this.wsService.sendMessage(message);
+  }
+
+  /**
+   * Check single reader connection
+   * PHP server expects: { type: 'checkReader', data: { deviceSerials: [...] } }
+   */
+  private checkSingleReader(serial: string): void {
+    if (!this.wsService.isConnected()) {
+      this.toastr.error('Bağlantı yok', 'Hata');
+      return;
+    }
+
+    this.readerStatuses.set(serial, 'checking');
+    this.cdr.markForCheck();
+
+    // PHP server format: type: 'checkReader'
+    const message = {
+      type: 'checkReader',
+      data: {
+        deviceSerials: [serial]
+      }
+    };
+
+    this.wsService.sendMessage(message);
+  }
+
+  /**
+   * Get reader status
+   */
+  getReaderStatus(reader: any): 'connected' | 'disconnected' | 'checking' {
+    const serial = reader.SerialNumber || reader.serialNumber;
+    if (!serial) {
+      return 'disconnected';
+    }
+    return this.readerStatuses.get(serial) || 'disconnected';
+  }
+
+  /**
+   * Check if reader is selectable (connected)
+   */
+  isReaderSelectable(reader: any): boolean {
+    return this.getReaderStatus(reader) === 'connected';
+  }
+
+  /**
+   * Get reader message
+   */
+  getReaderMessage(reader: any): string | null {
+    const serial = reader.SerialNumber || reader.serialNumber || reader.readerSerial;
+    if (!serial) {
+      return null;
+    }
+    return this.readerMessages.get(String(serial)) || null;
+  }
+
+  /**
+   * Close format modal
+   */
+  closeFormatModal(): void {
+    this.showFormatModal = false;
+    this.readers = [];
+    this.selectedCardIdsForFormat = [];
+    this.readerStatuses.clear();
+    this.readerMessages.clear();
+  }
+
+  /**
+   * Cleanup subscriptions
+   */
+  ngOnDestroy(): void {
+    if (this.wsMessageSubscription) {
+      this.wsMessageSubscription.unsubscribe();
+    }
+    if (this.wsConnectionSubscription) {
+      this.wsConnectionSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * Handle reader selection for format operation
+   */
+  onReaderSelect(reader: any): void {
+    const serial = reader.SerialNumber || reader.serialNumber;
+    const status = this.getReaderStatus(reader);
+
+    // If disconnected, try to check connection again
+    if (status === 'disconnected') {
+      if (serial) {
+        this.checkSingleReader(serial);
+      } else {
+        this.toastr.error('Bağlantı yok', 'Hata');
+      }
+      return;
+    }
+
+    // If checking, wait
+    if (status === 'checking') {
+      return;
+    }
+
+    // Only allow selection if connected
+    if (status !== 'connected') {
+      this.toastr.error('Bağlantı yok', 'Hata');
+      return;
+    }
+
+    // Set message to "--" when clicked
+    if (serial) {
+      this.readerMessages.set(String(serial), '--');
+      this.cdr.markForCheck();
+    }
+
+    const readerId = reader.ReaderID || reader.id;
+    const readerName = reader.ReaderName || reader.name || reader.Name || `Reader ${readerId}`;
+    
+    // TODO: Implement format operation with selected reader and card IDs
+    this.toastr.info(`Reader seçildi: ${readerName}`, 'Bilgi');
+    
+    // Example: this.http.post(`${environment.apiUrl}/api/Cards/Format`, { 
+    //   CardIDs: this.selectedCardIdsForFormat, 
+    //   ReaderID: readerId 
+    // }).subscribe({
+    //   next: (response) => {
+    //     this.toastr.success('Kartlar başarıyla formatlandı', 'Başarılı');
+    //     this.closeFormatModal();
+    //     // Reload card grid if needed
+    //   },
+    //   error: (error) => {
+    //     this.toastr.error('Format işlemi başarısız', 'Hata');
+    //   }
+    // });
+  }
+
+  /**
+   * Handle reader item click (for disconnected readers)
+   */
+  onReaderItemClick(reader: any, event: MouseEvent): void {
+    const status = this.getReaderStatus(reader);
+    const serial = reader.SerialNumber || reader.serialNumber;
+    
+    // Set message to "--" when clicked
+    if (serial) {
+      this.readerMessages.set(String(serial), '--');
+      this.cdr.markForCheck();
+    }
+    
+    // If disconnected, check connection
+    if (status === 'disconnected') {
+      if (serial) {
+        this.checkSingleReader(serial);
+      } else {
+        this.toastr.error('Bağlantı yok', 'Hata');
+      }
+    } else if (status === 'connected') {
+      // If connected, allow selection
+      this.onReaderSelect(reader);
+    }
+    // If checking, do nothing
   }
 
   onCardTransfer(event: MouseEvent, item: any) {
     console.log('Transfer clicked', event, item);
-    // TODO: Transfer işlemi - seçili kartları transfer et
-    // Seçili kartları al ve transfer API'sine gönder
+    
+    const selectedCardIds = this.getSelectedCardIds();
+    
+    if (selectedCardIds.length === 0) {
+      this.toastr.warning('Lütfen transfer etmek için en az bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    console.log('Transfer edilecek kart ID\'leri:', selectedCardIds);
+    // TODO: Transfer API'sine gönder
+    // Örnek: this.http.post(`${environment.apiUrl}/api/Cards/Transfer`, { CardIDs: selectedCardIds })
   }
 
   onCardReset(event: MouseEvent, item: any) {
     console.log('Sıfırla clicked', event, item);
-    // TODO: Sıfırla işlemi - seçili kartları sıfırla
-    // Seçili kartları al ve sıfırla API'sine gönder
+    
+    const selectedCardIds = this.getSelectedCardIds();
+    
+    if (selectedCardIds.length === 0) {
+      this.toastr.warning('Lütfen sıfırlamak için en az bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    console.log('Sıfırlanacak kart ID\'leri:', selectedCardIds);
+    // TODO: Sıfırla API'sine gönder
+    // Örnek: this.http.post(`${environment.apiUrl}/api/Cards/Reset`, { CardIDs: selectedCardIds })
   }
 
   /**
@@ -553,8 +991,11 @@ export class EmployeeComponent implements OnInit {
     private http: HttpClient,
     private toastr: ToastrService,
     public translate: TranslateService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private wsService: WebSocketService
+  ) {
+    this.setupWebSocketListeners();
+  }
 
   ngOnInit(): void {
     // Initialize toolbar items for EmployeeCardGrid with translations and handlers

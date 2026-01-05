@@ -66,8 +66,8 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   --ui-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   
   /* Z-index */
-  --ui-z-modal-backdrop: 1040;
-  --ui-z-modal: 1050;
+  --ui-z-modal-backdrop: 10001; /* Higher than form overlay (10000) */
+  --ui-z-modal: 10002; /* Higher than modal backdrop */
   --ui-z-dropdown: 1000;
   --ui-z-tooltip: 1070;
   

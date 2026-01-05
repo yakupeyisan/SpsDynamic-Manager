@@ -76,7 +76,6 @@ export class FormComponent implements OnInit {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(this.formJson).then(() => {
         // Could show a toast notification here
-        console.log('JSON copied to clipboard');
       });
     }
   }

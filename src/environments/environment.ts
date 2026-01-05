@@ -3,6 +3,8 @@ export const environment = {
   // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
   // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
   apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
+  // WebSocket URL (otomatik olarak apiUrl'den türetilir, gerekirse manuel ayarlayabilirsiniz)
+  wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir
   
   // Açılış sayfası ayarı: 'home' veya 'other'
   // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir

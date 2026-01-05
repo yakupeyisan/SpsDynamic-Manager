@@ -547,7 +547,7 @@
             variant="default"
             (activeTabChange)="onFormTabChange($event)">
             
-            <ng-container *ngFor="let tab of formTabs; let tabIndex = index">
+            <ng-container *ngFor="let tab of getVisibleFormTabs(); let tabIndex = index">
               <ui-tab-item [label]="tab.label">
                 <div class="ui-form-tab-content">
                   <!-- Image Upload Section (only on first tab if imageField is defined) -->

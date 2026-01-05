@@ -172,7 +172,8 @@ export const formTabs: FormTab[] = [
     fields: Array.from({ length: 20 }, (_, i) => `CustomField${String(i + 1).padStart(2, '0')}`) 
   },
   { 
-    label: 'Kişi Kartları', 
+    label: 'Kişi Kartları',
+    showInAdd: false, // Hide in add mode
     grids: [{
       id: "EmployeeCardGrid",
       selectable: true,
@@ -392,11 +393,13 @@ export const formTabs: FormTab[] = [
     fields: ['WebClient', 'WebAdmin', 'WebClientAuthorizationId', 'AuthorizationId'] 
   },
   { 
-    label: 'Kafeterya', 
+    label: 'Kafeterya',
+    showInAdd: false, // Hide in add mode
     fields: ['CafeteriaStatus', 'CafeteriaAccount','TotalPrice'] 
   },
   { 
     label: 'Abone',
+    showInAdd: false, // Hide in add mode
     fields: ['SubscriptionCard'],
     grids: [{
       id: 'SubscriptionEvents',
