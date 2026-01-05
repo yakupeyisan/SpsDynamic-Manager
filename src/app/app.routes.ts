@@ -94,6 +94,28 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'TimeZone',
+        loadComponent: () =>
+          import('./pages/timezone/timezone.component').then(
+            (m) => m.TimezoneComponent
+          ),
+        data: {
+          title: 'Zaman Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CardTemplates',
+        loadComponent: () =>
+          import('./pages/card-template/card-template.component').then(
+            (m) => m.CardTemplateComponent
+          ),
+        data: {
+          title: 'Kart Şablonları',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {

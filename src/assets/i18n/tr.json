@@ -148,6 +148,10 @@
     "reset": "Sıfırla",
     "resetTooltip": "Kartı Sıfırla"
   },
+  "cardTemplate": {
+    "createTemplate": "Şablon Oluşturma",
+    "updateTemplate": "Şablon Güncelleme"
+  },
   "columns": {
     "EmployeeID": "Kişi No",
     "PictureID": "Resim",
