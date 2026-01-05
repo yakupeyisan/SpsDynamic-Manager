@@ -41,7 +41,7 @@ export const navItems: NavItem[] = [
       },
       {
         displayName: 'Kadro Tanımları',
-        route: '/PdksKadro',
+        route: '/PdksStaff',
       },
       {
         displayName: 'Görev Tanımları',

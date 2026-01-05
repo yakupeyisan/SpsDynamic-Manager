@@ -50,6 +50,50 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'PdksCompany',
+        loadComponent: () =>
+          import('./pages/pdks-company/pdks-company.component').then(
+            (m) => m.PdksCompanyComponent
+          ),
+        data: {
+          title: 'Firma Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'Department',
+        loadComponent: () =>
+          import('./pages/department/department.component').then(
+            (m) => m.DepartmentComponent
+          ),
+        data: {
+          title: 'Bölüm Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PdksStaff',
+        loadComponent: () =>
+          import('./pages/pdks-staff/pdks-staff.component').then(
+            (m) => m.PdksStaffComponent
+          ),
+        data: {
+          title: 'Kadro Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PdksPosition',
+        loadComponent: () =>
+          import('./pages/pdks-position/pdks-position.component').then(
+            (m) => m.PdksPositionComponent
+          ),
+        data: {
+          title: 'Görev Tanımları',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {

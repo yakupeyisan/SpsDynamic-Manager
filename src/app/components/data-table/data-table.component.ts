@@ -2548,6 +2548,21 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
+   * Open form in add mode
+   */
+  openAddForm() {
+    this.isEditMode = false;
+    this.editingRecordId = null;
+    this.formData = {};
+    this.initializeFormData();
+    this.selectedImageFile = null;
+    this.imagePreview = null;
+    this.showFormPage = true; // Show full page form instead of modal
+    this.cdr.markForCheck();
+    this.add.emit();
+  }
+
+  /**
    * Open form modal in edit mode
    */
   openEditForm(record: TableRow) {
@@ -2681,14 +2696,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Close form modal
    */
   closeFormModal() {
-    this.showFormModal = false;
+    // First set showFormPage to false to prevent form from reopening
     this.showFormPage = false;
+    this.showFormModal = false;
+    
+    // Then clear form data and reset flags
     this.formData = {};
     this.isEditMode = false;
     this.editingRecordId = null;
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.activeFormTab = 0; // Reset to first tab
+    
+    // Mark for change detection
     this.cdr.markForCheck();
   }
   
@@ -2980,8 +3000,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const submitData = { ...formValues };
     
     // If editing, include the ID
-    if (this.isEditMode && this.editingRecordId && this.recid) {
-      submitData[this.recid] = this.editingRecordId;
+    // Store recid value before it gets cleared
+    const currentRecid = this.editingRecordId;
+    if (this.isEditMode && currentRecid && this.recid) {
+      submitData[this.recid] = currentRecid;
+      // Also ensure recid is in submitData for API
+      submitData.recid = currentRecid;
     }
     
     // Show loading state
@@ -3050,24 +3074,37 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
       
       // Use custom save callback if provided
+      // Store isEditMode before save (since closeFormModal resets it)
+      const wasEditMode = this.isEditMode;
+      const savedRecordId = this.editingRecordId;
+      
       this.formSaveSubscription = this.onSave(submitData, this.isEditMode).subscribe({
         next: (response) => {
           this.isLoading = false;
           this.cdr.markForCheck();
           
-          // Close form
-          this.closeFormModal();
+          // Check if save was successful
+          // Response should have error: false for success, or error: true for failure
+          const isSuccess = response && (response.error === false || response.error === undefined || response.status === 'success');
           
-          // Reload data
-          if (this.dataSource) {
-            this.loadDataSource();
-          }
-          
-          // Emit event for parent component to handle
-          if (this.isEditMode) {
-            this.edit.emit(submitData as TableRow);
+          if (isSuccess) {
+            // Emit event for parent component to handle BEFORE closing form
+            if (wasEditMode) {
+              this.edit.emit(submitData as TableRow);
+            } else {
+              this.add.emit();
+            }
+            
+            // Close form only on success
+            this.closeFormModal();
+            
+            // Reload data
+            if (this.dataSource) {
+              this.loadDataSource();
+            }
           } else {
-            this.add.emit();
+            // Keep form open on error so user can fix and retry
+            // Error message is already shown by onSave callback
           }
         },
         error: (error) => {
