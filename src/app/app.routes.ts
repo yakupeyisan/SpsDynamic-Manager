@@ -39,6 +39,17 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'Card',
+        loadComponent: () =>
+          import('./pages/card/card.component').then(
+            (m) => m.CardComponent
+          ),
+        data: {
+          title: 'Kartlar',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {

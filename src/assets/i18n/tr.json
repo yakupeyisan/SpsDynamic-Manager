@@ -149,7 +149,7 @@
     "resetTooltip": "Kartı Sıfırla"
   },
   "columns": {
-    "EmployeeID": "ID",
+    "EmployeeID": "Kişi No",
     "PictureID": "Resim",
     "Name": "Ad",
     "SurName": "Soyad",
@@ -222,7 +222,7 @@
     "isDefined": "Tanımlı",
     "isVisitor": "Ziyaretçi",
     "DefinedTime": "Tanımlama Tarihi",
-    "CardStatusId": "Kart Durum ID",
+    "CardStatusId": "Kart Statü No",
     "TemporaryId": "Geçici ID",
     "TemporaryDate": "Geçici Tarih",
     "FacilityCode": "Tesis Kodu",
