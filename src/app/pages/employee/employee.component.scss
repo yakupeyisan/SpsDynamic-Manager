@@ -1,0 +1,36 @@
+.employee-page {
+  padding: 24px;
+
+  .search-field {
+    min-width: 300px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+
+    th {
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.87);
+    }
+
+    td {
+      padding: 16px;
+    }
+  }
+
+  .badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .badge-light-primary {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: #1976d2;
+  }
+}

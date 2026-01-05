@@ -1,0 +1,287 @@
+.ui-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-spacing-sm);
+  font-family: var(--ui-font-family);
+  font-size: 12px;
+  font-weight: var(--ui-font-weight-medium);
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  margin: 0px 3px;
+  padding: 6px 12px;
+  min-width: 75px;
+  cursor: pointer;
+  transition: all var(--ui-transition-base);
+  text-decoration: none;
+  line-height: 110%;
+  background-image: linear-gradient(#E8E8EE 0%, #E8E8EE 100%);
+  box-shadow: 0px 1px 0px white;
+  color: #666;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.ui-btn:focus {
+  outline: none !important;
+}
+
+.ui-btn:focus::before {
+  content: "";
+  border: 1px dashed #aaa;
+  border-radius: 15px;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  pointer-events: none;
+}
+
+.ui-btn:hover:not(:disabled) {
+  text-decoration: none;
+  background-image: linear-gradient(#ddd 0%, #DDDDDD 100%);
+  color: #333;
+}
+
+.ui-btn:active:not(:disabled),
+.ui-btn.clicked:not(:disabled) {
+  background-image: linear-gradient(#ccc 0%, #ccc 100%);
+  text-shadow: 1px 1px 1px #eee;
+}
+
+.ui-btn:disabled,
+.ui-btn-disabled {
+  border: 1px solid #e6e6e6;
+  background: #f7f7f7 !important;
+  background-image: none !important;
+  color: #bdbcbc !important;
+  text-shadow: none !important;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+/* Sizes */
+.ui-btn-sm {
+  padding: 5px;
+  border-radius: 4px;
+  margin: 0px;
+  min-width: 0px;
+}
+
+.ui-btn-sm:focus::before {
+  border-radius: 2px;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+}
+
+.ui-btn-md {
+  /* Default size, already set in .ui-btn */
+}
+
+.ui-btn-lg {
+  /* Default size, already set in .ui-btn */
+}
+
+/* Variants */
+.ui-btn-primary {
+  color: white;
+  background-image: linear-gradient(#269DF0 0%, #269DF0 100%);
+  border: 1px solid #269DF0;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-primary:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#2391DD 0%, #2391DD 100%);
+  border: 1px solid #2391DD;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-primary:active:not(:disabled),
+.ui-btn-primary.clicked:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#1E83C9 0%, #1E83C9 100%);
+  border: 1px solid #1268A6;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-primary:focus::before {
+  border: 1px dashed #e8e8e8;
+}
+
+.ui-btn-secondary {
+  /* Default button style (already gray gradient) */
+}
+
+.ui-btn-secondary:hover:not(:disabled) {
+  /* Already handled by base .ui-btn:hover */
+}
+
+.ui-btn-success {
+  color: white;
+  background-image: linear-gradient(#52A452 0%, #52A452 100%);
+  border: 1px solid #52A452;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-success:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#3F8F3D 0%, #3F8F3D 100%);
+  border: 1px solid #3F8F3D;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-success:active:not(:disabled),
+.ui-btn-success.clicked:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#377D36 0%, #377D36 100%);
+  border: 1px solid #555;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-success:focus::before {
+  border: 1px dashed #e8e8e8;
+}
+
+.ui-btn-danger {
+  color: white;
+  background-image: linear-gradient(#f9585a 0%, #f9585a 100%);
+  border: 1px solid #f9585a;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-danger:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#de4446 0%, #de4446 100%);
+  border: 1px solid #de4446;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-danger:active:not(:disabled),
+.ui-btn-danger.clicked:not(:disabled) {
+  color: white;
+  border: 1px solid #861C1E;
+  background-image: linear-gradient(#9C2123 0%, #9C2123 100%);
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-danger:focus::before {
+  border: 1px dashed #ddd;
+}
+
+.ui-btn-warning {
+  color: white;
+  background-image: linear-gradient(#FB8822 0%, #FB8822 100%);
+  border: 1px solid #FB8822;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-warning:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#F1731F 0%, #F1731F 100%);
+  border: 1px solid #F1731F;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-warning:active:not(:disabled),
+.ui-btn-warning.clicked:not(:disabled) {
+  color: white;
+  border: 1px solid #666;
+  background-image: linear-gradient(#B98747 0%, #B98747 100%);
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-warning:focus::before {
+  border: 1px dashed #f9f9f9;
+}
+
+.ui-btn-info {
+  color: white;
+  background-image: linear-gradient(#269DF0 0%, #269DF0 100%);
+  border: 1px solid #269DF0;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-info:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#2391DD 0%, #2391DD 100%);
+  border: 1px solid #2391DD;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-info:active:not(:disabled),
+.ui-btn-info.clicked:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#1E83C9 0%, #1E83C9 100%);
+  border: 1px solid #1268A6;
+  text-shadow: 0px 0px 1px #111;
+}
+
+.ui-btn-info:focus::before {
+  border: 1px dashed #e8e8e8;
+}
+
+.ui-btn-outline {
+  color: #269DF0;
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid #269DF0;
+  box-shadow: none;
+}
+
+.ui-btn-outline:hover:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#269DF0 0%, #269DF0 100%);
+  border: 1px solid #269DF0;
+  box-shadow: 0px 1px 0px white;
+}
+
+.ui-btn-outline:active:not(:disabled),
+.ui-btn-outline.clicked:not(:disabled) {
+  color: white;
+  background-image: linear-gradient(#1E83C9 0%, #1E83C9 100%);
+  border: 1px solid #1268A6;
+  text-shadow: 0px 0px 1px #111;
+}
+
+/* Block */
+.ui-btn-block {
+  width: 100%;
+  display: flex;
+}
+
+/* Loading State */
+.ui-btn-loading {
+  position: relative;
+  color: transparent;
+}
+
+.ui-btn-spinner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: ui-spin 0.6s linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ui-btn-icon {
+  display: inline-flex;
+  align-items: center;
+}
+

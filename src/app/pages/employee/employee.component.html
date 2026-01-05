@@ -1,0 +1,78 @@
+<!-- Employee Component Template - Adapted from old app.component.html -->
+<!-- NOTE: This template requires DataTableComponent (ui-data-table) to be created -->
+<!-- The structure is ready but DataTableComponent needs to be implemented -->
+
+<div class="employee-page">
+  <div class="container-fluid">
+    <!-- Data Table Section -->
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'employees-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="true"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [imageUploadUrl]="imageUploadUrl"
+          [imageField]="imageField"
+          [imagePreviewUrl]="imagePreviewUrl"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [getGridColumns]="getGridColumns"
+          [getGridDataSource]="getGridDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="10"
+          [height]="'800px'"
+          [recordHeight]="40"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [recid]="'EmployeeID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (contextMenu)="onTableContextMenu($event)"
+          (columnClick)="onTableColumnClick($event)"
+          (pictureClick)="onPictureClick($event)"
+          (columnDblClick)="onTableColumnDblClick($event)"
+          (columnContextMenu)="onTableColumnContextMenu($event)"
+          (columnResize)="onTableColumnResize($event)"
+          (mouseEnter)="onTableMouseEnter($event)"
+          (mouseLeave)="onTableMouseLeave($event)"
+          (focus)="onTableFocus()"
+          (blur)="onTableBlur()"
+          (copy)="onTableCopy($event)"
+          (paste)="onTablePaste($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()"
+          (delete)="onTableDelete($event)"
+          (add)="onTableAdd()"
+          (edit)="onTableEdit($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>

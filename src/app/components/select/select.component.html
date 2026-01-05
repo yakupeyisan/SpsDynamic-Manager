@@ -1,0 +1,61 @@
+<div class="ui-select-wrapper">
+  <label *ngIf="label" class="ui-select-label">
+    {{ label }}
+    <span *ngIf="required" class="ui-select-required">*</span>
+  </label>
+  
+  <div class="ui-select-container" #selectContainer (click)="onSelectClick($event)">
+    <div
+      [class]="selectClasses"
+      [class.ui-select-disabled]="disabled"
+      (click)="toggleOpen()"
+      role="combobox"
+      [attr.aria-expanded]="isOpen"
+      [attr.aria-disabled]="disabled">
+      <span class="ui-select-value" [class.ui-select-placeholder]="!value || (multiple && value.length === 0)">
+        <ng-container *ngIf="!multiple">{{ selectedLabel }}</ng-container>
+        <ng-container *ngIf="multiple">
+          <ng-container *ngIf="selectedOptions.length === 0">{{ placeholder }}</ng-container>
+          <ng-container *ngIf="selectedOptions.length > 0">
+            <span class="ui-select-count">{{ selectedOptions.length }} selected</span>
+            <span class="ui-select-separator">|</span>
+            <span class="ui-select-tags">
+              <span *ngFor="let option of selectedOptions" class="ui-select-tag">
+                <span class="ui-select-tag-label">{{ option.label }}</span>
+                <button 
+                  type="button"
+                  class="ui-select-tag-remove"
+                  (click)="removeSelectedOption($event, option.value)"
+                  aria-label="Remove {{ option.label }}">
+                  ×
+                </button>
+              </span>
+            </span>
+          </ng-container>
+        </ng-container>
+      </span>
+      <span class="ui-select-arrow" [class.ui-select-arrow-open]="isOpen">▼</span>
+    </div>
+    
+    <div *ngIf="isOpen" #dropdown class="ui-select-dropdown">
+      <div
+        *ngFor="let option of options"
+        class="ui-select-option"
+        [class.ui-select-option-selected]="isSelected(option)"
+        [class.ui-select-option-disabled]="option.disabled"
+        (click)="selectOption(option, $event)">
+        <span *ngIf="multiple" class="ui-select-checkbox">
+          <span *ngIf="isSelected(option)" class="ui-select-checkmark">✓</span>
+        </span>
+        {{ option.label }}
+      </div>
+      <div *ngIf="options.length === 0" class="ui-select-empty">
+        No options available
+      </div>
+    </div>
+  </div>
+  
+  <span *ngIf="helperText && !errorText" class="ui-select-helper">{{ helperText }}</span>
+  <span *ngIf="errorText" class="ui-select-error-text">{{ errorText }}</span>
+</div>
+

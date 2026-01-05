@@ -1,0 +1,22 @@
+<div [class]="tabsClasses">
+  <div class="ui-tabs-line"></div>
+  <div class="ui-tabs-header" role="tablist">
+    <div
+      *ngFor="let tab of tabItems; let i = index"
+      class="ui-tab-item"
+      [class.ui-tab-item-active]="tab.active"
+      [class.ui-tab-item-disabled]="tab.disabled"
+      [attr.role]="'tab'"
+      [attr.aria-selected]="tab.active"
+      [attr.aria-disabled]="tab.disabled"
+      (click)="!tab.disabled && selectTab(i)">
+      <span *ngIf="tab.icon" class="ui-tab-icon" [innerHTML]="tab.icon"></span>
+      {{ tab.label }}
+    </div>
+  </div>
+  
+  <div class="ui-tabs-content">
+    <ng-content></ng-content>
+  </div>
+</div>
+

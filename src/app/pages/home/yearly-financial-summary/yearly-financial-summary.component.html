@@ -1,0 +1,60 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <div class="hstack align-items-center flex-col flex-lg-row">
+      <div class="hstack w-100">
+        <div
+          class="bg-light-primary rounded icon-48 d-flex align-items-center justify-content-center"
+        >
+          <i
+            class="iconify f-s-24 d-flex text-primary"
+            data-icon="solar:chart-2-linear"
+          ></i>
+        </div>
+        <div>
+          <mat-card-title>Yıllık Finansal Özet</mat-card-title>
+          <mat-card-subtitle>Son 12 Ay</mat-card-subtitle>
+        </div>
+      </div>
+      <div class="m-l-auto hstack">
+        <span class="d-flex gap-8">
+          <i-tabler name="circle-filled" class="text-success icon-8"></i-tabler>
+          <span class="f-s-14 text-muted">Başarılı Yükleme</span>
+        </span>
+        <span class="d-flex gap-8">
+          <i-tabler name="circle-filled" class="text-warning icon-8"></i-tabler>
+          <span class="f-s-14 text-muted">Başarısız Yükleme</span>
+        </span>
+        <span class="d-flex gap-8">
+          <i-tabler name="circle-filled" class="text-error icon-8"></i-tabler>
+          <span class="f-s-14 text-muted">Harcama</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- chart -->
+    @if(isLoading) {
+    <div class="m-t-16 d-flex align-items-center justify-content-center" style="height: 300px">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+    } @else {
+    <div class="m-t-16" style="height: 300px">
+      <apx-chart
+        [series]="yearlyFinancialSummaryChart.series"
+        [dataLabels]="yearlyFinancialSummaryChart.dataLabels"
+        [chart]="yearlyFinancialSummaryChart.chart"
+        [legend]="yearlyFinancialSummaryChart.legend"
+        [colors]="yearlyFinancialSummaryChart.colors"
+        [grid]="yearlyFinancialSummaryChart.grid"
+        [fill]="yearlyFinancialSummaryChart.fill"
+        [stroke]="yearlyFinancialSummaryChart.stroke"
+        [tooltip]="yearlyFinancialSummaryChart.tooltip"
+        [markers]="yearlyFinancialSummaryChart.markers"
+        [xaxis]="yearlyFinancialSummaryChart.xaxis"
+        [yaxis]="yearlyFinancialSummaryChart.yaxis"
+        [responsive]="yearlyFinancialSummaryChart.responsive"
+      ></apx-chart>
+    </div>
+    }
+  </mat-card-content>
+</mat-card>
+

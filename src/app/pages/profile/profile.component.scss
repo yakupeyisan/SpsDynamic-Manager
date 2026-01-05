@@ -1,0 +1,387 @@
+@use "../../../assets/scss/variables" as *;
+
+.profile-page {
+  padding: 32px;
+  background: var(--mat-sys-surface-bright, $layout-bg);
+  min-height: calc(100vh - 64px);
+
+  .loading-container {
+    min-height: 400px;
+  }
+
+  // Profile Header - Sade ve Minimal
+  .profile-header-card {
+    background: var(--mat-sys-surface, white);
+    border-radius: 12px !important;
+    border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
+    margin-bottom: 32px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    mat-card-content {
+      padding: 32px !important;
+    }
+
+    .profile-name {
+      color: var(--mat-sys-on-surface, $text-color);
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    .profile-header-info {
+      p {
+        color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.7));
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      i-tabler {
+        color: var(--mat-sys-primary, $primary);
+        opacity: 0.8;
+      }
+    }
+
+    .profile-edit-btn,
+    .profile-save-btn {
+      transition: all 0.2s ease;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      line-height: 1;
+      vertical-align: middle;
+
+      i-tabler {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+        flex-shrink: 0;
+        color: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+      }
+
+      mat-spinner {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+      }
+
+      ::ng-deep .mat-mdc-progress-spinner circle {
+        stroke: currentColor;
+      }
+
+      ::ng-deep .mdc-button__label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1;
+      }
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .profile-cancel-btn,
+    button[color="warn"].profile-cancel-btn {
+      transition: all 0.2s ease;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      line-height: 1;
+      vertical-align: middle;
+
+      i-tabler {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+        flex-shrink: 0;
+        color: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+      }
+
+      ::ng-deep .mdc-button__label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1;
+      }
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  // Profile Image - Minimal
+  .profile-image-container {
+    position: relative;
+    display: inline-block;
+
+    .profile-image-wrapper {
+      position: relative;
+      display: inline-block;
+
+      .profile-image {
+        border: 3px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        object-fit: cover;
+        transition: opacity 0.2s ease;
+        width: 140px;
+        height: 140px;
+      }
+
+      .profile-image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+      }
+
+      &:hover .profile-image-overlay {
+        opacity: 1;
+      }
+    }
+  }
+
+  // Profile Info Cards - Sade Tasarım
+  .profile-info-card {
+    border-radius: 12px !important;
+    border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
+    margin-bottom: 24px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: var(--mat-sys-surface, white);
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    mat-card-header.profile-card-header {
+      padding-top: 15px !important;
+      padding-bottom: 15px !important;
+      padding-left: 24px;
+      padding-right: 24px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
+      background: var(--mat-sys-surface-container, rgba(0, 0, 0, 0.02));
+
+      mat-card-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--mat-sys-on-surface, $text-color);
+        letter-spacing: -0.2px;
+      }
+
+      .profile-card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    mat-card-content {
+      padding: 24px !important;
+    }
+  }
+
+  // Field Values - Minimal ve Okunabilir
+  .profile-field-value {
+    padding: 12px 16px;
+    background: var(--mat-sys-surface-container-highest, rgba(0, 0, 0, 0.02));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface, $text-color);
+    min-height: 44px;
+    margin-bottom: 0;
+
+    i-tabler {
+      flex-shrink: 0;
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+      margin-right: 8px;
+    }
+  }
+
+  // Labels - Daha Okunabilir
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.7));
+    display: block;
+    margin-bottom: 8px;
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+
+  // Badge Status - Sade
+  .badge-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    text-transform: none;
+
+    &.badge-success {
+      background: var(--mat-sys-success-fixed-dim, $light-success);
+      color: var(--mat-sys-success, $success);
+    }
+
+    &.badge-error {
+      background: var(--mat-sys-error-fixed-dim, $light-error);
+      color: var(--mat-sys-error, $error);
+    }
+
+    i-tabler {
+      margin-right: 6px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // Form Fields - Minimal
+  mat-form-field {
+    margin-bottom: 8px;
+
+    .mat-mdc-text-field-wrapper {
+      background: var(--mat-sys-surface-container-highest, rgba(0, 0, 0, 0.02));
+      border-radius: 8px;
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      margin-top: 4px;
+    }
+  }
+
+  // Field spacing - Daha İyi Boşluk
+  .row {
+    .col-12,
+    .col-md-6 {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  // Empty state
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.7));
+    line-height: 1.6;
+  }
+
+  // Responsive
+  @media (max-width: 992px) {
+    padding: 24px;
+
+    .profile-header-card {
+      mat-card-content {
+        padding: 28px !important;
+      }
+    }
+
+    .profile-info-card {
+      .profile-card-header {
+        padding: 18px 20px;
+      }
+
+      mat-card-content {
+        padding: 20px !important;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .profile-header-card {
+      mat-card-content {
+        padding: 24px !important;
+      }
+
+      .profile-name {
+        font-size: 22px;
+      }
+
+      .profile-image-container {
+        margin-bottom: 20px;
+
+        .profile-image {
+          width: 100px;
+          height: 100px;
+        }
+      }
+    }
+
+    .profile-info-card {
+      .profile-card-header {
+        padding: 16px 18px;
+
+        mat-card-title {
+          font-size: 15px;
+        }
+      }
+
+      mat-card-content {
+        padding: 18px !important;
+      }
+    }
+
+    .profile-field-value {
+      padding: 10px 14px;
+      font-size: 13px;
+      min-height: 40px;
+    }
+
+    label {
+      font-size: 12px;
+    }
+  }
+}
+

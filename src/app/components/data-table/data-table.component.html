@@ -1,0 +1,804 @@
+<div class="ui-data-table">
+  <div *ngIf="shouldShowToolbar()" class="ui-table-toolbar">
+    <div class="ui-toolbar-left">
+      <!-- Custom Toolbar Items - Only reload on left -->
+      <ng-container *ngIf="toolbar">
+        <ng-container *ngFor="let item of toolbarItems">
+          <!-- Reload Button only on left -->
+          <button 
+            *ngIf="item.type === 'button' && !item.hidden && item.id === 'reload'"
+            [class]="getToolbarItemClasses(item)"
+            [disabled]="item.disabled"
+            [title]="item.tooltip || ''"
+            (click)="onToolbarItemClick(item, $event)">
+            <!-- Reload Icon -->
+            <svg *ngIf="item.icon === 'reload' || item.icon === 'ui-icon-reload' || item.id === 'reload'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 8a6 6 0 0 1 6-6v2M14 8a6 6 0 0 1-6 6v-2M8 2l2 2-2 2M8 14l-2-2 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </ng-container>
+      </ng-container>
+
+      <!-- Default Toolbar (if no custom toolbar) -->
+      <ng-container *ngIf="!toolbar">
+        <button *ngIf="showRefresh" class="ui-toolbar-icon-btn" (click)="onRefresh()" title="Refresh" aria-label="Refresh">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2v4h4M8 14v-4H4M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6M14 8c0-3.314-2.686-6-6-6S2 4.686 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </button>
+      </ng-container>
+
+      <!-- Search Wrapper (always shown if searchable, with separator before) -->
+      <div *ngIf="searchable && (showRefresh || toolbar)" class="ui-toolbar-separator"></div>
+      <div *ngIf="searchable" class="ui-toolbar-search-wrapper">
+        <span class="ui-search-icon-outer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div class="ui-toolbar-search">
+          <ui-input
+            [placeholder]="searchPlaceholder"
+            [(ngModel)]="searchTerm"
+            (valueChange)="onSearchChange($event)"
+            (keyupEvent)="onSearchKeyUp($event)"
+            (blurEvent)="onSearchBlur()"
+            class="ui-search-input">
+          </ui-input>
+        </div>
+        <button *ngIf="advancedFilter" class="ui-filter-icon-outer" (click)="openFilterPanel()" [title]="translate.instant('table.advancedFilter')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Separator before action buttons -->
+      <div class="ui-toolbar-separator"></div>
+      
+      <!-- Action Buttons (Add, Edit, Delete, Save) -->
+      <div class="ui-toolbar-actions">
+        <!-- Custom Toolbar Right Content -->
+        <ng-container *ngIf="toolbar">
+          <ng-container *ngFor="let item of toolbarItems">
+            <!-- Button Type -->
+            <button 
+              *ngIf="item.type === 'button' && !item.hidden && item.id !== 'reload'"
+              [class]="getToolbarItemClasses(item)"
+              [disabled]="item.disabled"
+              [title]="item.tooltip || ''"
+              (click)="onToolbarItemClick(item, $event)">
+              <!-- Plus/Add Icon -->
+              <svg *ngIf="item.icon === 'plus' || item.icon === 'ui-icon-plus' || item.id === 'add'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <!-- Pencil/Edit Icon -->
+              <svg *ngIf="item.icon === 'pencil' || item.icon === 'ui-icon-pencil' || item.id === 'edit'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.5 2.5l2 2L5.5 12.5 2 14l1.5-3.5 8-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <!-- Delete Icon -->
+              <svg *ngIf="item.icon === 'delete' || item.icon === 'ui-icon-cross' || item.icon === 'cross' || item.id === 'delete'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <!-- Check/Save Icon -->
+              <svg *ngIf="item.icon === 'check' || item.icon === 'ui-icon-check' || item.id === 'save'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <span *ngIf="item.text">{{ item.text }}</span>
+            </button>
+
+            <!-- Menu Type -->
+            <div *ngIf="item.type === 'menu' && !item.hidden && item.items" class="ui-toolbar-menu-wrapper">
+              <button 
+                class="ui-toolbar-item ui-toolbar-item-menu"
+                [class.ui-toolbar-item-disabled]="item.disabled"
+                [disabled]="item.disabled"
+                [title]="item.tooltip || ''"
+                (click)="toggleToolbarMenu(item.id, $event)"
+                type="button">
+                <span *ngIf="item.text">{{ item.text }}</span>
+                <svg *ngIf="!item.text && item.icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="item.text" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;">
+                  <path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div *ngIf="openMenuId === item.id" class="ui-toolbar-menu-dropdown" (click)="$event.stopPropagation()">
+                <button
+                  *ngFor="let menuItem of item.items"
+                  class="ui-toolbar-menu-item"
+                  [disabled]="menuItem.disabled"
+                  (click)="onToolbarMenuItemClick(item, menuItem, $event)">
+                  <svg *ngIf="menuItem.icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px; flex-shrink: 0;">
+                    <use [attr.href]="'#' + menuItem.icon"></use>
+                  </svg>
+                  <span>{{ menuItem.text }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Break/Separator Type -->
+            <div *ngIf="item.type === 'break' && !item.hidden && item.id !== 'break-actions'" class="ui-toolbar-separator"></div>
+
+            <!-- Spacer Type -->
+            <div *ngIf="item.type === 'spacer' && !item.hidden" class="ui-toolbar-spacer"></div>
+
+            <!-- HTML Type -->
+            <div *ngIf="item.type === 'html' && item.html && !item.hidden" [innerHTML]="item.html"></div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Default Toolbar Buttons (if no custom toolbar) -->
+        <ng-container *ngIf="!toolbar">
+          <button class="ui-toolbar-btn" (click)="onAdd()" [title]="translate.instant('toolbar.addNewTooltip')" [attr.aria-label]="translate.instant('toolbar.addNew')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ translate.instant('toolbar.addNew') }}</span>
+          </button>
+          <button class="ui-toolbar-btn" [disabled]="!hasSingleSelection()" (click)="onEdit()" [title]="translate.instant('toolbar.editTooltip')" [attr.aria-label]="translate.instant('toolbar.edit')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.5 2.5l2 2L5.5 12.5 2 14l1.5-3.5 8-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span>{{ translate.instant('toolbar.edit') }}</span>
+          </button>
+          <button class="ui-toolbar-btn" [disabled]="selectedRows.size === 0" (click)="onDelete()" [title]="translate.instant('toolbar.deleteTooltip')" [attr.aria-label]="translate.instant('toolbar.delete')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ translate.instant('toolbar.delete') }}</span>
+          </button>
+          <div class="ui-toolbar-separator"></div>
+          <button class="ui-toolbar-btn" (click)="onUpdate()" [title]="translate.instant('toolbar.saveTooltip')" [attr.aria-label]="translate.instant('toolbar.save')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span>{{ translate.instant('toolbar.save') }}</span>
+          </button>
+        </ng-container>
+
+        <!-- Custom Toolbar Right Content -->
+        <div *ngIf="toolbar && toolbar.right" [innerHTML]="toolbar.right"></div>
+      </div>
+      
+      <!-- Options Menu Button (Right Side) -->
+      <div class="ui-toolbar-right">
+        <div class="ui-options-menu-wrapper">
+          <button 
+            class="ui-options-menu-btn" 
+            (click)="toggleOptionsMenu($event)"
+            [title]="translate.instant('options.title')"
+            [attr.aria-label]="translate.instant('options.title')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="4" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
+          </button>
+          
+          <!-- Options Dropdown Menu -->
+          <div *ngIf="showOptionsMenu" class="ui-options-dropdown" (click)="$event.stopPropagation()">
+            <button class="ui-options-menu-item" (click)="openJoinOptionsPanel()">
+              <span>{{ translate.instant('options.title') }}</span>
+            </button>
+            <button 
+              *ngIf="canViewDeleted" 
+              class="ui-options-menu-item" 
+              (click)="toggleShowDeleted()"
+              [class.active]="showDeleted">
+              <span>{{ showDeleted ? translate.instant('options.hideDeleted') : translate.instant('options.showDeleted') }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Join Options Panel Overlay -->
+      <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay">
+        <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
+          <div class="ui-join-options-header">
+            <h3>{{ translate.instant('joinOptions.title') }}</h3>
+          </div>
+          <div class="ui-join-options-body">
+            <ng-container *ngFor="let option of joinOptions">
+              <div class="ui-join-option-item" [class.ui-join-option-nested]="option.nested">
+                <label class="ui-checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isJoinSelected(option.key)"
+                    (change)="toggleJoinOption(option.key, $event)"
+                    class="ui-checkbox">
+                  <span>{{ translate.instant('joinOptions.' + option.key) || option.label }}</span>
+                </label>
+              </div>
+            </ng-container>
+          </div>
+          <div class="ui-join-options-footer">
+            <button class="ui-btn ui-btn-primary" (click)="applyJoinOptions()">{{ translate.instant('joinOptions.apply') }}</button>
+            <button class="ui-btn ui-btn-secondary" (click)="closeJoinOptionsPanel()">{{ translate.instant('joinOptions.cancel') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Filter Panel Overlay -->
+    <div *ngIf="showFilterPanel && advancedFilter" class="ui-filter-overlay">
+      <div class="ui-filter-overlay-content">
+        <ui-filter-panel
+          [columns]="columnOptions"
+          [data]="data"
+          [filter]="activeFilter || undefined"
+          [limit]="currentLimit"
+          [limitOptions]="limitOptions"
+          (filterChange)="onFilterChange($event)"
+          (limitChange)="onLimitChange($event)"
+          (clear)="onFilterClear()"
+          (close)="closeFilterPanel()">
+        </ui-filter-panel>
+      </div>
+    </div>
+  </div>
+  
+  <div #tableWrapper class="ui-table-wrapper" 
+       [style.height]="height && fixedBody ? height : null"
+       [style.padding-bottom]="showFooter ? '24px' : null"
+       [attr.tabindex]="keyboard ? (tabIndex ?? 0) : null"
+       (focus)="onGridFocus($event)"
+       (blur)="onGridBlur($event)"
+       (copy)="onGridCopy($event)"
+       (paste)="onGridPaste($event)">
+    <table class="ui-table" [class.ui-table-striped]="striped" [class.ui-table-hover]="hover" [class.ui-table-fixed-body]="fixedBody && height">
+      <thead>
+        <tr>
+          <th *ngIf="selectable" class="ui-table-select-header">
+            <input
+              type="checkbox"
+              [checked]="isAllSelected()"
+              [indeterminate]="isIndeterminate()"
+              (change)="onSelectAll($event)"
+            />
+          </th>
+          <th
+            *ngFor="let column of displayColumns; let colIndex = index"
+            [class]="['ui-table-header', column.sortable ? 'ui-table-sortable' : '', getAlignmentClass(column.align)]"
+            [style.width]="column.width"
+            [attr.title]="column.tooltip || column.label |translate"
+            (click)="onSort(column, $event)"
+            (dblclick)="onColumnDblClick(column, $event)"
+            (contextmenu)="onColumnContextMenu(column, $event)">
+            <div class="ui-table-header-content">
+              {{ getColumnLabel(column) }}
+              <span *ngIf="column.sortable" class="ui-table-sort-icon">
+                <span *ngIf="sortField !== column.field" class="ui-table-sort-both">⇅</span>
+                <span *ngIf="sortField === column.field && sortDirection === 'asc'" class="ui-table-sort-up">↑</span>
+                <span *ngIf="sortField === column.field && sortDirection === 'desc'" class="ui-table-sort-down">↓</span>
+              </span>
+            </div>
+            <div 
+              *ngIf="column.resizable !== false"
+              class="ui-table-column-resizer"
+              (mousedown)="onColumnResizeStart($event, column, colIndex)"
+              [attr.title]="'Resize column'">
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let row of filteredData; let i = index"
+          [attr.index]="i"
+          [class.ui-table-row-even]="i % 2 === 0"
+          [class.ui-table-row-odd]="i % 2 === 1"
+          (dblclick)="onRowDblClick(row, $event)"
+          (contextmenu)="onRowContextMenu(row, $event)"
+          (mousedown)="onRowMouseDown(row, $event)"
+          (mouseenter)="onRowMouseEnter(row)"
+          (mouseleave)="onRowMouseLeave(row)">
+          <td *ngIf="selectable" class="ui-table-select-cell" (click)="$event.stopPropagation()">
+            <input
+              type="checkbox"
+              [checked]="isSelected(row)"
+              (change)="onSelectRow($event, row)"
+            />
+          </td>
+          <td
+            *ngFor="let column of displayColumns; let colIndex = index"
+            [attr.col]="colIndex"
+            [class]="getAlignmentClass(column.align)"
+            [style.width]="column.width"
+            (click)="onCellClick($event, row, column, i, colIndex)"
+            (dblclick)="onCellDblClick($event, row, column)">
+            <ng-container *ngIf="column.template; else defaultCell">
+              <ng-container *ngTemplateOutlet="column.template; context: { $implicit: row, column: column }"></ng-container>
+            </ng-container>
+            <ng-template #defaultCell>
+              <ng-container *ngIf="column.type === 'checkbox'; else textCell">
+                <input type="checkbox" [checked]="getCellValue(row, column, i)" disabled />
+              </ng-container>
+              <ng-template #textCell>
+                <span *ngIf="isHtmlValue(column, row, i); else textValue" [innerHTML]="sanitizeHtml(getCellValue(row, column, i))"></span>
+                <ng-template #textValue>{{ getCellValue(row, column, i) }}</ng-template>
+              </ng-template>
+            </ng-template>
+          </td>
+        </tr>
+        <!-- Empty message row -->
+        <tr *ngIf="filteredData.length === 0 && emptyRowsCount === 0" class="ui-table-empty">
+          <td [attr.colspan]="displayColumns.length + (selectable ? 1 : 0)" class="ui-table-empty-cell">
+            {{ emptyMessage || translate.instant('table.noDataAvailable') }}
+          </td>
+        </tr>
+        
+        <!-- Empty rows for Excel-like appearance -->
+        <tr
+          *ngFor="let emptyRow of emptyRows; let i = index"
+          [class.ui-table-row-even]="(filteredData.length + i) % 2 === 0"
+          [class.ui-table-row-odd]="(filteredData.length + i) % 2 === 1"
+          class="ui-table-empty-row">
+          <td *ngIf="selectable" class="ui-table-select-cell"></td>
+          <td *ngFor="let column of displayColumns" [class]="getAlignmentClass(column.align)"></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Footer (w2ui style) -->
+  <div *ngIf="showFooter" class="ui-table-footer">
+    <div class="ui-footer-left">
+      {{ footerLeftMessage }}
+      <span *ngIf="pagination" class="ui-footer-total">{{ footerCenterMessage }}</span>
+    </div>
+    <div class="ui-footer-right">
+      <!-- Pagination in Footer -->
+      <div *ngIf="pagination && totalPages > 1" class="ui-table-pagination">
+        <button
+          class="ui-pagination-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToFirstPage()"
+          [title]="translate.instant('table.firstPage')">
+          «
+        </button>
+        <button
+          class="ui-pagination-btn"
+          [disabled]="currentPage === 1"
+          (click)="previousPage()"
+          [title]="translate.instant('table.previousPage')">
+          ‹
+        </button>
+        <input
+          type="number"
+          class="ui-pagination-input"
+          [value]="currentPage"
+          [min]="1"
+          [max]="totalPages"
+          (change)="onPageInputChange($event)"
+          (keydown)="onPageInputKeyDown($event)"
+          [title]="translate.instant('table.pageNumber')">
+        <span class="ui-pagination-separator">/</span>
+        <span class="ui-pagination-total">{{ totalPages }}</span>
+        <button
+          class="ui-pagination-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()"
+          [title]="translate.instant('table.nextPage')">
+          ›
+        </button>
+        <button
+          class="ui-pagination-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToLastPage()"
+          [title]="translate.instant('table.lastPage')">
+          »
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Picture Overlay Modal -->
+  <ui-modal
+    title="Resim"
+    [(show)]="showPictureOverlay"
+    size="xl"
+    [showFooter]="false"
+    (closed)="closePictureOverlay()">
+    <div style="text-align: center; padding: 1rem;">
+      <img 
+        [src]="pictureOverlayUrl" 
+        alt="Picture" 
+        style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px;" 
+        (error)="closePictureOverlay()" />
+    </div>
+  </ui-modal>
+
+  <!-- Form Modal for Add/Edit -->
+  <ui-modal
+    [title]="isEditMode ? translate.instant('form.editRecord') : translate.instant('form.addNewRecord')"
+    [(show)]="showFormModal"
+    size="xl"
+    [closable]="true"
+    [backdrop]="true"
+    [backdropClose]="true"
+    [showFooter]="true"
+    (closed)="closeFormModal()">
+    
+    <ui-form 
+      [title]="''"
+      layout="vertical"
+      [showJsonOutput]="false">
+      
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-height: 70vh; overflow-y: auto; padding: 1rem;">
+        <ng-container *ngFor="let column of getEditableColumns()">
+          <ui-form-field 
+            [label]="getColumnLabel(column)"
+            [required]="false">
+            
+            <!-- Text Input -->
+            <ui-input
+              *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
+              type="text"
+              [(ngModel)]="formData[column.field]"
+              [placeholder]="getColumnLabel(column)"
+              [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+            </ui-input>
+            
+            <!-- Number Input -->
+            <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
+              <!-- Disabled currency/money fields show formatted value -->
+              <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+                    class="ui-form-disabled-value">
+                {{ getFormattedFormValue(column) }}
+              </span>
+              <!-- Regular number input for editable fields or non-currency disabled fields -->
+              <ui-input
+                *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                type="number"
+                [(ngModel)]="formData[column.field]"
+                [placeholder]="getColumnLabel(column)"
+                [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+              </ui-input>
+            </ng-container>
+            
+            <!-- Select/Enum/List -->
+            <ui-select
+              *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
+              [options]="getColumnOptions(column)"
+              [(ngModel)]="formData[column.field]"
+              [placeholder]="getColumnLabel(column)"
+              [multiple]="column.type === 'enum'"
+              [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+            </ui-select>
+            
+            <!-- Checkbox/Toggle -->
+            <ui-toggle
+              *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
+              [(ngModel)]="formData[column.field]"
+              [label]="''"
+                          [disabled]="column.disabled || false">
+            </ui-toggle>
+            
+          </ui-form-field>
+        </ng-container>
+      </div>
+      
+    </ui-form>
+    
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem;">
+      <button 
+        type="button" 
+        class="ui-toolbar-btn"
+        (click)="closeFormModal()">
+        {{ translate.instant('form.cancel') }}
+      </button>
+      <button 
+        type="button" 
+        class="ui-toolbar-btn ui-toolbar-btn-primary"
+        (click)="onFormSubmit(formData)">
+        {{ isEditMode ? translate.instant('form.update') : translate.instant('form.save') }}
+      </button>
+    </div>
+    
+  </ui-modal>
+  
+  </div>
+
+  <!-- Full Page Form -->
+  <div *ngIf="showFormPage">
+    <!-- Backdrop for modal mode -->
+    <div *ngIf="!formFullscreen" 
+         class="ui-form-page-backdrop"
+         (click)="closeFormModal()">
+    </div>
+    
+    <div class="ui-form-page-overlay"
+         [class.ui-form-page-fullscreen]="formFullscreen"
+         [class.ui-form-page-modal]="!formFullscreen">
+      <div class="ui-form-page-container">
+      <div class="ui-form-page-header">
+        <h2>{{ isEditMode ? translate.instant('form.editRecord') : translate.instant('form.addNewRecord') }}</h2>
+        <button 
+          type="button" 
+          class="ui-form-page-close"
+          (click)="closeFormModal()"
+          aria-label="Close">
+          ×
+        </button>
+      </div>
+      
+      <div class="ui-form-page-body">
+        <ui-form 
+          [title]="''"
+          layout="vertical"
+          [showJsonOutput]="false"
+          (formChange)="onFormDataChange($event)">
+          
+          <!-- Tabs -->
+          <ui-tabs 
+            *ngIf="formTabs && formTabs.length > 0"
+            [(activeTab)]="activeFormTab"
+            variant="default"
+            (activeTabChange)="onFormTabChange($event)">
+            
+            <ng-container *ngFor="let tab of formTabs; let tabIndex = index">
+              <ui-tab-item [label]="tab.label">
+                <div class="ui-form-tab-content">
+                  <!-- Image Upload Section (only on first tab if imageField is defined) -->
+                  <div *ngIf="tabIndex === 0 && imageField" class="ui-form-image-section">
+                    <ui-form-field label="Resim">
+                      <div class="ui-form-image-upload">
+                        <div class="ui-form-image-preview" *ngIf="imagePreview">
+                          <img [src]="imagePreview" alt="Preview" />
+                          <button 
+                            type="button" 
+                            class="ui-form-image-remove"
+                            (click)="removeImage()"
+                            aria-label="Remove image">
+                            ×
+                          </button>
+                        </div>
+                        <div class="ui-form-image-placeholder" *ngIf="!imagePreview">
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                          <span>Resim Yükle</span>
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          class="ui-form-image-input"
+                          (change)="onImageSelected($event)"
+                          [id]="'imageUpload' + tabIndex">
+                        <label [for]="'imageUpload' + tabIndex" class="ui-form-image-label">
+                          {{ imagePreview ? 'Resmi Değiştir' : 'Resim Seç' }}
+                        </label>
+                      </div>
+                    </ui-form-field>
+                  </div>
+                  
+                  <!-- Form Fields Grid -->
+                  <div *ngIf="!tabHasGrids(tabIndex) || (tab.fields && tab.fields.length > 0)" class="ui-form-fields-grid">
+                    <ng-container *ngFor="let column of getColumnsForTab(tabIndex)">
+                      <ui-form-field 
+                        [label]="getColumnLabel(column)"
+                        [required]="false"
+                        [style.grid-column]="'span ' + (column.fullWidth ? 2 : 1)">
+                        
+                        <!-- Text Input -->
+                        <ui-input
+                          *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
+                          type="text"
+                          [(ngModel)]="formData[column.field]"
+                          [placeholder]="getColumnLabel(column)"
+                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                        </ui-input>
+                        
+                        <!-- Number Input -->
+                        <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
+                          <!-- Disabled currency/money fields show formatted value -->
+                          <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+                                class="ui-form-disabled-value">
+                            {{ getFormattedFormValue(column) }}
+                          </span>
+                          <!-- Regular number input for editable fields or non-currency disabled fields -->
+                          <ui-input
+                            *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                            type="number"
+                            [(ngModel)]="formData[column.field]"
+                            [placeholder]="getColumnLabel(column)"
+                            [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                          </ui-input>
+                        </ng-container>
+                        
+                        <!-- Select/Enum/List -->
+                        <ui-select
+                          *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
+                          [options]="getColumnOptions(column)"
+                          [(ngModel)]="formData[column.field]"
+                          (valueChange)="onFormFieldChange(column.field, $event)"
+                          [placeholder]="getColumnLabel(column)"
+                          [multiple]="column.type === 'enum'"
+                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                        </ui-select>
+                        
+                        <!-- Checkbox/Toggle -->
+                        <ui-toggle
+                          *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
+                          [(ngModel)]="formData[column.field]"
+                          [label]="''"
+                          [disabled]="column.disabled || false">
+                        </ui-toggle>
+                        
+                        <!-- Textarea -->
+                        <textarea
+                          *ngIf="column.type === 'textarea' || (column.type === 'text' && column.field === 'CardDesc')"
+                          [(ngModel)]="formData[column.field]"
+                          [placeholder]="getColumnLabel(column)"
+                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                          class="ui-form-textarea"
+                          rows="4">
+                        </textarea>
+                        
+                      </ui-form-field>
+                    </ng-container>
+                  </div>
+                  
+                  <!-- Nested Grids -->
+                  <ng-container *ngIf="tabHasGrids(tabIndex)">
+                    <div *ngFor="let grid of getGridsForTab(tabIndex)" class="ui-form-tab-grid">
+                      <ui-data-table
+                        [id]="grid.id"
+                        [columns]="getGridColumnsForGrid(grid)"
+                        [dataSource]="getGridDataSourceWithFormData(grid)"
+                        [height]="grid.height || '400px'"
+                        [pageSize]="grid.pageSize || 10"
+                        [selectable]="grid.selectable !== undefined ? grid.selectable : false"
+                        [toolbar]="grid.toolbar"
+                        [formFullscreen]="grid.formFullscreen !== undefined ? grid.formFullscreen : false"
+                        [formWidth]="grid.formWidth || '400px'"
+                        [formHeight]="grid.formHeight || '600px'"
+                        [formFields]="grid.formFields"
+                        [formLoadUrl]="grid.formLoadUrl"
+                        [formLoadRequest]="getFormLoadRequestWithParentData(grid)"
+                        [formDataMapper]="grid.formDataMapper"
+                        [onSave]="grid.onSave"
+                        [recid]="grid.recid || 'CardID'"
+                        [joinOptions]="grid.joinOptions || []"
+                        [showFooter]="true"
+                        [pagination]="true">
+                      </ui-data-table>
+                    </div>
+                  </ng-container>
+                </div>
+              </ui-tab-item>
+            </ng-container>
+            
+          </ui-tabs>
+          
+          <!-- Fallback: No tabs, show all fields in a single view -->
+          <div *ngIf="!formTabs || formTabs.length === 0" class="ui-form-tab-content">
+            <!-- Image Upload Section (if imageField is defined) -->
+            <div *ngIf="imageField" class="ui-form-image-section">
+              <ui-form-field label="Resim">
+                <div class="ui-form-image-upload">
+                  <div class="ui-form-image-preview" *ngIf="imagePreview">
+                    <img [src]="imagePreview" alt="Preview" />
+                    <button 
+                      type="button" 
+                      class="ui-form-image-remove"
+                      (click)="removeImage()"
+                      aria-label="Remove image">
+                      ×
+                    </button>
+                  </div>
+                  <div class="ui-form-image-placeholder" *ngIf="!imagePreview">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <span>Resim Yükle</span>
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    class="ui-form-image-input"
+                    (change)="onImageSelected($event)"
+                    id="imageUpload">
+                  <label for="imageUpload" class="ui-form-image-label">
+                    {{ imagePreview ? 'Resmi Değiştir' : 'Resim Seç' }}
+                  </label>
+                </div>
+              </ui-form-field>
+            </div>
+            
+            <!-- Form Fields Grid -->
+            <div class="ui-form-fields-grid">
+              <ng-container *ngFor="let column of getEditableColumns()">
+                <ui-form-field 
+                  [label]="column.label || column.text || column.field"
+                  [required]="false">
+                  
+                  <!-- Text Input -->
+                  <ui-input
+                    *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
+                    type="text"
+                    [(ngModel)]="formData[column.field]"
+                    [placeholder]="getColumnLabel(column)"
+                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                  </ui-input>
+                  
+                  <!-- Number Input -->
+                  <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
+                    <!-- Disabled currency/money fields show formatted value -->
+                    <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+                          class="ui-form-disabled-value">
+                      {{ getFormattedFormValue(column) }}
+                    </span>
+                    <!-- Regular number input for editable fields or non-currency disabled fields -->
+                    <ui-input
+                      *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                      type="number"
+                      [(ngModel)]="formData[column.field]"
+                      [placeholder]="getColumnLabel(column)"
+                      [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                    </ui-input>
+                  </ng-container>
+                  
+                  <!-- Select/Enum/List -->
+                  <ui-select
+                    *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
+                    [options]="getColumnOptions(column)"
+                    [(ngModel)]="formData[column.field]"
+                    [placeholder]="getColumnLabel(column)"
+                    [multiple]="column.type === 'enum'"
+                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                  </ui-select>
+                  
+                  <!-- Checkbox/Toggle -->
+                  <ui-toggle
+                    *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
+                    [(ngModel)]="formData[column.field]"
+                    [label]="''"
+                          [disabled]="column.disabled || false">
+                  </ui-toggle>
+                  
+                  <!-- Textarea -->
+                  <textarea
+                    *ngIf="column.type === 'textarea' || (column.type === 'text' && column.field === 'CardDesc')"
+                    [(ngModel)]="formData[column.field]"
+                    [placeholder]="getColumnLabel(column)"
+                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                    class="ui-form-textarea"
+                    rows="4">
+                  </textarea>
+                  
+                </ui-form-field>
+              </ng-container>
+            </div>
+          </div>
+          
+        </ui-form>
+      </div>
+      
+      <div class="ui-form-page-footer">
+        <button 
+          type="button" 
+          class="ui-toolbar-btn"
+          (click)="closeFormModal()">
+          İptal
+        </button>
+        <button 
+          type="button" 
+          class="ui-toolbar-btn ui-toolbar-btn-primary"
+          (click)="onFormSubmit(formData)"
+          [disabled]="isLoading">
+          {{ isLoading ? translate.instant('form.saving') : (isEditMode ? translate.instant('form.update') : translate.instant('form.save')) }}
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
+

@@ -1,0 +1,330 @@
+<div class="profile-page">
+  <div class="container-fluid">
+    @if(isLoading && !currentUser) {
+    <div class="d-flex justify-content-center align-items-center loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+    } @else {
+    
+    <!-- Profile Header -->
+    <mat-card class="cardWithShadow profile-header-card mb-24">
+      <mat-card-content class="p-32">
+        <div class="row align-items-center">
+          <div class="col-md-3 text-center">
+            <div class="profile-image-container">
+              <div class="profile-image-wrapper" (click)="openUpdateImageDialog()">
+                <img [src]="userProfileImage" class="rounded-circle profile-image" width="150" height="150" />
+                <div class="profile-image-overlay">
+                  <i-tabler name="camera" class="icon-24 text-white"></i-tabler>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-9">
+            <div class="profile-header-info">
+              <h2 class="profile-name">
+                {{ getFieldValue('Name') }} {{ getFieldValue('SurName') }}
+              </h2>
+              <div class="d-flex align-items-center m-b-12">
+                <i-tabler name="id" class="icon-16 m-r-10"></i-tabler>
+                <p class="m-0">
+                  {{ getFieldValue('IdentificationNumber') }}
+                </p>
+              </div>
+              @if(getFieldValue('Mail')) {
+              <div class="d-flex align-items-center m-b-20">
+                <i-tabler name="mail" class="icon-16 m-r-10"></i-tabler>
+                <p class="m-0">{{ getFieldValue('Mail') }}</p>
+              </div>
+              }
+              <div class="m-t-32 d-flex align-items-center gap-16">
+                @if(!isEditing) {
+                <button mat-flat-button color="primary" class="profile-edit-btn" (click)="toggleEdit()">
+                  <i-tabler name="edit"></i-tabler>
+                  Düzenle
+                </button>
+                } @else {
+                <button mat-flat-button color="primary" class="profile-save-btn" (click)="saveProfile()" [disabled]="isLoading || profileForm.invalid">
+                  @if(isLoading) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  }
+                  @if(!isLoading) {
+                  <i-tabler name="check"></i-tabler>
+                  }
+                  Kaydet
+                </button>
+                <button mat-stroked-button color="warn" class="profile-cancel-btn" (click)="toggleEdit()" [disabled]="isLoading">
+                  <i-tabler name="x"></i-tabler>
+                  İptal
+                </button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="row">
+      <!-- Sol Kolon - Kişisel Bilgiler -->
+      <div class="col-lg-6">
+        <mat-card class="cardWithShadow profile-info-card mb-24">
+          <mat-card-header class="profile-card-header">
+            <div class="d-flex align-items-center">
+              <div class="profile-card-icon bg-light-primary">
+                <i-tabler name="user" class="icon-20 text-primary"></i-tabler>
+              </div>
+              <mat-card-title class="m-l-16">Kişisel Bilgiler</mat-card-title>
+            </div>
+          </mat-card-header>
+          <mat-card-content class="p-24">
+            <form [formGroup]="profileForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <label>Ad</label>
+                  <p class="profile-field-value">{{ getFieldValue('Name') }}</p>
+                </div>
+                <div class="col-md-6">
+                  <label>Soyad</label>
+                  <p class="profile-field-value">{{ getFieldValue('SurName') }}</p>
+                </div>
+                <div class="col-md-6">
+                  <label>TC Kimlik No</label>
+                  <p class="profile-field-value">{{ getFieldValue('IdentificationNumber') }}</p>
+                </div>
+                <div class="col-md-6">
+                  <label>Cinsiyet</label>
+                  <p class="profile-field-value">{{ getFieldValue('Gender') || '-' }}</p>
+                </div>
+                <div class="col-12">
+                  <label>E-posta</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <input matInput formControlName="Mail" />
+                    <mat-icon matPrefix class="text-muted">mail</mat-icon>
+                    @if(profileForm.get('Mail')?.hasError('required')) {
+                    <mat-error>E-posta gereklidir</mat-error>
+                    }
+                    @if(profileForm.get('Mail')?.hasError('email')) {
+                    <mat-error>Geçerli bir e-posta adresi giriniz</mat-error>
+                    }
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="mail" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('Mail') }}
+                  </p>
+                  }
+                </div>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- İletişim Bilgileri -->
+        <mat-card class="cardWithShadow profile-info-card mb-24">
+          <mat-card-header class="profile-card-header">
+            <div class="d-flex align-items-center">
+              <div class="profile-card-icon bg-light-secondary">
+                <i-tabler name="phone" class="icon-20 text-secondary"></i-tabler>
+              </div>
+              <mat-card-title class="m-l-16">İletişim Bilgileri</mat-card-title>
+            </div>
+          </mat-card-header>
+          <mat-card-content class="p-24">
+            <form [formGroup]="profileForm">
+              <div class="row">
+                <div class="col-12">
+                  <label>Cep Telefonu 1</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <input matInput formControlName="MobilePhone1" />
+                    <mat-icon matPrefix class="text-muted">phone_android</mat-icon>
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="device-mobile" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('MobilePhone1') || '-' }}
+                  </p>
+                  }
+                </div>
+                <div class="col-12">
+                  <label>Cep Telefonu 2</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <input matInput formControlName="MobilePhone2" />
+                    <mat-icon matPrefix class="text-muted">phone_android</mat-icon>
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="device-mobile" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('MobilePhone2') || '-' }}
+                  </p>
+                  }
+                </div>
+                <div class="col-12">
+                  <label>Ev Telefonu</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <input matInput formControlName="HomePhone" />
+                    <mat-icon matPrefix class="text-muted">phone</mat-icon>
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="phone" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('HomePhone') || '-' }}
+                  </p>
+                  }
+                </div>
+                <div class="col-12">
+                  <label>Adres</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-icon matPrefix class="text-muted">location_on</mat-icon>
+                    <textarea matInput formControlName="Address" rows="3"></textarea>
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="map-pin" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('Address') || '-' }}
+                  </p>
+                  }
+                </div>
+                <div class="col-12">
+                  <label>Şehir</label>
+                  @if(isEditing) {
+                  <mat-form-field appearance="outline" class="w-100">
+                    <input matInput formControlName="City" />
+                    <mat-icon matPrefix class="text-muted">location_city</mat-icon>
+                  </mat-form-field>
+                  } @else {
+                  <p class="profile-field-value">
+                    <i-tabler name="building" class="icon-16 m-r-8 text-muted"></i-tabler>
+                    {{ getFieldValue('City') || '-' }}
+                  </p>
+                  }
+                </div>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Sağ Kolon - Sistem Bilgileri -->
+      <div class="col-lg-6">
+        <!-- Departman ve Yetki Bilgileri -->
+        <mat-card class="cardWithShadow profile-info-card mb-24">
+          <mat-card-header class="profile-card-header">
+            <div class="d-flex align-items-center">
+              <div class="profile-card-icon bg-light-success">
+                <i-tabler name="building-community" class="icon-20 text-success"></i-tabler>
+              </div>
+              <mat-card-title class="m-l-16">Departman ve Yetki Bilgileri</mat-card-title>
+            </div>
+          </mat-card-header>
+          <mat-card-content class="p-24">
+            <div class="row">
+              <div class="col-12">
+                <label>Departman</label>
+                <p class="profile-field-value">{{ getDepartmentName() }}</p>
+              </div>
+              <div class="col-12">
+                <label>Erişim Grubu</label>
+                <p class="profile-field-value">{{ getAccessGroupName() }}</p>
+              </div>
+              <div class="col-12">
+                <label>Yetki</label>
+                <p class="profile-field-value">{{ getAuthorizationName() }}</p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Hesap Bilgileri -->
+        <mat-card class="cardWithShadow profile-info-card mb-24">
+          <mat-card-header class="profile-card-header">
+            <div class="d-flex align-items-center">
+              <div class="profile-card-icon bg-light-warning">
+                <i-tabler name="settings" class="icon-20 text-warning"></i-tabler>
+              </div>
+              <mat-card-title class="m-l-16">Hesap Bilgileri</mat-card-title>
+            </div>
+          </mat-card-header>
+          <mat-card-content class="p-24">
+            <div class="row">
+              <div class="col-12">
+                <label>Web İstemcisi</label>
+                <p class="m-0">
+                  @if(currentUser?.['WebClient']) {
+                  <span class="badge-status badge-success">
+                    <i-tabler name="circle-check"></i-tabler>
+                    Aktif
+                  </span>
+                  } @else {
+                  <span class="badge-status badge-error">
+                    <i-tabler name="circle-x"></i-tabler>
+                    Pasif
+                  </span>
+                  }
+                </p>
+              </div>
+              <div class="col-12">
+                <label>Son Bağlanma</label>
+                <p class="profile-field-value">{{ getFieldValue('ConnectionIat') || '-' }}</p>
+              </div>
+              <div class="col-12">
+                <label>Son Şifre Güncelleme</label>
+                <p class="profile-field-value">{{ getFieldValue('LastPasswordUpdate') || '-' }}</p>
+              </div>
+              <div class="col-12">
+                <label>Kafeterya Durumu</label>
+                <p class="m-0">
+                  @if(isCafeteriaActive()) {
+                  <span class="badge-status badge-success">
+                    <i-tabler name="circle-check"></i-tabler>
+                    Aktif
+                  </span>
+                  } @else {
+                  <span class="badge-status badge-error">
+                    <i-tabler name="circle-x"></i-tabler>
+                    Pasif
+                  </span>
+                  }
+                </p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Özel Alanlar (Custom Fields) -->
+        @if(currentUser?.['CustomField']) {
+        <mat-card class="cardWithShadow profile-info-card mb-24">
+          <mat-card-header class="profile-card-header">
+            <div class="d-flex align-items-center">
+              <div class="profile-card-icon bg-light-info">
+                <i-tabler name="info-circle" class="icon-20 text-info"></i-tabler>
+              </div>
+              <mat-card-title class="m-l-16">Özel Bilgiler</mat-card-title>
+            </div>
+          </mat-card-header>
+          <mat-card-content class="p-24">
+            <div class="row">
+              @for(field of ['CustomField01', 'CustomField02', 'CustomField03', 'CustomField04', 'CustomField05', 'CustomField06', 'CustomField07', 'CustomField08', 'CustomField09', 'CustomField10', 
+              'CustomField11', 'CustomField12','CustomField13','CustomField14','CustomField15','CustomField16','CustomField17','CustomField18','CustomField19','CustomField20']; track field) {
+                @if(currentUser && currentUser['CustomField'] && currentUser['CustomField'][field] && !isCustomFieldHidden(field)) {
+                <div class="col-md-6">
+                  <label>{{ getCustomFieldName(field) }}</label>
+                  <p class="profile-field-value">{{ currentUser['CustomField'][field] }}</p>
+                </div>
+                }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+        }
+      </div>
+    </div>
+    }
+  </div>
+</div>
+

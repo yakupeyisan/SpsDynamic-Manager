@@ -1,0 +1,29 @@
+<div *ngIf="show" class="ui-modal-backdrop" (click)="onBackdropClick($event)">
+  <div [class]="modalClasses" (click)="$event.stopPropagation()">
+    <div class="ui-modal-content">
+      <!-- Header -->
+      <div *ngIf="title || closable" class="ui-modal-header">
+        <h3 *ngIf="title" class="ui-modal-title">{{ title }}</h3>
+        <button
+          *ngIf="closable"
+          type="button"
+          class="ui-modal-close"
+          (click)="close()"
+          aria-label="Close">
+          ×
+        </button>
+      </div>
+      
+      <!-- Body -->
+      <div class="ui-modal-body">
+        <ng-content select=":not([slot=footer])"></ng-content>
+      </div>
+      
+      <!-- Footer -->
+      <div *ngIf="showFooter" class="ui-modal-footer">
+        <ng-content select="[slot=footer]"></ng-content>
+      </div>
+    </div>
+  </div>
+</div>
+

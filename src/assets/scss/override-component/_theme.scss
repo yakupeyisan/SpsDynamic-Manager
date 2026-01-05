@@ -1,0 +1,25 @@
+@use "sass:map";
+@use "@angular/material" as mat;
+@use "../variables" as *;
+
+html {
+  @include mat.theme(
+    (
+      color: mat.$azure-palette,
+      typography: "Manrope",
+    )
+  );
+
+  @include mat.theme-overrides(
+    (
+      error: var(--mat-sys-error, rgb(255, 102, 146)), // Fallback değer
+      body-medium-size: 14px,
+      body-large-size: 14px,
+      outline-variant: var(--mat-sys-outline-variant, #e0e6eb), // Fallback değer
+      level1: var(--mat-sys-level1, 0px 2px 4px -1px rgba(175, 182, 201, 0.2)), // Fallback değer
+      level2: var(--mat-sys-level2, 0px 2px 4px -1px rgba(175, 182, 201, 0.2)), // Fallback değer
+      level3: var(--mat-sys-level3, 0px 2px 4px -1px rgba(175, 182, 201, 0.2)), // Fallback değer
+      level4: var(--mat-sys-level4, 0 15px 30px rgba(0,0,0,0.12)) // Fallback değer
+    )
+  );
+}

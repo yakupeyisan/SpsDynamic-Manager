@@ -1,0 +1,196 @@
+.account-selector {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 0; // Prevents flex item from overflowing
+}
+
+.summary-card {
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .summary-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  h4 {
+    color: #1a202c;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin: 0;
+
+    &.m-t-4 {
+      margin-top: 8px;
+    }
+
+    &.text-error {
+      color: #dc3545;
+    }
+
+    &.text-success {
+      color: #28a745;
+    }
+  }
+
+  h6 {
+    color: #718096;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    margin: 0;
+  }
+
+  mat-card-content {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
+
+// Tablet ve küçük ekranlar için responsive düzenlemeler
+@media (max-width: 1024px) {
+  .summary-card {
+    .summary-icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    h4 {
+      font-size: 24px !important;
+      line-height: 1.3;
+    }
+
+    h6 {
+      font-size: 14px !important;
+      line-height: 1.5;
+    }
+  }
+
+  .account-selector {
+    min-width: 180px;
+    max-width: 250px;
+  }
+}
+
+// Mobil cihazlar için responsive düzenlemeler
+@media (max-width: 768px) {
+  .account-selector {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .justify-content-sm-center {
+    justify-content: center !important;
+  }
+
+  .summary-card {
+    .summary-icon {
+      width: 44px;
+      height: 44px;
+    }
+
+    h4 {
+      font-size: 22px !important;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+    }
+
+    h6 {
+      font-size: 13px !important;
+      line-height: 1.5;
+    }
+
+    mat-card-content {
+      padding: 16px !important;
+    }
+  }
+}
+
+// Küçük mobil cihazlar için
+@media (max-width: 480px) {
+  .summary-card {
+    .summary-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    h4 {
+      font-size: 20px !important;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+
+    h6 {
+      font-size: 12px !important;
+      line-height: 1.5;
+    }
+
+    mat-card-content {
+      padding: 12px !important;
+    }
+
+    .m-l-16 {
+      margin-left: 12px !important;
+    }
+  }
+}
+
+// Orta boy ekranlar (768px - 1024px arası)
+@media (min-width: 769px) and (max-width: 1024px) {
+  .summary-card {
+    h4 {
+      font-size: 26px !important;
+      line-height: 1.3;
+    }
+
+    h6 {
+      font-size: 14px !important;
+      line-height: 1.5;
+    }
+  }
+}
+
+// Büyük ekranlar için ek düzenlemeler
+@media (min-width: 1400px) {
+  .summary-card {
+    .summary-icon {
+      width: 64px;
+      height: 64px;
+    }
+
+    h4 {
+      font-size: 32px !important;
+      line-height: 1.25;
+      letter-spacing: -0.03em;
+    }
+
+    h6 {
+      font-size: 16px !important;
+      line-height: 1.5;
+    }
+  }
+}

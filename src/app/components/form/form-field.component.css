@@ -1,0 +1,39 @@
+.ui-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-spacing-xs);
+  width: 100%;
+}
+
+.ui-form-field-label {
+  font-size: var(--ui-font-size-sm);
+  font-weight: var(--ui-font-weight-medium);
+  color: var(--ui-gray-700);
+  margin-bottom: var(--ui-spacing-xs);
+}
+
+.ui-form-field-required .ui-form-field-label::after {
+  content: ' *';
+  color: var(--ui-danger);
+}
+
+.ui-form-field-control {
+  width: 100%;
+}
+
+.ui-form-field-helper {
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-gray-600);
+  margin-top: var(--ui-spacing-xs);
+}
+
+.ui-form-field-error-text {
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-danger);
+  margin-top: var(--ui-spacing-xs);
+}
+
+.ui-form-field-error {
+  /* Error state styling is handled by child components */
+}
+

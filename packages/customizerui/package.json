@@ -1,0 +1,50 @@
+{
+  "name": "@customizer/ui",
+  "version": "1.0.0",
+  "description": "Placeholder texts and UI customization constants for Customizer UI components",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "customizer",
+    "ui",
+    "placeholder",
+    "angular",
+    "components",
+    "typescript",
+    "ui-components"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "typescript": "~5.9.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

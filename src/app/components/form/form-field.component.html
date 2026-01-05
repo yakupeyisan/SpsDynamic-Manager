@@ -1,0 +1,10 @@
+<div class="ui-form-field" [class.ui-form-field-required]="required" [class.ui-form-field-error]="!!error" [style.grid-column]="'span ' + span">
+  <label *ngIf="label" class="ui-form-field-label">
+    {{ getTranslatedLabel() }}
+  </label>
+  <div class="ui-form-field-control">
+    <ng-content></ng-content>
+  </div>
+  <span *ngIf="helperText && !error" class="ui-form-field-helper">{{ helperText }}</span>
+  <span *ngIf="error" class="ui-form-field-error-text">{{ error }}</span>
+</div>

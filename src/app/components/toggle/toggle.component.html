@@ -1,0 +1,13 @@
+<label [class]="toggleClasses" (click)="toggle($event)" (mousedown)="$event.preventDefault()">
+  <input
+    type="checkbox"
+    [checked]="checked"
+    [disabled]="disabled"
+    [attr.aria-checked]="checked"
+    style="display: none;"
+    (click)="$event.preventDefault(); $event.stopPropagation()"
+  />
+  <span class="ui-toggle-slider" (click)="toggle($event)"></span>
+  <span *ngIf="label" class="ui-toggle-label">{{ label }}</span>
+</label>
+

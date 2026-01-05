@@ -1,0 +1,27 @@
+<div class="ui-form" [class.ui-form-vertical]="layout === 'vertical'" [class.ui-form-horizontal]="layout === 'horizontal'" [class.ui-form-inline]="layout === 'inline'">
+  <h3 *ngIf="title" class="ui-form-title">{{ title }}</h3>
+  <div class="ui-form-body">
+    <ng-content></ng-content>
+  </div>
+  
+  <!-- JSON Output Section -->
+  <div *ngIf="showJsonOutput && formGroup" class="ui-form-json-output">
+    <div class="ui-form-json-header" (click)="toggleJsonOutput()">
+      <h4 class="ui-form-json-title">{{ jsonOutputTitle }}</h4>
+      <div class="ui-form-json-actions">
+        <button 
+          type="button" 
+          class="ui-form-json-copy" 
+          (click)="copyJsonToClipboard(); $event.stopPropagation()"
+          title="Copy JSON to clipboard">
+          📋 Copy
+        </button>
+        <span class="ui-form-json-toggle">{{ isJsonExpanded ? '▼' : '▶' }}</span>
+      </div>
+    </div>
+    <div *ngIf="isJsonExpanded" class="ui-form-json-content">
+      <pre class="ui-form-json-code">{{ formJson }}</pre>
+    </div>
+  </div>
+</div>
+

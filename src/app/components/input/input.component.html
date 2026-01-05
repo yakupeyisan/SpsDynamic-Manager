@@ -1,0 +1,36 @@
+<div class="ui-input-wrapper">
+  <label *ngIf="label" class="ui-input-label">
+    {{ label }}
+    <span *ngIf="required" class="ui-input-required">*</span>
+  </label>
+  
+  <div class="ui-input-container">
+    <span *ngIf="icon && iconPosition === 'left'" class="ui-input-icon ui-input-icon-left">
+      <ng-content select="[slot=icon-left]"></ng-content>
+    </span>
+    <ng-content select="[slot=icon-left]"></ng-content>
+    
+    <input
+      [type]="type"
+      [class]="inputClasses"
+      [placeholder]="placeholder"
+      [value]="value"
+      [disabled]="disabled"
+      [readonly]="readonly"
+      [required]="required"
+      (input)="onInput($event)"
+      (focus)="onFocus($event)"
+      (blur)="onBlur($event)"
+      (keyup)="onKeyUp($event)"
+    />
+    
+    <span *ngIf="icon && iconPosition === 'right'" class="ui-input-icon ui-input-icon-right">
+      <ng-content select="[slot=icon-right]"></ng-content>
+    </span>
+    <ng-content select="[slot=icon-right]"></ng-content>
+  </div>
+  
+  <span *ngIf="helperText && !errorText" class="ui-input-helper">{{ helperText }}</span>
+  <span *ngIf="errorText" class="ui-input-error-text">{{ errorText }}</span>
+</div>
+

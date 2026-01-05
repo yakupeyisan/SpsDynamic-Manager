@@ -1,0 +1,114 @@
+.ui-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--ui-z-modal-backdrop);
+  padding: var(--ui-spacing-lg);
+  overflow-y: auto;
+}
+
+.ui-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: auto;
+  background-color: var(--ui-white);
+  border-radius: var(--ui-border-radius-lg);
+  box-shadow: var(--ui-shadow-xl);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  z-index: var(--ui-z-modal);
+}
+
+/* Sizes */
+.ui-modal-sm {
+  max-width: 300px;
+}
+
+.ui-modal-md {
+  max-width: 500px;
+}
+
+.ui-modal-lg {
+  max-width: 800px;
+}
+
+.ui-modal-xl {
+  max-width: 1140px;
+}
+
+.ui-modal-full {
+  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+.ui-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ui-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ui-spacing-lg);
+  border-bottom: var(--ui-border-width) solid var(--ui-border-color);
+  flex-shrink: 0;
+}
+
+.ui-modal-title {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+  font-weight: var(--ui-font-weight-semibold);
+  color: var(--ui-gray-900);
+}
+
+.ui-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ui-gray-500);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ui-border-radius);
+  transition: all var(--ui-transition-fast);
+}
+
+.ui-modal-close:hover {
+  background-color: var(--ui-gray-100);
+  color: var(--ui-gray-900);
+}
+
+.ui-modal-body {
+  padding: var(--ui-spacing-lg);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ui-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ui-spacing-sm);
+  padding: var(--ui-spacing-lg);
+  border-top: var(--ui-border-width) solid var(--ui-border-color);
+  flex-shrink: 0;
+}
+

@@ -1,0 +1,30 @@
+<!-- ============================================================== -->
+<!-- Language Switcher - Fixed Position -->
+<!-- ============================================================== -->
+<div class="language-switcher-container">
+  <button [matMenuTriggerFor]="flags" mat-icon-button class="language-switcher-btn">
+    <img [src]="selectedLanguage.icon" class="rounded-circle object-cover icon-24" />
+  </button>
+  <mat-menu #flags="matMenu" class="cardWithShadow language-menu">
+    @for(lang of languages; track lang.icon) {
+    <button mat-menu-item (click)="changeLanguage(lang)">
+      <div class="d-flex align-items-center">
+        <img [src]="lang.icon" class="rounded-circle object-cover m-r-8 icon-20" />
+        <span class="f-s-14">{{ lang.language }}</span>
+      </div>
+    </button>
+    }
+  </mat-menu>
+</div>
+
+<!-- ============================================================== -->
+<!-- Only router without any element -->
+<!-- ============================================================== -->
+<mat-sidenav-container
+  [ngClass]="{
+    cardBorder: options.cardBorder,
+  }"
+  [dir]="options.dir!"
+>
+  <router-outlet></router-outlet>
+</mat-sidenav-container>

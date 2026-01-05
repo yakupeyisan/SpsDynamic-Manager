@@ -1,0 +1,10 @@
+<div class="ui-form-group">
+  <div *ngIf="title" class="ui-form-group-header" [class.ui-form-group-collapsible]="collapsible" (click)="toggle()">
+    <h4 class="ui-form-group-title">{{ title }}</h4>
+    <span *ngIf="collapsible" class="ui-form-group-toggle">{{ isCollapsed ? '▼' : '▲' }}</span>
+  </div>
+  <div class="ui-form-group-body" [class.ui-form-group-collapsed]="isCollapsed">
+    <ng-content></ng-content>
+  </div>
+</div>
+

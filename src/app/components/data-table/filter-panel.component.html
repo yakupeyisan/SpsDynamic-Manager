@@ -1,0 +1,131 @@
+<div class="ui-filter-panel">
+  <div class="ui-filter-header">
+    <h3 class="ui-filter-title">Advanced Search</h3>
+    <div class="ui-filter-header-right">
+      <ui-select
+        [options]="logicOptions"
+        [ngModel]="currentFilter.logic"
+        (valueChange)="onLogicChange($event)"
+        class="ui-filter-logic-select">
+      </ui-select>
+    </div>
+  </div>
+
+  <div class="ui-filter-body">
+
+    <div class="ui-filter-conditions">
+      <div *ngFor="let condition of currentFilter.conditions; let i = index" class="ui-filter-condition">
+        <div class="ui-filter-condition-row">
+          <label class="ui-filter-field-label">{{ getFieldLabel(condition.field) }}</label>
+
+          <div class="ui-filter-operator">
+            <ui-select
+              [options]="getOperatorsForField(condition.field)"
+              [ngModel]="condition.operator"
+              (valueChange)="onOperatorChange(i, $event)"
+              [placeholder]="PLACEHOLDERS.FILTER_OPERATOR">
+            </ui-select>
+          </div>
+
+          <div class="ui-filter-value" *ngIf="requiresValue(condition.operator)">
+            <!-- Between operator -->
+            <div *ngIf="condition.operator === 'between'" class="ui-filter-between">
+              <ui-input
+                [ngModel]="getBetweenMin(condition.value)"
+                (valueChange)="onBetweenMinChange(i, $event)"
+                [type]="getFieldType(condition.field)"
+                [placeholder]="PLACEHOLDERS.FILTER_MIN">
+              </ui-input>
+              <span class="ui-filter-between-separator">-</span>
+              <ui-input
+                [ngModel]="getBetweenMax(condition.value)"
+                (valueChange)="onBetweenMaxChange(i, $event)"
+                [type]="getFieldType(condition.field)"
+                [placeholder]="PLACEHOLDERS.FILTER_MAX">
+              </ui-input>
+            </div>
+
+            <!-- List type (single select) -->
+            <ui-select
+              *ngIf="condition.operator !== 'between' && isListType(condition.field)"
+              [options]="getListOptions(condition.field)"
+              [ngModel]="condition.value"
+              (valueChange)="onValueChange(i, $event)"
+              [placeholder]="PLACEHOLDERS.FILTER_SELECT_VALUE">
+            </ui-select>
+
+            <!-- Enum type (multi select) -->
+            <ui-select
+              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && isEnumType(condition.field)"
+              [options]="getEnumOptions(condition.field)"
+              [ngModel]="condition.value || []"
+              (valueChange)="onEnumValueChange(i, $event)"
+              [multiple]="true"
+              [placeholder]="PLACEHOLDERS.FILTER_SELECT_VALUES">
+            </ui-select>
+
+            <!-- Date type (date picker) -->
+            <input
+              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && !isEnumType(condition.field) && isDateType(condition.field)"
+              [type]="getDateInputType(condition.field)"
+              class="ui-filter-date-input"
+              [ngModel]="condition.value"
+              (ngModelChange)="onValueChange(i, $event)"
+              [placeholder]="PLACEHOLDERS.FILTER_SELECT_DATE">
+
+            <!-- Regular input for other types -->
+            <ui-input
+              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && !isEnumType(condition.field) && !isDateType(condition.field)"
+              [ngModel]="condition.value"
+              (valueChange)="onValueChange(i, $event)"
+              [type]="getFieldType(condition.field)"
+              [placeholder]="PLACEHOLDERS.FILTER_VALUE">
+            </ui-input>
+          </div>
+
+          <div class="ui-filter-actions">
+            <button
+              type="button"
+              class="ui-filter-remove-btn"
+              [disabled]="currentFilter.conditions.length === 1"
+              (click)="removeCondition(i)"
+              aria-label="Remove condition">
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui-filter-actions-bar">
+      <ui-select
+        [options]="fieldOptions"
+        [ngModel]="selectedFieldForAdd"
+        (valueChange)="onSelectedFieldForAddChange($event)"
+        [placeholder]="PLACEHOLDERS.FILTER_SELECT_FIELD"
+        class="ui-filter-add-field-select">
+      </ui-select>
+      <ui-button variant="secondary" size="sm" (clicked)="addCondition()">
+        Add Condition
+      </ui-button>
+    </div>
+  </div>
+
+  <div class="ui-filter-footer">
+    <div class="ui-filter-footer-left">
+      <label class="ui-filter-limit-label">Record Limit:</label>
+      <ui-select
+        [options]="getLimitOptions()"
+        [ngModel]="currentLimit"
+        (valueChange)="onLimitChange($event)"
+        class="ui-filter-limit-select">
+      </ui-select>
+    </div>
+    <div class="ui-filter-footer-right">
+      <ui-button variant="secondary" size="sm" (clicked)="onClose()">Close</ui-button>
+      <ui-button variant="secondary" size="sm" (clicked)="clearFilter()">Reset</ui-button>
+      <ui-button variant="primary" size="sm" (clicked)="applyFilter()">Search</ui-button>
+    </div>
+  </div>
+</div>
+

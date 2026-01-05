@@ -1,0 +1,313 @@
+<!-- Global Loading Spinner -->
+<app-loading-spinner></app-loading-spinner>                                                                                                     
+
+<div class="demo-container">
+  <header class="demo-header">
+    <h1>{{ title }}</h1>
+    <p>Modern, accessible, and customizable Angular UI components</p>
+  </header>
+
+  <main class="demo-content">
+    <!-- Buttons Section -->
+    <section class="demo-section">
+      <h2>Buttons</h2>
+      <div class="demo-grid">
+        <ui-button variant="primary">Primary</ui-button>
+        <ui-button variant="secondary">Secondary</ui-button>
+        <ui-button variant="success">Success</ui-button>
+        <ui-button variant="danger">Danger</ui-button>
+        <ui-button variant="warning">Warning</ui-button>
+        <ui-button variant="info">Info</ui-button>
+        <ui-button variant="outline">Outline</ui-button>
+        <ui-button variant="primary" [disabled]="true">Disabled</ui-button>
+        <ui-button variant="primary" [loading]="true">Loading</ui-button>
+        <ui-button variant="primary" size="sm">Small</ui-button>
+        <ui-button variant="primary" size="md">Medium</ui-button>
+        <ui-button variant="primary" size="lg">Large</ui-button>
+        <ui-button variant="primary" [block]="true">Block Button</ui-button>
+      </div>
+    </section>
+
+    <!-- Input Section -->
+    <section class="demo-section">
+      <h2>Input Fields</h2>
+      <div class="demo-grid">
+        <ui-input
+          label="Text Input"
+          placeholder="Enter text..."
+          [(ngModel)]="inputValue">
+        </ui-input>
+        
+        <ui-input
+          type="email"
+          label="Email Input"
+          placeholder="email@example.com"
+          helperText="Enter a valid email address">
+        </ui-input>
+        
+        <ui-input
+          type="number"
+          label="Number Input"
+          placeholder="Enter number">
+        </ui-input>
+        
+        <ui-input
+          label="Required Input"
+          placeholder="This field is required"
+          [required]="true">
+        </ui-input>
+        
+        <ui-input
+          label="Input with Error"
+          placeholder="Invalid input"
+          errorText="This field has an error">
+        </ui-input>
+        
+        <ui-input
+          label="Disabled Input"
+          placeholder="Cannot edit"
+          [disabled]="true"
+          [ngModel]="'Disabled value'">
+        </ui-input>
+      </div>
+    </section>
+
+    <!-- Toggle Section -->
+    <section class="demo-section">
+      <h2>Toggle Switch</h2>
+      <div class="demo-grid">
+        <ui-toggle label="Toggle Switch" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Primary Toggle" color="primary" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Success Toggle" color="success" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Small Toggle" size="sm" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Medium Toggle" size="md" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Large Toggle" size="lg" [(ngModel)]="toggleValue"></ui-toggle>
+        <ui-toggle label="Disabled Toggle" [disabled]="true" [ngModel]="true"></ui-toggle>
+      </div>
+    </section>
+
+    <!-- Select Section -->
+    <section class="demo-section">
+      <h2>Select Dropdown</h2>
+      <div class="demo-grid">
+        <ui-select
+          label="Select Option"
+          [options]="selectOptions"
+          placeholder="Choose an option..."
+          [(ngModel)]="selectValue">
+        </ui-select>
+        
+        <ui-select
+          label="Multiple Select"
+          [options]="selectOptions"
+          placeholder="Select multiple..."
+          [multiple]="true">
+        </ui-select>
+        
+        <ui-select
+          label="Required Select"
+          [options]="selectOptions"
+          [required]="true">
+        </ui-select>
+        
+        <ui-select
+          label="Select with Error"
+          [options]="selectOptions"
+          errorText="This field has an error">
+        </ui-select>
+      </div>
+    </section>
+
+    <!-- Tabs Section -->
+    <section class="demo-section">
+      <h2>Tabs</h2>
+      <ui-tabs variant="default" [(activeTab)]="activeTabDefault">
+        <ui-tab-item label="Tab 1">
+          <div style="padding: 1rem;">
+            <h3>Tab 1 Content</h3>
+            <p>This is the content of the first tab.</p>
+          </div>
+        </ui-tab-item>
+        <ui-tab-item label="Tab 2">
+          <div style="padding: 1rem;">
+            <h3>Tab 2 Content</h3>
+            <p>This is the content of the second tab.</p>
+          </div>
+        </ui-tab-item>
+        <ui-tab-item label="Tab 3">
+          <div style="padding: 1rem;">
+            <h3>Tab 3 Content</h3>
+            <p>This is the content of the third tab.</p>
+          </div>
+        </ui-tab-item>
+        <ui-tab-item label="Disabled" [disabled]="true">
+          <div style="padding: 1rem;">
+            <p>This tab is disabled</p>
+          </div>
+        </ui-tab-item>
+      </ui-tabs>
+
+      <ui-tabs variant="pills" [(activeTab)]="activeTabPills" style="margin-top: 2rem;">
+        <ui-tab-item label="Pill 1">
+          <div style="padding: 1rem;">
+            <p>Pill style tabs</p>
+          </div>
+        </ui-tab-item>
+        <ui-tab-item label="Pill 2">
+          <div style="padding: 1rem;">
+            <p>Another pill tab</p>
+          </div>
+        </ui-tab-item>
+      </ui-tabs>
+    </section>
+
+    <!-- Data Table Section -->
+    <section class="demo-section">
+      <h2>Data Table</h2>
+      <ui-data-table
+        [id]="'employees-grid'"
+        [showFooter]="true"
+        [page]="1"
+        [columns]="tableColumns"
+        [dataSource]="tableDataSource"
+        [joinOptions]="joinOptions"
+        [canViewDeleted]="true"
+        [formFields]="formFields"
+        [formTabs]="formTabs"
+        [formLoadUrl]="formLoadUrl"
+        [formFullscreen]="true"
+        [formLoadRequest]="formLoadRequest"
+        [formDataMapper]="formDataMapper"
+        [imageUploadUrl]="imageUploadUrl"
+        [imageField]="imageField"
+        [imagePreviewUrl]="imagePreviewUrl"
+        [onSave]="onSave"
+        [onFormChange]="onFormChange"
+        [getGridColumns]="getGridColumns"
+        [getGridDataSource]="getGridDataSource"
+        [selectable]="true"
+        [pagination]="true"
+        [pageSize]="3"
+        [height]="'800px'"
+        [recordHeight]="40"
+        [showEmptyRows]="true"
+        [fixedBody]="true"
+        [advancedFilter]="true"
+        [showRefresh]="true"
+        [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+        [recid]="'EmployeeID'"
+        [selectType]="'row'"
+        [multiSelect]="true"
+        [multiSort]="true"
+        [keyboard]="true"
+        [liveSearch]="true"
+        [reorderColumns]="false"
+        [reorderRows]="false"
+        [lineNumbers]="false"
+        [expandColumn]="false"
+        [nestedFields]="true"
+        [columnTooltip]="'top'"
+        [toolbar]="tableToolbarConfig"
+        (rowClick)="onTableRowClick($event)"
+        (rowDblClick)="onTableRowDblClick($event)"
+        (rowSelect)="onTableRowSelect($event)"
+        (contextMenu)="onTableContextMenu($event)"
+        (columnClick)="onTableColumnClick($event)"
+        (pictureClick)="onPictureClick($event)"
+        (columnDblClick)="onTableColumnDblClick($event)"
+        (columnContextMenu)="onTableColumnContextMenu($event)"
+        (columnResize)="onTableColumnResize($event)"
+        (mouseEnter)="onTableMouseEnter($event)"
+        (mouseLeave)="onTableMouseLeave($event)"
+        (focus)="onTableFocus()"
+        (blur)="onTableBlur()"
+        (copy)="onTableCopy($event)"
+        (paste)="onTablePaste($event)"
+        (advancedFilterChange)="onAdvancedFilterChange($event)"
+        (refresh)="onTableRefresh()"
+        (delete)="onTableDelete($event)"
+        (add)="onTableAdd()"
+        (edit)="onTableEdit($event)">
+      </ui-data-table>
+    </section>
+
+    <!-- Modal Section -->
+    <section class="demo-section">
+      <h2>Modal</h2>
+      <ui-button variant="primary" (clicked)="openModal()">Open Modal</ui-button>
+      
+      <ui-modal
+        title="Example Modal"
+        [(show)]="showModal"
+        size="md"
+        (closed)="closeModal()">
+        <p>This is a modal dialog. You can put any content here.</p>
+        <p>Click outside or press ESC to close.</p>
+        
+        <div slot="footer">
+          <ui-button variant="secondary" (clicked)="closeModal()">Cancel</ui-button>
+          <ui-button variant="primary" (clicked)="closeModal()">Save</ui-button>
+        </div>
+      </ui-modal>
+    </section>
+
+    <!-- Form Section -->
+    <section class="demo-section">
+      <h2>Form Components</h2>
+      
+      <form [formGroup]="sampleForm" (ngSubmit)="onSubmit()">
+        <ui-form 
+          title="Sample Form" 
+          layout="vertical"
+          [formGroup]="sampleForm"
+          [showJsonOutput]="true"
+          (formSubmit)="onFormSubmit($event)"
+          (formChange)="onFormChange($event)">
+        <ui-form-group title="Personal Information" [collapsible]="true">
+          <ui-form-field label="First Name" [required]="true">
+            <ui-input formControlName="firstName" placeholder="Enter first name"></ui-input>
+          </ui-form-field>
+          
+          <ui-form-field label="Last Name" [required]="true">
+            <ui-input formControlName="lastName" placeholder="Enter last name"></ui-input>
+          </ui-form-field>
+          
+          <ui-form-field label="Email" [required]="true">
+            <ui-input type="email" formControlName="email" placeholder="email@example.com"></ui-input>
+          </ui-form-field>
+          
+          <ui-form-field label="Phone">
+            <ui-input type="tel" formControlName="phone" placeholder="Enter phone number"></ui-input>
+          </ui-form-field>
+        </ui-form-group>
+
+        <ui-form-group title="Address">
+          <ui-form-field label="Address">
+            <ui-input formControlName="address" placeholder="Enter address"></ui-input>
+          </ui-form-field>
+          
+          <ui-form-field label="City">
+            <ui-input formControlName="city" placeholder="Enter city"></ui-input>
+          </ui-form-field>
+          
+          <ui-form-field label="Country">
+            <ui-select [options]="selectOptions" formControlName="country" placeholder="Select country"></ui-select>
+          </ui-form-field>
+        </ui-form-group>
+
+        <ui-form-field>
+          <ui-toggle label="I agree to the terms and conditions" formControlName="agreeToTerms"></ui-toggle>
+        </ui-form-field>
+
+        <div class="ui-form-actions">
+          <ui-button variant="secondary" type="button">Cancel</ui-button>
+          <ui-button variant="primary" type="submit" (clicked)="onSubmit()">Submit</ui-button>
+        </div>
+        </ui-form>
+      </form>
+    </section>
+  </main>
+
+</div>
+
+<router-outlet />

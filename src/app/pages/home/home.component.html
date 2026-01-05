@@ -1,0 +1,106 @@
+<!-- Özet Bilgiler -->
+<div class="row m-b-24">
+  <div class="col-12">
+    <!-- Account Seçici - Sağ Üst -->
+    <div class="d-flex justify-content-end justify-content-sm-center m-b-16">
+      <mat-form-field appearance="outline" class="account-selector">
+        <mat-label>Kafeterya Hesabı</mat-label>
+        <mat-select [(ngModel)]="selectedAccountId" (selectionChange)="onAccountChange()">
+          <mat-option [value]="0">Tümü</mat-option>
+          @for(account of accounts; track account.ID) {
+          <mat-option [value]="account.ID">{{ account.AccountName || 'Hesap ' + account.ID }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-6 m-b-16">
+        <mat-card class="cardWithShadow summary-card">
+          <mat-card-content class="p-24">
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-light-primary">
+                <i-tabler name="credit-card" class="icon-24 text-primary"></i-tabler>
+              </div>
+              <div class="m-l-16 flex-1">
+                <h6 class="text-muted">Kart Sayısı</h6>
+                @if(isLoading) {
+                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
+                } @else {
+                <h4 class="m-t-4">{{ cardCount }}</h4>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-md-3 col-sm-6 m-b-16">
+        <mat-card class="cardWithShadow summary-card">
+          <mat-card-content class="p-24">
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-light-success">
+                <i-tabler name="wallet" class="icon-24 text-success"></i-tabler>
+              </div>
+              <div class="m-l-16 flex-1">
+                <h6 class="text-muted">Toplam Bakiye</h6>
+                @if(isLoading) {
+                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
+                } @else {
+                <h4 class="m-t-4">{{ formatPrice(totalBalance) }} ₺</h4>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-md-3 col-sm-6 m-b-16">
+        <mat-card class="cardWithShadow summary-card">
+          <mat-card-content class="p-24">
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-light-warning">
+                <i-tabler name="shopping-cart" class="icon-24 text-warning"></i-tabler>
+              </div>
+              <div class="m-l-16 flex-1">
+                <h6 class="text-muted">Son 1 Aylık Harcama</h6>
+                @if(isLoading) {
+                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
+                } @else {
+                <h4 class="m-t-4 text-error">{{ formatPrice(monthlyExpense) }} ₺</h4>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-md-3 col-sm-6 m-b-16">
+        <mat-card class="cardWithShadow summary-card">
+          <mat-card-content class="p-24">
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-light-info">
+                <i-tabler name="arrow-down-circle" class="icon-24 text-info"></i-tabler>
+              </div>
+              <div class="m-l-16 flex-1">
+                <h6 class="text-muted">Son 1 Aylık Yükleme</h6>
+                @if(isLoading) {
+                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
+                } @else {
+                <h4 class="m-t-4 text-success">{{ formatPrice(monthlyLoad) }} ₺</h4>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Yıllık Finansal Özet -->
+<div class="row">
+  <div class="col-12">
+    <app-yearly-financial-summary [accountId]="selectedAccountId" [accounts]="accounts"></app-yearly-financial-summary>
+  </div>
+</div>
+
+
