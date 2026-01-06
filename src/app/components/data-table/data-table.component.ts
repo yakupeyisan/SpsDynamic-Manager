@@ -4240,36 +4240,50 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   private loadColumnOption(column: TableColumn): void {
     if (!column.load || !column.load.url) return;
 
+    // Try to get the original form field definition that might have the map function
+    // This is important for nested grids where form fields might be copied without preserving functions
+    const originalFormField = this.formFields?.find(f => f.field === column.field);
+    
+    // If the original form field has a map function but the column doesn't, restore it
+    if (originalFormField?.load?.map && typeof originalFormField.load.map === 'function' && !column.load.map) {
+      console.log(`[loadColumnOption] ${column.field} - Restoring map function from original form field`);
+      column.load = { ...column.load, map: originalFormField.load.map };
+    }
+    
+    // Use the load config (which now has the map function if it was restored)
+    const load = column.load;
+
     let cacheKey: string;
     let data: any;
     let method: string;
     let url: string;
 
     // If data is a function, check if required formData values are available
-    if (typeof column.load.data === 'function') {
+    if (typeof load.data === 'function') {
       // Get dynamic data to check if required values exist
       // Pass formData to the function - it should return the request payload
-      const dynamicData = column.load.data(this.formData);
+      const dynamicData = load.data(this.formData);
       
-      console.log(`loadColumnOption for ${column.field} - formData:`, this.formData);
-      console.log(`loadColumnOption for ${column.field} - dynamicData:`, dynamicData);
+      console.log(`[loadColumnOption] ${column.field} - formData:`, this.formData);
+      console.log(`[loadColumnOption] ${column.field} - dynamicData:`, dynamicData);
       
       // Check if EmployeeID is in the returned data (for GetCardsByEmployeeID, etc.)
       const employeeId = dynamicData?.EmployeeID;
       
       // If EmployeeID is required but not available, skip loading
       if (employeeId == null || employeeId === undefined) {
-        console.warn(`loadColumnOption for ${column.field} - EmployeeID not found in dynamicData, skipping`);
+        console.warn(`[loadColumnOption] ${column.field} - EmployeeID not found in dynamicData, skipping`);
         return;
       }
       
       // Include relevant formData values in cache key for dynamic data
-      cacheKey = `${column.field}_${column.load.url}_${employeeId}`;
+      cacheKey = `${column.field}_${load.url}_${employeeId}`;
       data = dynamicData;
     } else {
       // Static data - use existing logic
-      cacheKey = `${column.field}_${column.load.url}`;
-      data = column.load.data || {};
+      cacheKey = `${column.field}_${load.url}`;
+      data = load.data || {};
+      console.log(`[loadColumnOption] ${column.field} - Static data:`, data);
     }
 
     // Check if already loaded (has cached options, even if empty)
@@ -4285,8 +4299,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
     this.columnOptionsLoading.set(cacheKey, true);
 
-    method = column.load.method || 'GET';
-    url = column.load.url;
+    method = load.method || 'GET';
+    url = load.url;
 
     let request: Observable<any>;
 
@@ -4305,27 +4319,48 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
     request.pipe(
       map(response => {
-        // Apply map function if provided
-        if (column.load?.map && typeof column.load.map === 'function') {
-          const mapped = column.load.map(response);
+        // Apply map function if provided (use load which might have the map function from original form field)
+        if (load?.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
           return mapped;
+        } else {
+          
+          // Default mapping: handle different API response formats
+          let records: any[] = [];
+          
+          if (response && response.records && Array.isArray(response.records)) {
+            records = response.records;
+          } else if (response && Array.isArray(response)) {
+            records = response;
+          } else if (response && response.data && Array.isArray(response.data)) {
+            records = response.data;
+          }
+          
+          if (records.length > 0) {
+            // Try to extract id and text from various field name patterns
+            return records.map((item: any) => {
+              // Try different ID field names
+              const id = item.id || item.value || item.ID || item.Id || 
+                        item.CafeteriaGroupID || item.CardTypeID || 
+                        item.CardCodeTypeID || item.CardStatusId ||
+                        item.recid || null;
+              
+              // Try different text field names
+              const text = item.text || item.label || item.name || item.Name ||
+                          item.CafeteriaGroupName || item.CardType || 
+                          item.CardTypeName || item.CardCodeType ||
+                          (id !== null ? String(id) : '');
+              
+              return {
+                id: id,
+                text: text
+              };
+            });
+          }
+          
+          console.warn(`[loadColumnOption] ${column.field} - Unexpected response format:`, response);
+          return [];
         }
-        // Default mapping: assume response has records array
-        if (response.records && Array.isArray(response.records)) {
-          return response.records.map((item: any) => ({
-            id: item.id || item.value,
-            text: item.text || item.label || item.name || String(item.id || item.value)
-          }));
-        }
-        // If response is already an array
-        if (Array.isArray(response)) {
-          return response.map((item: any) => ({
-            id: item.id || item.value,
-            text: item.text || item.label || item.name || String(item.id || item.value)
-          }));
-        }
-        console.warn(`Unexpected response format for ${column.field}:`, response);
-        return [];
       }),
       catchError(error => {
         console.error(`Error loading options for column ${column.field}:`, error);
