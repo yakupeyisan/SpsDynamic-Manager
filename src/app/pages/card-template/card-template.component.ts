@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
@@ -166,6 +167,7 @@ export class CardTemplateComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
+    private router: Router,
     private toastr: ToastrService,
     public translate: TranslateService,
     private cdr: ChangeDetectorRef
@@ -273,10 +275,8 @@ export class CardTemplateComponent implements OnInit {
   }
 
   onCreateTemplate(): void {
-    // Open add form
-    if (this.dataTableComponent) {
-      this.dataTableComponent.openAddForm();
-    }
+    // Navigate to editor page for new template
+    this.router.navigate(['/CardTemplates/editor']);
   }
 
   onUpdateTemplate(): void {
@@ -290,9 +290,8 @@ export class CardTemplateComponent implements OnInit {
       return;
     }
 
-    // Open edit form with selected record
-    if (this.dataTableComponent) {
-      this.dataTableComponent.openEditForm(this.selectedRows[0]);
-    }
+    // Navigate to editor page with template ID
+    const templateId = this.selectedRows[0].Id || this.selectedRows[0].id || this.selectedRows[0].recid;
+    this.router.navigate(['/CardTemplates/editor', templateId]);
   }
 }

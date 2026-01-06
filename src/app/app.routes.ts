@@ -107,14 +107,41 @@ export const routes: Routes = [
       },
       {
         path: 'CardTemplates',
-        loadComponent: () =>
-          import('./pages/card-template/card-template.component').then(
-            (m) => m.CardTemplateComponent
-          ),
-        data: {
-          title: 'Kart Şablonları',
-          breadcrumb: false,
-        },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/card-template/card-template.component').then(
+                (m) => m.CardTemplateComponent
+              ),
+            data: {
+              title: 'Kart Şablonları',
+              breadcrumb: false,
+            },
+          },
+          {
+            path: 'editor/:id',
+            loadComponent: () =>
+              import('./pages/card-template/card-template-editor.component').then(
+                (m) => m.CardTemplateEditorComponent
+              ),
+            data: {
+              title: 'Kart Şablon Düzenle',
+              breadcrumb: false,
+            },
+          },
+          {
+            path: 'editor',
+            loadComponent: () =>
+              import('./pages/card-template/card-template-editor.component').then(
+                (m) => m.CardTemplateEditorComponent
+              ),
+            data: {
+              title: 'Kart Şablon Oluştur',
+              breadcrumb: false,
+            },
+          },
+        ],
       },
     ],
   },

@@ -1,0 +1,228 @@
+<div class="card-template-editor">
+  <div class="editor-container">
+    <div class="editor-header">
+      <h2>{{ templateId ? 'Kart Şablon Güncelleme' : 'Kart Şablon Oluşturma' }}</h2>
+    </div>
+
+    <div class="editor-wrapper">
+      <!-- Left Panel: Controls -->
+      <div class="editor-panel">
+        <div class="panel-section">
+          <label class="section-title">Sayfa Ölçüleri</label>
+          
+          <div class="input-group">
+            <label>Sayfa Tipi</label>
+            <select [(ngModel)]="pageType" (change)="onPageTypeChange()">
+              <option value="0">Yatay</option>
+              <option value="1">Dikey</option>
+              <option value="2">Özel</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="pageType === '2'">
+            <label>Yükseklik</label>
+            <input type="number" [(ngModel)]="height" (change)="onHeightChange()" step="0.1">
+          </div>
+
+          <div class="input-group" *ngIf="pageType === '2'">
+            <label>Genişlik</label>
+            <input type="number" [(ngModel)]="width" (change)="onWidthChange()" step="0.1">
+          </div>
+
+          <div class="input-group">
+            <label>Tasarım Tipi</label>
+            <div class="radio-group">
+              <label class="radio-label" [class.active]="designType === 'MULTI'">
+                <input type="radio" [(ngModel)]="designType" value="MULTI" (change)="onDesignTypeChange()">
+                Çift Taraflı
+              </label>
+              <label class="radio-label" [class.active]="designType === 'SINGLE'">
+                <input type="radio" [(ngModel)]="designType" value="SINGLE" (change)="onDesignTypeChange()">
+                Tek Taraflı
+              </label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Tasarım Yönü</label>
+            <div class="radio-group">
+              <label class="radio-label" [class.active]="designDirection === 'FRONT'">
+                <input type="radio" [(ngModel)]="designDirection" value="FRONT" (change)="onDesignDirectionChange()" [disabled]="designType === 'SINGLE'">
+                Ön Yüz
+              </label>
+              <label class="radio-label" [class.active]="designDirection === 'BACK'">
+                <input type="radio" [(ngModel)]="designDirection" value="BACK" (change)="onDesignDirectionChange()" [disabled]="designType === 'SINGLE'">
+                Arka Yüz
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <label class="section-title">İçerik Düzenle</label>
+
+          <div class="input-group">
+            <label>Tipi</label>
+            <select [(ngModel)]="contentType" (change)="onContentTypeChange()">
+              <option value="0">Yazı</option>
+              <option value="1">Personel Resim</option>
+              <option value="2">2D Barkod</option>
+              <option value="4">Sabit Resim</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Alan</label>
+            <select [(ngModel)]="field" (change)="onFieldChange()">
+              <option *ngFor="let option of fieldOptions" [value]="option.Field">{{ option.Name }}</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0' && field === 'Fix'">
+            <label>Fix Yazı</label>
+            <input type="text" [(ngModel)]="fixText">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Yazı Tipi</label>
+            <select [(ngModel)]="fontFamily">
+              <option value="Special">Özel</option>
+              <option value="Open Sans">Open Sans</option>
+              <option value="Libre Barcode 39 Extended Text">1D Barcode</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Poppins">Poppins</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Yazı Boyutu (mm)</label>
+            <input type="number" [(ngModel)]="fontSize" step="0.1">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Genişlik (mm)</label>
+            <input type="number" [(ngModel)]="textWidth" step="0.1">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Kalınlık</label>
+            <select [(ngModel)]="fontWeight">
+              <option value="100">En İnce</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="400">400</option>
+              <option value="500">Normal</option>
+              <option value="600">600</option>
+              <option value="700">700</option>
+              <option value="800">800</option>
+              <option value="900">En Kalın</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '0'">
+            <label>Karakter Tipi</label>
+            <select [(ngModel)]="textTransform">
+              <option value="none">Normal</option>
+              <option value="capitalize">İlk Harf Büyük</option>
+              <option value="uppercase">Bütün Harfler Büyük</option>
+              <option value="lowercase">Bütün Harfler Küçük</option>
+            </select>
+          </div>
+
+          <div class="input-group align-group" *ngIf="contentType === '0'">
+            <label>Hizalama & Renk</label>
+            <div class="align-buttons">
+              <button type="button" 
+                      [class.active]="textAlign === 'left'"
+                      (click)="textAlign = 'left'"
+                      title="Sola Hizala">
+                ◄
+              </button>
+              <button type="button" 
+                      [class.active]="textAlign === 'center'"
+                      (click)="textAlign = 'center'"
+                      title="Ortala">
+                ━
+              </button>
+              <button type="button" 
+                      [class.active]="textAlign === 'right'"
+                      (click)="textAlign = 'right'"
+                      title="Sağa Hizala">
+                ►
+              </button>
+              <input type="color" [(ngModel)]="textColor" class="color-picker">
+            </div>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '1' || contentType === '2' || contentType === '4'">
+            <label>Genişlik (mm)</label>
+            <input type="number" [(ngModel)]="imageWidth" step="0.1">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '1' || contentType === '2' || contentType === '4'">
+            <label>Yükseklik (mm)</label>
+            <input type="number" [(ngModel)]="imageHeight" step="0.1">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">
+            <label>Hizalama</label>
+            <select [(ngModel)]="objectFit">
+              <option value="fill">Doldur</option>
+              <option value="contain">Sığdır</option>
+              <option value="cover">Taşan alanı kes</option>
+              <option value="none">Olduğu Gibi Bırak</option>
+            </select>
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">
+            <label>Yuvarlama</label>
+            <input type="text" [(ngModel)]="borderRadius">
+          </div>
+
+          <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">
+            <label>Örnek Resim</label>
+            <input type="file" #sampleImgInput accept="image/*">
+          </div>
+
+          <button type="button" class="add-button" (click)="addItem()">
+            {{ selectedItemId ? 'Uygula' : 'Yeni Ekle' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Panel: Preview -->
+      <div class="preview-panel">
+        <div class="preview-container">
+          <div #wrapperRef class="card-flip-wrapper" [class.flip-to-back]="designDirection === 'BACK'">
+            <div #frontContainer 
+                 class="preview-card front-preview">
+            </div>
+            <div #backContainer 
+                 class="preview-card back-preview">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="editor-controls">
+      <div class="controls-row">
+        <button type="button" class="btn-secondary" (click)="goBack()">Anasayfaya Dön</button>
+        <button type="button" class="btn-danger" (click)="removeBackground()">Resim Sil</button>
+        <button type="button" class="btn-secondary" (click)="selectBackgroundImage()">Resim Seç</button>
+        <input type="file" #fileInput accept="image/*" hidden (change)="onBackgroundImageSelected($event)">
+      </div>
+      
+      <div class="controls-row">
+        <div class="template-name-input">
+          <label>Şablon Adı</label>
+          <input type="text" [(ngModel)]="templateName" placeholder="Şablon Adı">
+        </div>
+        <button type="button" class="btn-primary" (click)="saveTemplate()">Şablonu Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
