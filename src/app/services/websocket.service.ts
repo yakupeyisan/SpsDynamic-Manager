@@ -11,9 +11,10 @@ export class WebSocketService {
   private connectionStatus = new BehaviorSubject<boolean>(false);
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectInterval = 3000; // 3 seconds
+  private reconnectInterval = 1000; // 1 second
   private isConnecting = false; // Prevent multiple simultaneous connection attempts
-  private reconnectTimer: any = null; // Store reconnect timer to clear if needed
+  private reconnectTimer: any = null; // Store reconnect timer/interval to clear if needed
+  private reconnectIntervalId: any = null; // Store reconnect interval ID to clear if needed
   private shouldReconnect = true; // Flag to control reconnection
 
   constructor() {
@@ -34,11 +35,8 @@ export class WebSocketService {
       return;
     }
 
-    // Clear any existing reconnect timer
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    // Clear any existing reconnect timer/interval
+    this.stopReconnectLoop();
 
     try {
       this.isConnecting = true;
@@ -71,6 +69,8 @@ export class WebSocketService {
         this.isConnecting = false;
         this.connectionStatus.next(true);
         this.reconnectAttempts = 0;
+        // Stop reconnect loop when connection is established
+        this.stopReconnectLoop();
       };
 
       this.socket.onmessage = (event) => {
@@ -115,30 +115,67 @@ export class WebSocketService {
   }
 
   /**
+   * Stop reconnect loop
+   */
+  private stopReconnectLoop(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.reconnectIntervalId) {
+      clearInterval(this.reconnectIntervalId);
+      this.reconnectIntervalId = null;
+    }
+  }
+
+  /**
    * Attempt to reconnect to WebSocket
+   * Starts a loop that tries to reconnect every second until connected or max attempts reached
    */
   private attemptReconnect(): void {
-    // Don't reconnect if already connecting or if we've exceeded max attempts
-    if (this.isConnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
-        this.shouldReconnect = false;
-      }
+    // Don't start reconnect loop if already connecting or if loop is already running
+    if (this.isConnecting || this.reconnectIntervalId) {
       return;
     }
 
-    this.reconnectAttempts++;
-    
-    // Clear any existing timer
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
+    // Don't reconnect if we've exceeded max attempts
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
+      this.shouldReconnect = false;
+      return;
     }
-    
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      if (this.shouldReconnect) {
-        this.connect();
+
+    // Start reconnect loop - try every second
+    console.log('WebSocket: Starting reconnect loop (1 attempt per second)');
+    this.reconnectIntervalId = setInterval(() => {
+      // Check if already connected
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        console.log('WebSocket: Connection established, stopping reconnect loop');
+        this.stopReconnectLoop();
+        this.reconnectAttempts = 0;
+        return;
       }
+
+      // Check if we should continue reconnecting
+      if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
+          this.shouldReconnect = false;
+        }
+        this.stopReconnectLoop();
+        return;
+      }
+
+      // Don't reconnect if already connecting
+      if (this.isConnecting) {
+        return;
+      }
+
+      this.reconnectAttempts++;
+      console.log(`WebSocket: Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+      
+      // Try to connect
+      this.connect();
     }, this.reconnectInterval);
   }
 
@@ -290,11 +327,8 @@ export class WebSocketService {
   disconnect(): void {
     this.shouldReconnect = false; // Stop reconnecting when manually disconnected
     
-    // Clear reconnect timer
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    // Stop reconnect loop
+    this.stopReconnectLoop();
     
     if (this.socket) {
       this.socket.close(1000); // Normal closure

@@ -262,14 +262,41 @@ export const formTabs: FormTab[] = [
         { field: 'CardDesc', label: 'Kart Açıklaması', text: 'Kart Açıklaması', type: 'textarea' },
         { field: 'Status', label: 'Durum', text: 'Durum', type: 'checkbox' },
       ] as TableColumn[],
-      formLoadUrl: `${apiUrl}/api/Cards/GetCardsByEmployeeID`,
+      formLoadUrl: `${apiUrl}/api/Cards/form`,
       formLoadRequest: (recid: any, parentFormData?: any) => {
         // Get EmployeeID from parent form data
         const employeeId = parentFormData?.['EmployeeID'] || null;
         console.log('Card formLoadRequest - recid:', recid, 'employeeId:', employeeId, 'parentFormData:', parentFormData);
         return {
-          EmployeeID: employeeId
+          action: 'get',
+          recid: recid,
+          name: 'EditEmployeeCard'
         };
+      },
+      formDataMapper: (apiRecord: any) => {
+        const formData: any = { ...apiRecord };
+        
+        // Map nested Employee object to EmployeeID field
+        if (apiRecord.Employee && apiRecord.Employee.EmployeeID) {
+          formData['EmployeeID'] = apiRecord.Employee.EmployeeID;
+        }
+        
+        // Map nested CardType object to CardTypeID field
+        if (apiRecord.CardType && apiRecord.CardType.CardTypeID) {
+          formData['CardTypeID'] = apiRecord.CardType.CardTypeID;
+        }
+        
+        // Map nested CardStatus object to CardStatusId field
+        if (apiRecord.CardStatus && apiRecord.CardStatus.Id) {
+          formData['CardStatusId'] = apiRecord.CardStatus.Id;
+        }
+        
+        // Map nested CafeteriaGroup object to CafeteriaGroupID field
+        if (apiRecord.CafeteriaGroup && apiRecord.CafeteriaGroup.CafeteriaGroupID) {
+          formData['CafeteriaGroupID'] = apiRecord.CafeteriaGroup.CafeteriaGroupID;
+        }
+        
+        return formData;
       },
       onSave: (data: any, isEdit: boolean, http?: any) => {
         if (!http) {
@@ -278,8 +305,12 @@ export const formTabs: FormTab[] = [
         const url = `${apiUrl}/api/Cards/form`;
         // Extract recid from data (CardID field)
         const recid = data.CardID || data.recid || null;
-        // Remove recid from record data
-        const { CardID, recid: _, ...record } = data;
+        // Remove CardID and recid from record data, but keep EmployeeID
+        const { CardID, recid: _, EmployeeID, ...record } = data;
+        // Add EmployeeID back to record if it exists (required for both add and edit)
+        if (EmployeeID) {
+          record.EmployeeID = EmployeeID;
+        }
         return http.post(url, {
           request: {
             action: 'save',

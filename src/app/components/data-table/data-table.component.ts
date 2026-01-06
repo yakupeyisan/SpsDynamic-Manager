@@ -109,7 +109,7 @@ export interface FormTabGrid {
   formLoadUrl?: string; // URL to load form data for edit mode
   formLoadRequest?: (recid: any, parentFormData?: any) => any; // Function to build request body for form load (parentFormData is available for nested grids)
   formDataMapper?: (apiRecord: any) => any; // Function to map API response to form data
-  onSave?: (data: any, isEdit: boolean) => Observable<any>; // Callback function to save form data
+  onSave?: (data: any, isEdit: boolean, http?: any) => Observable<any>; // Callback function to save form data (http is optional for nested grids)
   recid?: string; // Record ID field name for this grid
   joinOptions?: JoinOption[]; // Join options for this grid
 }
@@ -284,7 +284,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() imageUploadUrl?: string; // URL for image upload
   @Input() imageField?: string; // Field name for image
   @Input() imagePreviewUrl?: (filename: string) => string; // Function to generate image preview URL
-  @Input() onSave?: (data: any, isEdit: boolean) => Observable<any>; // Callback function to save form data
+  @Input() onSave?: (data: any, isEdit: boolean, http?: any) => Observable<any>; // Callback function to save form data (http is optional for nested grids)
   @Input() onFormChange?: (formData: any) => void; // Callback function for form data changes
   @Input() formFullscreen?: boolean = true; // Whether form should open in fullscreen mode (default: true)
   @Input() formWidth?: string = '800px'; // Form width when not fullscreen
@@ -2580,9 +2580,29 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // If formLoadUrl is provided, load form data from API
     if (this.formLoadUrl) {
-      const requestBody = this.formLoadRequest 
+      // Check if recid is valid
+      if (!this.editingRecordId) {
+        console.error('Cannot load form: editingRecordId is null or undefined');
+        this.isLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+      
+      let requestBody = this.formLoadRequest 
         ? this.formLoadRequest(this.editingRecordId)
         : { recid: this.editingRecordId };
+      
+      // Ensure requestBody has action property for form endpoints
+      if (requestBody && !requestBody.action) {
+        requestBody.action = 'get';
+      }
+      
+      // If requestBody has 'action' property, wrap it in 'request' object (for form endpoints)
+      if (requestBody && requestBody.action) {
+        requestBody = { request: requestBody };
+      }
+      
+      console.log('Form load request:', { url: this.formLoadUrl, body: requestBody, recid: this.editingRecordId });
       
       // Unsubscribe from previous subscription if exists
       if (this.formLoadSubscription) {
@@ -3008,9 +3028,40 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
+   * Get onSave callback with http client for nested grids
+   */
+  getOnSaveWithHttp(grid: FormTabGrid): ((data: any, isEdit: boolean, http?: any) => Observable<any>) | undefined {
+    console.log('getOnSaveWithHttp called:', { gridId: grid.id, hasOnSave: !!grid.onSave, grid });
+    
+    if (!grid.onSave) {
+      console.warn('getOnSaveWithHttp: grid.onSave is undefined for grid:', grid.id);
+      return undefined;
+    }
+    
+    // Wrap the original onSave to pass http client and add EmployeeID from parent formData
+    return (data: any, isEdit: boolean, http?: any) => {
+      console.log('Wrapped onSave called:', { data, isEdit, hasHttp: !!this.http, gridId: grid.id });
+      
+      // For EmployeeCardGrid, add EmployeeID from parent formData if not present
+      if (grid.id === 'EmployeeCardGrid' && this.formData) {
+        const employeeId = this.formData['EmployeeID'] || this.formData['recid'];
+        if (employeeId && !data.EmployeeID) {
+          data.EmployeeID = employeeId;
+          console.log('Added EmployeeID to submitData:', employeeId);
+        }
+      }
+      
+      // Pass http client to the nested grid's onSave
+      return grid.onSave!(data, isEdit, this.http);
+    };
+  }
+  
+  /**
    * Handle form submit
    */
   onFormSubmit(formValues: any) {
+    console.log('onFormSubmit called:', { formValues, isEditMode: this.isEditMode, editingRecordId: this.editingRecordId, recid: this.recid, hasOnSave: !!this.onSave, id: this.id });
+    
     // Prepare data for API
     const submitData = { ...formValues };
     
@@ -3021,6 +3072,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       submitData[this.recid] = currentRecid;
       // Also ensure recid is in submitData for API
       submitData.recid = currentRecid;
+    }
+    
+    // For nested grids (EmployeeCardGrid), add EmployeeID from parent formData if not present
+    // This ensures EmployeeID is always included in both add and edit modes
+    if (this.id === 'EmployeeCardGrid' && this.formData) {
+      const employeeId = this.formData['EmployeeID'] || this.formData['recid'];
+      if (employeeId && !submitData.EmployeeID) {
+        submitData.EmployeeID = employeeId;
+        console.log('Added EmployeeID to submitData from parent formData:', employeeId);
+      }
     }
     
     // Show loading state
@@ -3082,6 +3143,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Save form data
    */
   private saveFormData(submitData: any) {
+    console.log('saveFormData called:', { hasOnSave: !!this.onSave, submitData, isEditMode: this.isEditMode });
+    
     if (this.onSave) {
       // Unsubscribe from previous subscription if exists
       if (this.formSaveSubscription) {
@@ -3093,7 +3156,20 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const wasEditMode = this.isEditMode;
       const savedRecordId = this.editingRecordId;
       
-      this.formSaveSubscription = this.onSave(submitData, this.isEditMode).subscribe({
+      try {
+        // Pass http client to onSave callback if it accepts 3 parameters
+        const saveObservable = this.onSave(submitData, this.isEditMode, this.http);
+        
+        if (!saveObservable) {
+          console.error('onSave callback did not return an Observable');
+          this.isLoading = false;
+          this.cdr.markForCheck();
+          return;
+        }
+        
+        console.log('Calling onSave with:', { submitData, isEditMode: this.isEditMode, hasHttp: !!this.http });
+        
+        this.formSaveSubscription = saveObservable.subscribe({
         next: (response) => {
           this.isLoading = false;
           this.cdr.markForCheck();
@@ -3129,11 +3205,23 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           this.isLoading = false;
           this.cdr.markForCheck();
           console.error('Error saving data:', error);
+          console.error('Error details:', { 
+            message: error?.message, 
+            error: error?.error, 
+            status: error?.status,
+            url: error?.url 
+          });
           // Keep form open on error so user can fix and retry
         }
       });
+      } catch (error) {
+        console.error('Error calling onSave callback:', error);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
     } else {
-      // No save callback provided, just emit events
+      // No save callback provided
+      console.warn('No onSave callback provided. Cannot save data.');
       this.isLoading = false;
       this.cdr.markForCheck();
       

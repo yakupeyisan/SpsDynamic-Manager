@@ -670,7 +670,7 @@
                         [formLoadUrl]="grid.formLoadUrl"
                         [formLoadRequest]="getFormLoadRequestWithParentData(grid)"
                         [formDataMapper]="grid.formDataMapper"
-                        [onSave]="grid.onSave"
+                        [onSave]="getOnSaveWithHttp(grid)"
                         [recid]="grid.recid || 'CardID'"
                         [joinOptions]="grid.joinOptions || []"
                         [showFooter]="true"

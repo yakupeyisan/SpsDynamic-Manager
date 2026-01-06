@@ -55,7 +55,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   
   // Form configuration
   formFields: TableColumn[] = formFields;
-  formTabs: FormTab[] = JSON.parse(JSON.stringify(formTabs)); // Deep copy to allow modification
+  formTabs: FormTab[] = []; // Will be initialized in constructor
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
@@ -631,11 +631,17 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
   /**
    * Handle WebSocket messages
-   * PHP server sends messages in format: { type: 'xxx', status: true/false, data: {...}, ... }
+   * Supports both old format: { type: 'xxx', status: true/false, data: {...}, ... }
+   * and new format: { Type: 'xxx', Status: true/false, Data: {...}, Message: '...', ... }
    */
   private handleWebSocketMessage(message: any): void {
+    // Normalize message format (support both old and new format)
+    const messageType = message.Type || message.type;
+    const messageData = message.Data || message.data;
+    const messageStatus = message.Status !== undefined ? message.Status : message.status;
+    
     // Handle formatconnect messages (format operation responses)
-    if (message.type === 'formatconnect' || (message.Message && this.isFormatting)) {
+    if (messageType === 'formatconnect' || message.type === 'formatconnect' || (message.Message && this.isFormatting)) {
       //console.log('Format WebSocket message received:', message);
       
       // Update status message
@@ -668,12 +674,25 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return; // Don't process further
     }
     
-    // Handle checkReader response (could come as RC2XXDeviceStatus or custom format)
-    if (message.type === 'checkReader' || message.type === 'RC2XXDeviceStatus') {
+    // Handle checkReader response (supports both old and new format)
+    if (messageType === 'checkReader' || message.type === 'checkReader' || message.type === 'RC2XXDeviceStatus') {
       
-      // Handle different response formats from PHP server
-      if (message.data && message.data.readers && Array.isArray(message.data.readers)) {
-        // Format: { type: 'checkReader', data: { readers: [{ isConnected: false, readerSerial: '210551988', message: '...', ... }] } }
+      // Handle new format: { Type: 'checkReader', Status: true, Message: '...', Data: { readers: [...] } }
+      if (messageData && messageData.readers && Array.isArray(messageData.readers)) {
+        // New format: { Type: 'checkReader', Data: { readers: [{ isConnected: true, readerSerial: '264550284', message: '...', ... }] } }
+        messageData.readers.forEach((reader: any) => {
+          const serial = reader.readerSerial || reader.SerialNumber || reader.serialNumber;
+          if (serial) {
+            const status = reader.isConnected === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(String(serial), status);
+            // Store message if available
+            if (reader.message) {
+              this.readerMessages.set(String(serial), reader.message);
+            }
+          }
+        });
+      } else if (message.data && message.data.readers && Array.isArray(message.data.readers)) {
+        // Old format: { type: 'checkReader', data: { readers: [{ isConnected: false, readerSerial: '210551988', message: '...', ... }] } }
         message.data.readers.forEach((reader: any) => {
           const serial = reader.readerSerial || reader.SerialNumber || reader.serialNumber;
           if (serial) {
@@ -685,8 +704,21 @@ export class EmployeeComponent implements OnInit, OnDestroy {
             }
           }
         });
-      } else if (message.data && typeof message.data === 'object') {
-        // Format: { subType: 'checkReader', data: { '210551988': true, ... } }
+      } else if (messageData && typeof messageData === 'object' && !messageData.readers) {
+        // Format: { Type: 'checkReader', Data: { '210551988': true, ... } } or old format
+        Object.keys(messageData).forEach((serial: string) => {
+          const result = messageData[serial];
+          if (typeof result === 'boolean') {
+            const status = result === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          } else if (typeof result === 'object' && result !== null) {
+            // Format: { Type: 'checkReader', Data: { '210551988': { connected: true, ... } } }
+            const status = result.connected || result.isConnected === true ? 'connected' : 'disconnected';
+            this.readerStatuses.set(serial, status);
+          }
+        });
+      } else if (message.data && typeof message.data === 'object' && !message.data.readers) {
+        // Old format: { subType: 'checkReader', data: { '210551988': true, ... } }
         Object.keys(message.data).forEach((serial: string) => {
           const result = message.data[serial];
           if (typeof result === 'boolean') {
@@ -1122,7 +1154,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       const client = {
         type: 'formatconnect',
         card: card,
-        reader: reader
+        reader: reader.SerialNumber
       };
       
       //console.log('Sending formatconnect message:', client);
@@ -1214,6 +1246,24 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Deep copy formTabs while preserving functions (onSave, formLoadRequest, etc.)
+   */
+  private deepCopyFormTabs(tabs: FormTab[]): FormTab[] {
+    return tabs.map(tab => ({
+      ...tab,
+      grids: tab.grids?.map(grid => ({
+        ...grid,
+        // Preserve functions that might be lost in JSON serialization
+        onSave: grid.onSave,
+        formLoadRequest: grid.formLoadRequest,
+        formDataMapper: grid.formDataMapper,
+        dataSource: grid.dataSource,
+        data: grid.data
+      }))
+    }));
+  }
+
+  /**
    * Load total price based on CafeteriaAccount and EmployeeID
    */
   loadTotalPrice(accountId: number): void {
@@ -1270,6 +1320,8 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private wsService: WebSocketService
   ) {
+    // Deep copy formTabs while preserving functions (onSave, formLoadRequest, etc.)
+    this.formTabs = this.deepCopyFormTabs(formTabs);
     this.setupWebSocketListeners();
   }
 
