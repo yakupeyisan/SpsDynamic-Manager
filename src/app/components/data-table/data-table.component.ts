@@ -159,6 +159,8 @@ export interface TableColumn {
   currencyPrefix?: string; // Currency prefix (e.g., '$', '€', '₺') - overrides global setting
   currencySuffix?: string; // Currency suffix (e.g., ' TL', ' USD') - overrides global setting
   currencyPrecision?: number; // Number of decimal places for currency (default: 2) - overrides global setting
+  showInAdd?: boolean; // Show field in add mode (default: true)
+  showInUpdate?: boolean; // Show field in update/edit mode (default: true)
 }
 
 export interface TableRow {
@@ -2821,7 +2823,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         col.type !== 'picture' && 
         col.field !== 'recid' &&
         // Include ID field only in edit mode
-        (!col.field.includes('ID') || this.isEditMode || col.field === this.recid)
+        ((!this.isEditMode && col.showInAdd !== false) || (this.isEditMode && col.showInUpdate !== false) || col.field === this.recid)
       );
     }
     

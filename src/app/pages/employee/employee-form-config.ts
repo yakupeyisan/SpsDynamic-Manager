@@ -189,7 +189,7 @@ export const formTabs: FormTab[] = [
       formHeight: '600px',
       recid: 'CardID',
       formFields: [
-        { field: 'CardTypeID', label: 'CardTypeID', text: 'CardTypeID', type: 'list', required: true, load: {
+        { field: 'CardTypeID', label: 'CardTypeID', text: 'CardTypeID', type: 'list',required: true, load: {
           url: `${apiUrl}/api/CardTypes`,
           injectAuth: true,
           method: 'POST',
