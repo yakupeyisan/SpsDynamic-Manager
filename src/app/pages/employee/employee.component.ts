@@ -68,10 +68,16 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   readers: any[] = [];
   isLoadingReaders = false;
   selectedCardIdsForFormat: number[] = [];
+  selectedCardsForFormat: any[] = []; // Store selected card details
   
   // WebSocket subscriptions
   private wsMessageSubscription?: Subscription;
   private wsConnectionSubscription?: Subscription;
+  
+  // Format operation state
+  formatStatusMessage: string = '';
+  isFormatting: boolean = false;
+  selectedReaderForFormat: any = null;
   
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
@@ -223,7 +229,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
             requestBody.AccessGroups = params.AccessGroups;
           }
           
-          console.log('EmployeeAccessGroupReaders API request:', requestBody);
+          //console.log('EmployeeAccessGroupReaders API request:', requestBody);
           
           return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroupReaders/GetReadersByAccessGroups`, requestBody).pipe(
             map((response: GridResponse) => ({
@@ -244,7 +250,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       case 'EmployeeHistories':
         return (params: any) => {
           const requestBody = params;
-          console.log('EmployeeHistories API request:', requestBody);
+          //console.log('EmployeeHistories API request:', requestBody);
           
           return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanyHistories/EmployeeHistories`, requestBody).pipe(
             map((response: GridResponse) => ({
@@ -310,7 +316,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
 
   onFormChange = (formData: any) => {
-    console.log('onFormChange called with formData:', formData);
+    //console.log('onFormChange called with formData:', formData);
     
     if (formData) {
       const currentAccessGroup = formData['AccessGroup'];
@@ -359,39 +365,39 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
   // Event handlers
   onTableRowClick(event: { row: any; columnIndex?: number }) {
-    console.log('Row clicked:', event.row);
+    //console.log('Row clicked:', event.row);
   }
 
   onPictureClick(event: { row: any; column: any; rowIndex: number; columnIndex: number; pictureId: string; event: MouseEvent }) {
-    console.log('Picture clicked:', event);
+    //console.log('Picture clicked:', event);
   }
 
   onTableRowSelect(rows: any[]) {
-    console.log('Rows selected:', rows);
+    //console.log('Rows selected:', rows);
   }
 
   onAdvancedFilterChange(filter: any) {
-    console.log('Advanced filter changed:', filter);
+    //console.log('Advanced filter changed:', filter);
   }
 
   onTableRefresh() {
-    console.log('Table refresh requested');
+    //console.log('Table refresh requested');
   }
 
   onTableDelete(rows: any[]) {
-    console.log('Delete records requested:', rows);
+    //console.log('Delete records requested:', rows);
   }
   
   onTableAdd() {
-    console.log('Add new record requested');
+    //console.log('Add new record requested');
   }
   
   onTableEdit(row: any) {
-    console.log('Edit record requested:', row);
+    //console.log('Edit record requested:', row);
   }
   
   onTableRowDblClick(row: any) {
-    console.log('Row double-clicked:', row);
+    //console.log('Row double-clicked:', row);
   }
   
   onTableContextMenu(event: { row: any; event: MouseEvent }) {
@@ -399,11 +405,11 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
   
   onTableColumnClick(event: { column: TableColumn; event: MouseEvent }) {
-    console.log('Column clicked:', event.column.field);
+    //console.log('Column clicked:', event.column.field);
   }
   
   onTableColumnDblClick(event: { column: TableColumn; event: MouseEvent }) {
-    console.log('Column double-clicked:', event.column.field);
+    //console.log('Column double-clicked:', event.column.field);
   }
   
   onTableColumnContextMenu(event: { column: TableColumn; event: MouseEvent }) {
@@ -411,7 +417,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
   
   onTableColumnResize(event: { column: TableColumn; width: number }) {
-    console.log('Column resized:', event.column.field, 'new width:', event.width);
+    //console.log('Column resized:', event.column.field, 'new width:', event.width);
   }
   
   onTableMouseEnter(row: any) {
@@ -423,7 +429,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
   
   onTableFocus() {
-    console.log('Table focused');
+    //console.log('Table focused');
   }
   
   onTableBlur() {
@@ -431,56 +437,56 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
   
   onTableCopy(event: { text: string; event: ClipboardEvent }) {
-    console.log('Copy event:', event.text);
+    //console.log('Copy event:', event.text);
   }
   
   onTablePaste(event: { text: string; event: ClipboardEvent }) {
-    console.log('Paste event:', event.text);
+    //console.log('Paste event:', event.text);
   }
 
   // Bulk operation handlers
   onBulkAccessPermission(event: MouseEvent, item: any) {
-    console.log('Bulk access permission:', event, item);
+    //console.log('Bulk access permission:', event, item);
   }
 
   onBulkCompany(event: MouseEvent, item: any) {
-    console.log('Bulk company:', event, item);
+    //console.log('Bulk company:', event, item);
   }
 
   onBulkPosition(event: MouseEvent, item: any) {
-    console.log('Bulk position:', event, item);
+    //console.log('Bulk position:', event, item);
   }
 
   onBulkDepartment(event: MouseEvent, item: any) {
-    console.log('Bulk department:', event, item);
+    //console.log('Bulk department:', event, item);
   }
 
   onBulkSms(event: MouseEvent, item: any) {
-    console.log('Bulk SMS:', event, item);
+    //console.log('Bulk SMS:', event, item);
   }
 
   onBulkMail(event: MouseEvent, item: any) {
-    console.log('Bulk mail:', event, item);
+    //console.log('Bulk mail:', event, item);
   }
 
   onImportFromExcel(event: MouseEvent, item: any) {
-    console.log('Import from Excel:', event, item);
+    //console.log('Import from Excel:', event, item);
   }
 
   onBulkImageUpload(event: MouseEvent, item: any) {
-    console.log('Bulk image upload:', event, item);
+    //console.log('Bulk image upload:', event, item);
   }
 
   onBulkWebClient(event: MouseEvent, item: any) {
-    console.log('Bulk web client:', event, item);
+    //console.log('Bulk web client:', event, item);
   }
 
   onBulkPasswordReset(event: MouseEvent, item: any) {
-    console.log('Bulk password reset:', event, item);
+    //console.log('Bulk password reset:', event, item);
   }
 
   onExportToExcel(event: MouseEvent, item: any) {
-    console.log('Export to Excel:', event, item);
+    //console.log('Export to Excel:', event, item);
   }
 
   /**
@@ -533,17 +539,72 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     return cardIds;
   }
 
+  /**
+   * Get selected card details from EmployeeCardGrid (alternative to API call)
+   */
+  private getSelectedCardDetails(): any[] {
+    if (!this.dataTableComponent) {
+      console.warn('DataTableComponent not found');
+      return [];
+    }
+
+    // Find EmployeeCardGrid in nested grids
+    if (!this.dataTableComponent.nestedGrids) {
+      console.warn('Nested grids not found');
+      return [];
+    }
+
+    const cardGrid = this.dataTableComponent.nestedGrids.find(
+      (grid: DataTableComponent) => grid.id === 'EmployeeCardGrid'
+    );
+
+    if (!cardGrid) {
+      console.warn('EmployeeCardGrid not found');
+      return [];
+    }
+
+    // Get selected row IDs from the grid
+    const selectedRowIds = Array.from(cardGrid.selectedRows);
+    
+    // Get actual card data from the grid
+    const cards: any[] = [];
+    const recidField = cardGrid.recid || 'CardID';
+    
+    // Use filteredData or internalData depending on dataSource
+    const dataSource = cardGrid.dataSource ? cardGrid.filteredData : cardGrid.data;
+    
+    selectedRowIds.forEach((rowId: any) => {
+      const row = dataSource.find((r: any) => {
+        const id = r['recid'] ?? r[recidField] ?? r['CardID'] ?? r['id'];
+        return id === rowId;
+      });
+      
+      if (row) {
+        // Return the full card object
+        cards.push(row);
+      }
+    });
+    
+    return cards;
+  }
+
   // Card operation handlers
   onCardFormat(event: MouseEvent, item: any) {
     const selectedCardIds = this.getSelectedCardIds();
+    
+    //console.log('onCardFormat - selectedCardIds:', selectedCardIds);
     
     if (selectedCardIds.length === 0) {
       this.toastr.warning('Lütfen formatlamak için en az bir kart seçin', 'Uyarı');
       return;
     }
 
-    // Store selected card IDs
+    // Store selected card IDs and clear previous card details
     this.selectedCardIdsForFormat = selectedCardIds;
+    this.selectedCardsForFormat = []; // Clear previous card details
+    this.selectedReaderForFormat = null; // Clear previous reader selection
+    
+    //console.log('onCardFormat - selectedCardIdsForFormat:', this.selectedCardIdsForFormat);
     
     // Open modal and load readers
     this.showFormatModal = true;
@@ -573,6 +634,40 @@ export class EmployeeComponent implements OnInit, OnDestroy {
    * PHP server sends messages in format: { type: 'xxx', status: true/false, data: {...}, ... }
    */
   private handleWebSocketMessage(message: any): void {
+    // Handle formatconnect messages (format operation responses)
+    if (message.type === 'formatconnect' || (message.Message && this.isFormatting)) {
+      //console.log('Format WebSocket message received:', message);
+      
+      // Update status message
+      if (message.Message) {
+        this.formatStatusMessage = message.Message;
+        this.cdr.markForCheck();
+      }
+
+      // If Kill message received, close modal
+      if (message.Kill) {
+        this.isFormatting = false;
+        
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          this.closeFormatModal();
+          this.toastr.success('Format işlemi tamamlandı', 'Başarılı');
+          
+          // Reload card grid if needed
+          if (this.dataTableComponent) {
+            const cardGrid = this.dataTableComponent.nestedGrids?.find(
+              (grid: DataTableComponent) => grid.id === 'EmployeeCardGrid'
+            );
+            if (cardGrid) {
+              cardGrid.reload();
+            }
+          }
+        }, 2000);
+      }
+      
+      return; // Don't process further
+    }
+    
     // Handle checkReader response (could come as RC2XXDeviceStatus or custom format)
     if (message.type === 'checkReader' || message.type === 'RC2XXDeviceStatus') {
       
@@ -790,9 +885,16 @@ export class EmployeeComponent implements OnInit, OnDestroy {
    * Close format modal
    */
   closeFormatModal(): void {
+    // Stop formatting
+    this.formatWebSocket(false);
+    
     this.showFormatModal = false;
     this.readers = [];
     this.selectedCardIdsForFormat = [];
+    this.selectedCardsForFormat = [];
+    this.formatStatusMessage = '';
+    this.isFormatting = false;
+    this.selectedReaderForFormat = null;
     this.readerStatuses.clear();
     this.readerMessages.clear();
   }
@@ -801,6 +903,9 @@ export class EmployeeComponent implements OnInit, OnDestroy {
    * Cleanup subscriptions
    */
   ngOnDestroy(): void {
+    // Close format WebSocket connection
+    this.formatWebSocket(false);
+    
     if (this.wsMessageSubscription) {
       this.wsMessageSubscription.unsubscribe();
     }
@@ -815,6 +920,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   onReaderSelect(reader: any): void {
     const serial = reader.SerialNumber || reader.serialNumber;
     const status = this.getReaderStatus(reader);
+    //console.log('status', status);
 
     // If disconnected, try to check connection again
     if (status === 'disconnected') {
@@ -837,31 +943,201 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Set message to "--" when clicked
-    if (serial) {
-      this.readerMessages.set(String(serial), '--');
-      this.cdr.markForCheck();
+    // If already formatting, don't allow another selection
+    if (this.isFormatting) {
+      this.toastr.warning('Format işlemi devam ediyor', 'Uyarı');
+      return;
     }
 
-    const readerId = reader.ReaderID || reader.id;
-    const readerName = reader.ReaderName || reader.name || reader.Name || `Reader ${readerId}`;
+
+    // Store selected reader
+    this.selectedReaderForFormat = reader;
     
-    // TODO: Implement format operation with selected reader and card IDs
-    this.toastr.info(`Reader seçildi: ${readerName}`, 'Bilgi');
+    //console.log('selectedCardIdsForFormat:', this.selectedCardIdsForFormat);
+    //console.log('selectedCardsForFormat:', this.selectedCardsForFormat);
     
-    // Example: this.http.post(`${environment.apiUrl}/api/Cards/Format`, { 
-    //   CardIDs: this.selectedCardIdsForFormat, 
-    //   ReaderID: readerId 
-    // }).subscribe({
-    //   next: (response) => {
-    //     this.toastr.success('Kartlar başarıyla formatlandı', 'Başarılı');
-    //     this.closeFormatModal();
-    //     // Reload card grid if needed
-    //   },
-    //   error: (error) => {
-    //     this.toastr.error('Format işlemi başarısız', 'Hata');
-    //   }
-    // });
+    // Try to get card details directly from grid first (faster, no API call needed)
+    if (this.selectedCardsForFormat.length === 0) {
+      const cardDetails = this.getSelectedCardDetails();
+      if (cardDetails && cardDetails.length > 0) {
+        //console.log('Got card details from grid:', cardDetails);
+        this.selectedCardsForFormat = cardDetails;
+      }
+    }
+    
+    // If we have card details, start format operation
+    if (this.selectedCardsForFormat.length > 0) {
+      //console.log('Starting format operation with card details from grid...');
+      this.startFormatOperation(reader);
+    } else if (this.selectedCardIdsForFormat.length > 0) {
+      // Fallback: Load from API if grid data not available
+      //console.log('Loading card details from API...');
+      this.loadCardDetailsForFormat();
+    } else {
+      console.error('No cards selected for format');
+      this.toastr.error('Format için kart seçilmedi', 'Hata');
+    }
+  }
+
+  /**
+   * Load card details for format operation
+   */
+  private loadCardDetailsForFormat(): void {
+    if (this.selectedCardIdsForFormat.length === 0) {
+      console.error('No card IDs selected');
+      this.toastr.error('Kart seçilmedi', 'Hata');
+      return;
+    }
+
+    //console.log('Loading card details for IDs:', this.selectedCardIdsForFormat);
+    const url = `${environment.apiUrl}/api/Cards`;
+    
+    // Use the same format as Card component - with proper search structure
+    const requestBody = {
+      page: 1,
+      limit: -1,
+      offset: 0,
+      search: {
+        field: 'CardID',
+        operator: 'in',
+        value: this.selectedCardIdsForFormat
+      },
+      searchLogic: 'AND',
+      sort: undefined,
+      join: undefined,
+      showDeleted: false
+    };
+    
+    //console.log('Request body:', requestBody);
+    
+    this.http.post<any>(url, requestBody).pipe(
+      catchError(error => {
+        console.error('Error loading card details:', error);
+        console.error('Error details:', error.error || error.message);
+        this.toastr.error('Kart detayları yüklenirken hata oluştu', 'Hata');
+        return of({ records: [], total: 0 });
+      })
+    ).subscribe({
+      next: (response) => {
+        //console.log('Card details response:', response);
+        //console.log('Response type:', typeof response);
+        //console.log('Response keys:', response ? Object.keys(response) : 'null');
+        
+        // Handle different response formats
+        let records: any[] = [];
+        if (response && response.records) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        //console.log('Extracted records:', records);
+        
+        if (records && records.length > 0) {
+          this.selectedCardsForFormat = records;
+          //console.log('Cards loaded:', this.selectedCardsForFormat);
+          // Start format operation with first card
+          if (this.selectedReaderForFormat) {
+            //console.log('Starting format operation...');
+            this.startFormatOperation(this.selectedReaderForFormat);
+          } else {
+            console.error('No reader selected for format');
+          }
+        } else {
+          console.error('No records in response:', response);
+          this.toastr.error('Kart detayları bulunamadı', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Subscription error:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.message);
+        console.error('Error body:', error.error);
+      }
+    });
+  }
+
+  /**
+   * Start format operation with selected reader and card
+   */
+  private startFormatOperation(reader: any): void {
+    //console.log('startFormatOperation called with reader:', reader);
+    //console.log('selectedCardsForFormat:', this.selectedCardsForFormat);
+    
+    if (this.selectedCardsForFormat.length === 0) {
+      console.error('No cards available for format');
+      this.toastr.error('Kart bilgisi bulunamadı', 'Hata');
+      return;
+    }
+
+    // Use first card for format (or iterate through all cards)
+    const card = this.selectedCardsForFormat[0];
+    //console.log('Using card for format:', card);
+    
+    // Start format WebSocket connection
+    //console.log('Calling formatWebSocket...');
+    this.formatWebSocket(true, reader, card);
+  }
+
+  /**
+   * Format WebSocket function - based on PHP formatWebsocket function
+   * Uses existing WebSocketService connection instead of creating a new one
+   */
+  formatWebSocket(status: boolean, reader: any = null, card: any = null): void {
+    if (!status) {
+      // Stop formatting - send disconnect message if needed
+      this.isFormatting = false;
+      this.formatStatusMessage = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (!reader || !card) {
+      this.toastr.error('Reader veya kart bilgisi eksik', 'Hata');
+      return;
+    }
+
+    // Check if WebSocket is connected
+    if (!this.wsService.isConnected()) {
+      this.toastr.error('WebSocket bağlantısı yok. Lütfen bekleyin...', 'Hata');
+      // Try to connect
+      this.wsService.connect();
+      return;
+    }
+
+    try {
+      this.isFormatting = true;
+      this.formatStatusMessage = '';
+      
+      // Determine message based on card type
+      // CardTypeID == 3 means card, otherwise fingerprint
+      const messageCard = card.CardTypeID == 3 ? 'Kart okutunuz..' : 'Parmak izi terminaline bağlanıyor..';
+      this.formatStatusMessage = messageCard;
+      this.cdr.markForCheck();
+
+      // Send formatconnect message using existing WebSocket connection
+      // Format must be: { type: 'formatconnect', card: card, reader: reader }
+      const client = {
+        type: 'formatconnect',
+        card: card,
+        reader: reader
+      };
+      
+      //console.log('Sending formatconnect message:', client);
+      
+      // Use WebSocketService to send message
+      // sendMessage will handle formatconnect specially and add token
+      this.wsService.sendMessage(client);
+      
+    } catch (error) {
+      console.error('Error sending formatconnect message:', error);
+      this.toastr.error('Format mesajı gönderilemedi', 'Hata');
+      this.isFormatting = false;
+      this.formatStatusMessage = '';
+      this.cdr.markForCheck();
+    }
   }
 
   /**

@@ -2558,6 +2558,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.showFormPage = true; // Show full page form instead of modal
+    
+    // Load options for all columns with load configuration
+    setTimeout(() => {
+      this.loadFormFieldOptions();
+    }, 0);
+    
     this.cdr.markForCheck();
     this.add.emit();
   }
@@ -2602,11 +2608,20 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             this.formData = { ...record };
           }
           
+          // Ensure EmployeeID is set if recid exists (for dynamic field options)
+          if (this.formData['recid'] && !this.formData['EmployeeID']) {
+            this.formData['EmployeeID'] = this.formData['recid'];
+          }
+          
           // Normalize checkbox values to boolean
           this.normalizeCheckboxValues();
           
-          // Load dynamic field options that depend on formData (e.g., SubscriptionCard)
-          this.loadDynamicFieldOptions();
+          // Load options for all form fields with load configuration
+          setTimeout(() => {
+            this.loadFormFieldOptions();
+            // Load dynamic field options that depend on formData (e.g., SubscriptionCard)
+            this.loadDynamicFieldOptions();
+          }, 0);
           
           this.cdr.markForCheck();
           
@@ -4190,6 +4205,36 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   /**
+   * Load options for form fields that have load configuration
+   * Called when form is opened (add or edit mode)
+   */
+  private loadFormFieldOptions(): void {
+    if (!this.formFields || this.formFields.length === 0) return;
+
+    // Load all static options in parallel
+    const loadPromises: Promise<void>[] = [];
+    
+    this.formFields.forEach(column => {
+      if (column.load && column.load.url) {
+        // Skip if data is a function (dynamic) - will be loaded by loadDynamicFieldOptions
+        if (typeof column.load.data === 'function') {
+          return;
+        }
+        // Clear cache for this column to ensure fresh data when form opens
+        const cacheKey = `${column.field}_${column.load.url}`;
+        this.columnOptionsCache.delete(cacheKey);
+        this.columnOptionsLoading.delete(cacheKey);
+        
+        // Clear column.options to force reload
+        column.options = undefined;
+        
+        // Load static options immediately
+        this.loadColumnOption(column);
+      }
+    });
+  }
+
+  /**
    * Load options for a specific column
    */
   private loadColumnOption(column: TableColumn): void {
@@ -4203,11 +4248,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // If data is a function, check if required formData values are available
     if (typeof column.load.data === 'function') {
       // Get dynamic data to check if required values exist
+      // Pass formData to the function - it should return the request payload
       const dynamicData = column.load.data(this.formData);
+      
+      console.log(`loadColumnOption for ${column.field} - formData:`, this.formData);
+      console.log(`loadColumnOption for ${column.field} - dynamicData:`, dynamicData);
+      
+      // Check if EmployeeID is in the returned data (for GetCardsByEmployeeID, etc.)
       const employeeId = dynamicData?.EmployeeID;
       
       // If EmployeeID is required but not available, skip loading
       if (employeeId == null || employeeId === undefined) {
+        console.warn(`loadColumnOption for ${column.field} - EmployeeID not found in dynamicData, skipping`);
         return;
       }
       
@@ -4242,7 +4294,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       request = this.http.get(url);
     } else {
       // For POST, PUT, DELETE, send data in body
+      // Use the data returned from the function (or static data)
       const body: any = { ...data };
+      
+      //console.log(`loadColumnOption for ${column.field} - sending request body:`, body);
       
       // Add bypass_token if injectAuth is true (will be handled by interceptor)
       request = this.http.request(method, url, { body });
@@ -4295,15 +4350,28 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // This prevents infinite loops when API returns empty arrays
       this.columnOptionsCache.set(cacheKey, validOptions);
       
-      // Update column options
-      if (column) {
-        column.options = validOptions;
+      // Update column options - find the actual column reference in formFields
+      if (column && column.field) {
+        // Find the actual column reference in formFields to update
+        const formFieldColumn = this.formFields?.find(f => f.field === column.field);
+        if (formFieldColumn) {
+          // Create new array reference to trigger change detection
+          formFieldColumn.options = [...validOptions];
+          console.log(`Updated options for ${column.field} in formFields:`, validOptions.length, 'options');
+        }
+        // Also update the column directly (in case it's not in formFields)
+        column.options = [...validOptions]; // Create new array reference
       }
       
       this.columnOptionsLoading.set(cacheKey, false);
       
-      // Force change detection to update UI
-      this.cdr.detectChanges();
+      // Force change detection to update UI - use markForCheck for better performance
+      this.cdr.markForCheck();
+      
+      // Also trigger detectChanges in next tick to ensure immediate update
+      setTimeout(() => {
+        this.cdr.detectChanges();
+      }, 0);
     });
   }
 
@@ -4311,19 +4379,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Get options for a column (from cache or load if needed)
    */
   getColumnOptions(column: TableColumn): TableColumnOption[] {
-    if (!column) return [];
+    if (!column || !column.field) return [];
 
-    // If column has static options, return them
-    if (column.options && Array.isArray(column.options) && column.options.length > 0) {
-      return column.options;
-    }
+    // Always use the actual column from formFields to ensure we're working with the correct reference
+    const formFieldColumn = this.formFields?.find(f => f.field === column.field);
+    const actualColumn = formFieldColumn || column;
 
-    // If column has load configuration, check cache
-    if (column.load && column.load.url) {
+    // If column has load configuration, check cache first
+    if (actualColumn.load && actualColumn.load.url) {
       // Build cache key same way as loadColumnOption
-      let cacheKey = `${column.field}_${column.load.url}`;
-      if (typeof column.load.data === 'function') {
-        const dynamicData = column.load.data(this.formData);
+      let cacheKey = `${actualColumn.field}_${actualColumn.load.url}`;
+      if (typeof actualColumn.load.data === 'function') {
+        const dynamicData = actualColumn.load.data(this.formData);
         const employeeId = dynamicData?.EmployeeID;
         
         // If EmployeeID is required but not available, return empty array (don't load)
@@ -4331,20 +4398,28 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           return [];
         }
         
-        cacheKey = `${column.field}_${column.load.url}_${employeeId}`;
+        cacheKey = `${actualColumn.field}_${actualColumn.load.url}_${employeeId}`;
       }
       
       // First check cache (even if empty, to prevent duplicate requests)
       if (this.columnOptionsCache.has(cacheKey)) {
         const cachedOptions = this.columnOptionsCache.get(cacheKey);
+        // Update column.options from cache to ensure consistency
+        if (cachedOptions && cachedOptions.length > 0) {
+          // Create new array reference to trigger change detection
+          actualColumn.options = [...cachedOptions];
+          // Also update the passed column reference if different
+          if (column !== actualColumn) {
+            column.options = [...cachedOptions];
+          }
+        }
         return cachedOptions || [];
       }
       
-      // Then check column.options (loaded but not in cache yet)
-      if (column.options && Array.isArray(column.options) && column.options.length > 0) {
+      if (actualColumn.options && Array.isArray(actualColumn.options) && actualColumn.options.length > 0) {
         // Also cache it for next time
-        this.columnOptionsCache.set(cacheKey, column.options);
-        return column.options;
+        this.columnOptionsCache.set(cacheKey, actualColumn.options);
+        return actualColumn.options;
       }
       
       // Check if already loading - if yes, return empty array to prevent duplicate requests
@@ -4353,8 +4428,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
       
       // Load if not cached and not currently loading
-      this.loadColumnOption(column);
+      // Use the actual column from formFields if available
+      this.loadColumnOption(actualColumn);
       return []; // Return empty array while loading
+    }
+
+    // If column has static options, return them
+    if (actualColumn.options && Array.isArray(actualColumn.options) && actualColumn.options.length > 0) {
+      return actualColumn.options;
     }
 
     return [];

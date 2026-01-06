@@ -151,20 +151,30 @@ export class WebSocketService {
       // Prepare message to send
       let messageToSend: any;
       
-      if (message.type) {
+      // Special handling for formatconnect - send as is with card and reader at top level
+      if (message.type === 'formatconnect' && message.card && message.reader) {
+        messageToSend = {
+          type: 'formatconnect',
+          card: message.card,
+          reader: message.reader,
+          token: localStorage.getItem('token')
+        };
+      } else if (message.type) {
         // Has type, use as is or wrap data
         messageToSend = {
           type: message.type,
           data: message.data || message
         };
+        messageToSend.token = localStorage.getItem('token');
       } else {
         // Default: assume it's a checkReader message
         messageToSend = {
           type: 'checkReader',
           data: message
         };
+        messageToSend.token = localStorage.getItem('token');
       }
-      messageToSend.token = localStorage.getItem('token');
+      
       this.socket.send(JSON.stringify(messageToSend));
     } else {
       console.warn('WebSocket is not connected. Message not sent:', message);

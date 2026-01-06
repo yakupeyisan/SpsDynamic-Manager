@@ -470,7 +470,7 @@
             <!-- Select/Enum/List -->
             <ui-select
               *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-              [options]="getColumnOptions(column)"
+              [options]="column.options || getColumnOptions(column)"
               [(ngModel)]="formData[column.field]"
               [placeholder]="getColumnLabel(column)"
               [multiple]="column.type === 'enum'"
@@ -622,7 +622,7 @@
                         <!-- Select/Enum/List -->
                         <ui-select
                           *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-                          [options]="getColumnOptions(column)"
+                          [options]="column.options || getColumnOptions(column)"
                           [(ngModel)]="formData[column.field]"
                           (valueChange)="onFormFieldChange(column.field, $event)"
                           [placeholder]="getColumnLabel(column)"
@@ -757,7 +757,7 @@
                   <!-- Select/Enum/List -->
                   <ui-select
                     *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-                    [options]="getColumnOptions(column)"
+                    [options]="column.options || getColumnOptions(column)"
                     [(ngModel)]="formData[column.field]"
                     [placeholder]="getColumnLabel(column)"
                     [multiple]="column.type === 'enum'"

@@ -89,6 +89,13 @@
   
   <!-- Modal Body: Reader List -->
   <div class="reader-list-container">
+    <!-- Format Status Message -->
+    <div *ngIf="isFormatting && formatStatusMessage" class="format-status-container">
+      <div class="format-status-message" [style.color]="'red'">
+        {{ formatStatusMessage }}
+      </div>
+    </div>
+    
     <div *ngIf="isLoadingReaders" class="loading-container">
       <div class="spinner"></div>
       <p>{{ translate.instant('common.loading') }}</p>
@@ -143,10 +150,18 @@
   <!-- Modal Footer -->
   <div slot="footer" class="modal-footer-actions">
     <button 
+      *ngIf="!isFormatting"
       type="button" 
       class="btn btn-secondary"
       (click)="closeFormatModal()">
       {{ translate.instant('common.cancel') }}
+    </button>
+    <button 
+      *ngIf="isFormatting"
+      type="button" 
+      class="btn btn-danger"
+      (click)="formatWebSocket(false); closeFormatModal()">
+      Durdur
     </button>
   </div>
 </ui-modal>

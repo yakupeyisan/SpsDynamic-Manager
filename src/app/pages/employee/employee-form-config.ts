@@ -138,8 +138,8 @@ export const formFields: TableColumn[] = [
       injectAuth: true,
       method: 'POST',
       data: (formData?: any) => {
-        const employeeId = formData?.['EmployeeID'] || null;
-        console.log('SubscriptionCard load data - employeeId:', employeeId, 'formData:', formData);
+        // Get EmployeeID from formData - try EmployeeID first, then recid
+        const employeeId = formData?.['EmployeeID'] || formData?.['recid'] || null;
         return { 
           limit: -1, 
           offset: 0, 
@@ -215,11 +215,7 @@ export const formTabs: FormTab[] = [
             return data.records ? data.records.map((item: any) => ({
               id: item.id,
               text: item.text
-            })) : [
-              { id: 'Wiegand26', text: 'Wiegand26' },
-              { id: 'Wiegand34', text: 'Wiegand34' },
-              { id: 'MIFARE', text: 'MIFARE' }
-            ];
+            })) : [];
           }
         }},
         { field: 'CardStatusId', label: 'Kart Statü', text: 'Kart Statü', type: 'list', required: true, load: {
@@ -228,11 +224,28 @@ export const formTabs: FormTab[] = [
           method: 'POST',
           data: { limit: -1, offset: 0 },
           map: (data: any) => {
-            return data.records ? data.records.map((item: any) => ({
-              id: item.Id,
-              text: item.Name
-            })) : [
-            ];
+            console.log('CardStatuses map - received data:', data);
+            
+            // Handle different response formats
+            let records: any[] = [];
+            if (data && data.records && Array.isArray(data.records)) {
+              records = data.records;
+            } else if (data && Array.isArray(data)) {
+              records = data;
+            } else if (data && data.data && Array.isArray(data.data)) {
+              records = data.data;
+            }
+            
+            console.log('CardStatuses map - extracted records:', records);
+            
+            const mapped = records.map((item: any) => ({
+              id: item.Id || item.id || item.CardStatusId,
+              text: item.Name || item.name || item.Text || item.text || String(item.Id || item.id || '')
+            }));
+            
+            console.log('CardStatuses map - mapped result:', mapped);
+            
+            return mapped;
           }
         }},
         { field: 'FacilityCode', label: 'FacilityCode', text: 'FacilityCode', type: 'text' },
