@@ -106,6 +106,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AccessGroup',
+        loadComponent: () =>
+          import('./pages/access-group/access-group.component').then(
+            (m) => m.AccessGroupComponent
+          ),
+        data: {
+          title: 'Geçiş Yetki Grubu',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'CardTemplates',
         children: [
           {
