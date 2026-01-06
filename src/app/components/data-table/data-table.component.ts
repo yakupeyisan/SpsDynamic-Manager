@@ -3741,16 +3741,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const option = this.joinOptions.find(opt => opt.key === key);
     if (!option) return false;
     
-    // Special handling for Department - check under EmployeeDepartments
-    if (key === 'Department') {
-      const parent = this.selectedJoins['EmployeeDepartments'];
+    // Check if option has a parent - if so, check under parent
+    if (option.parent) {
+      const parent = this.selectedJoins[option.parent];
       if (parent && typeof parent === 'object' && (parent as { [key: string]: boolean })[key] === true) {
         return true;
       }
       return false;
     }
     
-    // Check nested joins
+    // Check nested joins (for backward compatibility)
     if (option.nested && option.parent) {
       const parent = this.selectedJoins[option.parent];
       if (parent && typeof parent === 'object' && (parent as { [key: string]: boolean })[key] === true) {
@@ -3772,25 +3772,31 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     if (!option) return;
     
-    // Special handling for Department - it should be sent under EmployeeDepartments
-    if (key === 'Department') {
-      if (!this.selectedJoins['EmployeeDepartments']) {
-        this.selectedJoins['EmployeeDepartments'] = {};
+    // Handle options with parent property (regardless of nested flag)
+    if (option.parent) {
+      if (!this.selectedJoins[option.parent]) {
+        this.selectedJoins[option.parent] = {};
       }
       
-      if (typeof this.selectedJoins['EmployeeDepartments'] === 'object') {
-        (this.selectedJoins['EmployeeDepartments'] as { [key: string]: boolean })[key] = checked;
+      // If parent was set as boolean, convert it to object
+      if (this.selectedJoins[option.parent] === true) {
+        this.selectedJoins[option.parent] = {};
+      }
+      
+      if (typeof this.selectedJoins[option.parent] === 'object') {
+        (this.selectedJoins[option.parent] as { [key: string]: boolean })[key] = checked;
         
         // If unchecking and no nested joins remain, remove parent
         if (!checked) {
-          const parentObj = this.selectedJoins['EmployeeDepartments'] as { [key: string]: boolean };
-          if (Object.keys(parentObj).length === 0 || (Object.keys(parentObj).length === 1 && !parentObj[key])) {
-            delete this.selectedJoins['EmployeeDepartments'];
+          const parentObj = this.selectedJoins[option.parent] as { [key: string]: boolean };
+          const hasOtherNested = Object.keys(parentObj).some(k => k !== key && parentObj[k] === true);
+          if (!hasOtherNested) {
+            delete this.selectedJoins[option.parent];
           }
         }
       }
     }
-    // Handle nested joins
+    // Handle nested joins (for backward compatibility)
     else if (option.nested && option.parent) {
       // Check if parent is currently a direct join (true)
       // If so, convert it to an object to support nested joins
@@ -3875,6 +3881,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   applyJoinOptions() {
+    // Clean up selectedJoins before applying
+    this.cleanupSelectedJoins();
+    
     // Update column visibility based on join selection
     this.updateColumnVisibilityForJoins();
     
@@ -3919,6 +3928,36 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
           this.selectedJoins = parsed;
+          // Clean up: remove top-level entries for keys that have a parent and move them under parent
+          this.cleanupSelectedJoins();
+          
+          // Ensure all default options with parent are present
+          // If a default option with parent is missing, add it
+          if (this.joinOptions) {
+            for (const option of this.joinOptions) {
+              if (option.default === true && option.parent) {
+                // Check if parent exists
+                const parent = this.selectedJoins[option.parent];
+                if (!parent || typeof parent !== 'object') {
+                  // Parent doesn't exist or is not an object, create it
+                  if (!this.selectedJoins[option.parent]) {
+                    this.selectedJoins[option.parent] = {};
+                  }
+                  if (this.selectedJoins[option.parent] === true) {
+                    this.selectedJoins[option.parent] = {};
+                  }
+                }
+                // Check if the key exists under parent
+                if (typeof this.selectedJoins[option.parent] === 'object') {
+                  const parentObj = this.selectedJoins[option.parent] as { [key: string]: boolean };
+                  if (!parentObj[option.key]) {
+                    parentObj[option.key] = true;
+                  }
+                }
+              }
+            }
+          }
+          
           return; // User has custom settings, use them
         }
       }
@@ -3933,6 +3972,47 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   /**
+   * Clean up selectedJoins by removing top-level entries for keys that have a parent
+   * This ensures that options with a parent property only exist under their parent
+   * If a key with a parent exists at top level, move it under its parent
+   */
+  private cleanupSelectedJoins(): void {
+    if (!this.joinOptions) return;
+    
+    // Find all keys that have a parent and create a map
+    const keysWithParent = new Map<string, string>(); // key -> parent
+    for (const option of this.joinOptions) {
+      if (option.parent) {
+        keysWithParent.set(option.key, option.parent);
+      }
+    }
+    
+    // Process each key that has a parent
+    for (const [key, parent] of keysWithParent.entries()) {
+      if (this.selectedJoins[key] === true) {
+        // Key exists at top level, move it under parent
+        // Remove from top level
+        delete this.selectedJoins[key];
+        
+        // Ensure parent exists as an object
+        if (!this.selectedJoins[parent]) {
+          this.selectedJoins[parent] = {};
+        }
+        
+        // If parent was set as boolean, convert it to object
+        if (this.selectedJoins[parent] === true) {
+          this.selectedJoins[parent] = {};
+        }
+        
+        // Add key under parent
+        if (typeof this.selectedJoins[parent] === 'object') {
+          (this.selectedJoins[parent] as { [key: string]: boolean })[key] = true;
+        }
+      }
+    }
+  }
+
+  /**
    * Load default join options (where default: true)
    */
   private loadDefaultJoinOptions(): void {
@@ -3940,10 +4020,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     const defaultJoins: { [key: string]: boolean | { [key: string]: boolean } } = {};
     
-    // First pass: handle nested options (they need parent to be an object)
+    // First pass: handle options with parent property (they need parent to be an object)
     for (const option of this.joinOptions) {
-      if (option.default === true && option.nested && option.parent) {
-        // Nested option - need to set parent as object first
+      if (option.default === true && option.parent) {
+        // Option with parent - need to set parent as object first
         if (!defaultJoins[option.parent]) {
           defaultJoins[option.parent] = {};
         }
@@ -3957,9 +4037,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
     }
     
-    // Second pass: handle top-level options
+    // Second pass: handle top-level options (without parent)
     for (const option of this.joinOptions) {
-      if (option.default === true && !option.nested) {
+      if (option.default === true && !option.parent) {
         // Top-level option - only set if not already set as object (by nested children)
         if (!defaultJoins[option.key] || defaultJoins[option.key] === true) {
           // If it's already an object (from nested children), keep it as object
@@ -3974,6 +4054,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Only set if we have default joins
     if (Object.keys(defaultJoins).length > 0) {
       this.selectedJoins = defaultJoins;
+      // Clean up to ensure consistency
+      this.cleanupSelectedJoins();
     }
   }
 
@@ -4008,8 +4090,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       if (value === true) {
         activeJoinKeys.add(key);
       } else if (typeof value === 'object') {
-        // Add parent join (but not EmployeeDepartments as it's intermediate)
-        if (key !== 'EmployeeDepartments') {
+        // Check if this key is just an intermediate container (parent for nested joins)
+        // If there's no joinOption with this key, it's just an intermediate container
+        const isIntermediateContainer = !this.joinOptions.find(opt => opt.key === key);
+        
+        // Add parent join (but not intermediate containers like EmployeeDepartments, EmployeeAccessGroups)
+        if (!isIntermediateContainer) {
           activeJoinKeys.add(key);
         }
         // Add nested joins
@@ -4028,16 +4114,17 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         return true;
       }
       
-      // Special handling for Department - check under EmployeeDepartments
-      if (joinTable === 'Department') {
-        const parent = this.selectedJoins['EmployeeDepartments'];
-        if (parent && typeof parent === 'object' && (parent as { [key: string]: boolean })['Department'] === true) {
+      // Check if this joinTable has a parent property
+      const optionWithParent = this.joinOptions.find(opt => opt.key === joinTable && opt.parent);
+      if (optionWithParent && optionWithParent.parent) {
+        const parent = this.selectedJoins[optionWithParent.parent];
+        if (parent && typeof parent === 'object' && (parent as { [key: string]: boolean })[joinTable] === true) {
           return true;
         }
         return false;
       }
       
-      // Check nested joins - find if this joinTable is nested under any parent
+      // Check nested joins - find if this joinTable is nested under any parent (for backward compatibility)
       const nestedOption = this.joinOptions.find(opt => opt.key === joinTable && opt.nested && opt.parent);
       if (nestedOption && nestedOption.parent) {
         const parent = this.selectedJoins[nestedOption.parent];

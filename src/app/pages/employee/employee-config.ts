@@ -10,8 +10,8 @@ const apiUrl = environment.apiUrl;
 export const joinOptions: JoinOption[] = [
   { key: 'Company', label: 'Firma', nested: false, default: true },
   { key: 'Kadro', label: 'Kadro', nested: false, default: true },
-  { key: 'Department', label: 'Departman', nested: false, default: true },
-  { key: 'AccessGroup', label: 'Erişim Grubu', nested: false, default: true },
+  { key: 'Department', label: 'Departman', nested: false, default: true, parent: 'EmployeeDepartments' },
+  { key: 'AccessGroup', label: 'Erişim Grubu', nested: false, default: true, parent: 'EmployeeAccessGroups' },
   { key: 'CustomField', label: 'Özel Alan', nested: false, default: true },
   { key: 'WebClient', label: 'Kişisel Panel Yetkisi', nested: false, default: false },
   { key: 'WebAdmin', label: 'Yönetim Paneli Yetkisi', nested: false, default: false }

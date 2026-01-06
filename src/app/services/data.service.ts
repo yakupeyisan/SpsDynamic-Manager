@@ -386,11 +386,28 @@ export class DataService {
   /**
    * Build join object in the required format
    * Converts flat join structure to nested structure if needed
+   * Removes top-level keys that are also nested under a parent
    */
   private buildJoinObject(join: { [key: string]: boolean | { [key: string]: boolean } }): any {
     const result: any = {};
     
+    // First, collect all nested keys (keys that exist under parent objects)
+    const nestedKeys = new Set<string>();
     for (const [key, value] of Object.entries(join)) {
+      if (typeof value === 'object') {
+        for (const nestedKey of Object.keys(value)) {
+          nestedKeys.add(nestedKey);
+        }
+      }
+    }
+    
+    // Build result, skipping top-level keys that are also nested under a parent
+    for (const [key, value] of Object.entries(join)) {
+      // Skip top-level keys that are also nested under a parent
+      if (value === true && nestedKeys.has(key)) {
+        continue; // This key is nested under a parent, skip the top-level entry
+      }
+      
       if (value === true) {
         result[key] = true;
       } else if (typeof value === 'object') {
