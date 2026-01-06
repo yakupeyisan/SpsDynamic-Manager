@@ -143,10 +143,92 @@ export class WebSocketService {
   }
 
   /**
+   * Wait for WebSocket connection to be established
+   * Returns a promise that resolves when connected or rejects after timeout
+   */
+  private waitForConnection(timeout: number = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // If already connected, resolve immediately
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        resolve();
+        return;
+      }
+
+      let checkInterval: any = null;
+      let timeoutId: any = null;
+      let subscription: any = null;
+
+      const cleanup = () => {
+        if (checkInterval) {
+          clearInterval(checkInterval);
+          checkInterval = null;
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (subscription) {
+          subscription.unsubscribe();
+          subscription = null;
+        }
+      };
+
+      // Subscribe to connection status for more reliable checking
+      subscription = this.connectionStatus.subscribe((isConnected) => {
+        if (isConnected && this.socket && this.socket.readyState === WebSocket.OPEN) {
+          cleanup();
+          resolve();
+        }
+      });
+
+      // Also check readyState periodically as a fallback
+      checkInterval = setInterval(() => {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          cleanup();
+          resolve();
+        } else if (this.socket && this.socket.readyState === WebSocket.CLOSED && !this.isConnecting) {
+          cleanup();
+          reject(new Error('Connection failed'));
+        }
+      }, 100);
+
+      // Set timeout
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Connection timeout'));
+      }, timeout);
+
+      // If not connecting, start connection attempt
+      if (!this.isConnecting && (!this.socket || this.socket.readyState !== WebSocket.CONNECTING)) {
+        this.shouldReconnect = true;
+        this.reconnectAttempts = 0; // Reset attempts for manual reconnect
+        this.connect();
+      }
+    });
+  }
+
+  /**
    * Send message through WebSocket
    * PHP server expects messages in format: { type: 'xxx', data: {...} }
+   * If connection is not available, it will attempt to reconnect first
    */
-  sendMessage(message: any): void {
+  async sendMessage(message: any): Promise<void> {
+    // Check if connection is open
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.log('WebSocket is not connected. Attempting to reconnect...');
+      
+      try {
+        // Wait for connection (with 5 second timeout)
+        await this.waitForConnection(5000);
+        console.log('WebSocket reconnected successfully');
+      } catch (error) {
+        console.error('Failed to reconnect WebSocket:', error);
+        console.warn('Message not sent due to connection failure:', message);
+        return;
+      }
+    }
+
+    // At this point, connection should be open
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       // Prepare message to send
       let messageToSend: any;
@@ -177,7 +259,7 @@ export class WebSocketService {
       
       this.socket.send(JSON.stringify(messageToSend));
     } else {
-      console.warn('WebSocket is not connected. Message not sent:', message);
+      console.warn('WebSocket is still not connected after reconnect attempt. Message not sent:', message);
     }
   }
 

@@ -147,10 +147,17 @@ export const formFields: TableColumn[] = [
         };
       },
       map: (data: any) => {
-        return data.records ? data.records.map((item: any) => ({
-          id: item.TagCode,
-          text: item.TagCode + ' ' + item.CafeteriaGroup.CafeteriaGroupName + ' ' + (item.CardDesc ? ' - ' + item.CardDesc : '')
-        })) : [];
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
+        return data.records.map((item: any) => {
+          const cafeteriaGroupName = item.CafeteriaGroup?.CafeteriaGroupName || '';
+          const cardDesc = item.CardDesc ? ' - ' + item.CardDesc : '';
+          return {
+            id: item.TagCode,
+            text: `${item.TagCode} ${cafeteriaGroupName}${cardDesc}`.trim()
+          };
+        });
       }
     }
   },
