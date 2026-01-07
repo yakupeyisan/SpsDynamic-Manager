@@ -1,9 +1,9 @@
-// CafeteriaGroup table columns configuration
+// CafeteriaPlaces table columns configuration
 import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
 
 export const tableColumns: TableColumn[] = [
   { 
-    field: 'CafeteriaGroupID', 
+    field: 'PlaceID', 
     label: 'ID', 
     text: 'ID',
     type: 'int' as ColumnType, 
@@ -14,9 +14,20 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'CafeteriaGroupName', 
-    label: 'Kafeterya Grup Adı', 
-    text: 'Kafeterya Grup Adı',
+    field: 'PlaceName', 
+    label: 'Bölge Adı', 
+    text: 'Bölge Adı',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '300px', 
+    size: '300px',
+    searchable: 'text',
+    resizable: true
+  },
+  { 
+    field: 'PlaceDescription', 
+    label: 'Bölge Açıklaması', 
+    text: 'Bölge Açıklaması',
     type: 'text' as ColumnType, 
     sortable: true, 
     width: '300px', 

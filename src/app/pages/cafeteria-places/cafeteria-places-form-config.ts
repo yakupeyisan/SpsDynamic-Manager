@@ -1,4 +1,4 @@
-// CafeteriaGroup form configuration
+// CafeteriaPlaces form configuration
 import { environment } from 'src/environments/environment';
 import { TableColumn, ColumnType, FormTab } from 'src/app/components/data-table/data-table.component';
 
@@ -7,10 +7,17 @@ const apiUrl = environment.apiUrl;
 // Custom form fields for add/edit form
 export const formFields: TableColumn[] = [
   { 
-    field: 'CafeteriaGroupName', 
-    label: 'Kafeterya Grup Adı', 
-    text: 'Kafeterya Grup Adı', 
+    field: 'PlaceName', 
+    label: 'Bölge Adı', 
+    text: 'Bölge Adı', 
     type: 'text' as ColumnType,
+    fullWidth: true
+  },
+  { 
+    field: 'PlaceDescription', 
+    label: 'Bölge Açıklaması', 
+    text: 'Bölge Açıklaması', 
+    type: 'textarea' as ColumnType,
     fullWidth: true
   }
 ];
@@ -18,19 +25,19 @@ export const formFields: TableColumn[] = [
 // Form tabs configuration
 export const formTabs: FormTab[] = [
   { 
-    label: 'Kafeterya Grup Bilgileri', 
-    fields: ['ProjectID', 'CafeteriaGroupName'] 
+    label: 'Bölge Bilgileri', 
+    fields: ['PlaceName', 'PlaceDescription'] 
   }
 ];
 
 // Form load URL
-export const formLoadUrl = `${apiUrl}/api/CafeteriaGroups/form`;
+export const formLoadUrl = `${apiUrl}/api/CafeteriaPlaces/form`;
 
 // Form load request builder
 export const formLoadRequest = (recid: any) => ({
   action: 'get',
   recid: recid,
-  name: 'EditCafeteriaGroup'
+  name: 'EditCafeteriaPlace'
 });
 
 // Form data mapper - maps API response to form data

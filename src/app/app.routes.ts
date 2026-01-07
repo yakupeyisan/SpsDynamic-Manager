@@ -220,6 +220,94 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'CafeteriaPlaces',
+        loadComponent: () =>
+          import('./pages/cafeteria-places/cafeteria-places.component').then(
+            (m) => m.CafeteriaPlacesComponent
+          ),
+        data: {
+          title: 'Bölgeler',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaUnitType',
+        loadComponent: () =>
+          import('./pages/cafeteria-unit-type/cafeteria-unit-type.component').then(
+            (m) => m.CafeteriaUnitTypeComponent
+          ),
+        data: {
+          title: 'Birim Tipleri',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaProductType',
+        loadComponent: () =>
+          import('./pages/cafeteria-product-type/cafeteria-product-type.component').then(
+            (m) => m.CafeteriaProductTypeComponent
+          ),
+        data: {
+          title: 'Ürün Tipleri',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaProduct',
+        loadComponent: () =>
+          import('./pages/cafeteria-product/cafeteria-product.component').then(
+            (m) => m.CafeteriaProductComponent
+          ),
+        data: {
+          title: 'Ürünler',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaMenus',
+        loadComponent: () =>
+          import('./pages/cafeteria-menus/cafeteria-menus.component').then(
+            (m) => m.CafeteriaMenusComponent
+          ),
+        data: {
+          title: 'Yemek Menüleri',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaAccounts',
+        loadComponent: () =>
+          import('./pages/cafeteria-accounts/cafeteria-accounts.component').then(
+            (m) => m.CafeteriaAccountsComponent
+          ),
+        data: {
+          title: 'Kafeterya Hesapları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PaymentTypes',
+        loadComponent: () =>
+          import('./pages/payment-types/payment-types.component').then(
+            (m) => m.PaymentTypesComponent
+          ),
+        data: {
+          title: 'Ödeme Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'VisitorEvents',
+        loadComponent: () =>
+          import('./pages/visitor-events/visitor-events.component').then(
+            (m) => m.VisitorEventsComponent
+          ),
+        data: {
+          title: 'Ziyaret Defteri',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {
