@@ -342,6 +342,13 @@ export const formTabs: FormTab[] = [
             text: 'Sıfırla', // Will be translated in component
             tooltip: 'Kartı Sıfırla', // Will be translated in component
             onClick: null as any // Will be set in component
+          },
+          {
+            id: 'kapat-ve-yeni-ekle',
+            type: 'button' as const,
+            text: 'Kartı Kapat ve Yeni Ekle', // Will be translated in component
+            tooltip: 'Kartı Kapat ve Yeni Ekle', // Will be translated in component
+            onClick: null as any // Will be set in component
           }
         ],
         show: {

@@ -5,6 +5,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -39,7 +40,8 @@ import {
   standalone: true,
   imports: [
     MaterialModule, 
-    CommonModule, 
+    CommonModule,
+    FormsModule,
     TablerIconsModule,
     TranslateModule,
     DataTableComponent,
@@ -78,6 +80,12 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   formatStatusMessage: string = '';
   isFormatting: boolean = false;
   selectedReaderForFormat: any = null;
+  
+  // Close and clone modal state
+  showCloseAndCloneModal = false;
+  closeAndCloneCardDesc: string = '';
+  closeAndCloneCardDescError: boolean = false;
+  selectedCardForCloseAndClone: any = null;
   
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
@@ -1230,6 +1238,107 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Handle card close and clone button click
+   */
+  onCardCloseAndClone(event: MouseEvent, item: any) {
+    const selectedCardIds = this.getSelectedCardIds();
+    
+    if (selectedCardIds.length === 0) {
+      this.toastr.warning('Lütfen kapatmak için bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    if (selectedCardIds.length > 1) {
+      this.toastr.warning('Lütfen sadece bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    // Get selected card details
+    const selectedCards = this.getSelectedCardDetails();
+    if (selectedCards.length === 0) {
+      this.toastr.error('Kart bilgisi bulunamadı', 'Hata');
+      return;
+    }
+
+    this.selectedCardForCloseAndClone = selectedCards[0];
+    this.closeAndCloneCardDesc = '';
+    this.showCloseAndCloneModal = true;
+  }
+
+  /**
+   * Close close and clone modal
+   */
+  closeCloseAndCloneModal(): void {
+    this.showCloseAndCloneModal = false;
+    this.closeAndCloneCardDesc = '';
+    this.closeAndCloneCardDescError = false;
+    this.selectedCardForCloseAndClone = null;
+  }
+
+  /**
+   * Submit close and clone operation
+   */
+  submitCloseAndClone(): void {
+    // Reset error
+    this.closeAndCloneCardDescError = false;
+    
+    // Validate required field
+    if (!this.closeAndCloneCardDesc || this.closeAndCloneCardDesc.trim() === '') {
+      this.closeAndCloneCardDescError = true;
+      this.toastr.warning('Eski kartın kapatılma sebebi zorunludur', 'Uyarı');
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (!this.selectedCardForCloseAndClone) {
+      this.toastr.error('Kart bilgisi bulunamadı', 'Hata');
+      return;
+    }
+
+    const cardId = this.selectedCardForCloseAndClone.CardID || this.selectedCardForCloseAndClone.recid;
+    if (!cardId) {
+      this.toastr.error('Kart ID bulunamadı', 'Hata');
+      return;
+    }
+
+    const url = `${environment.apiUrl}/api/Cards/CloseAndClone`;
+    const payload = {
+      CardID: cardId,
+      CardDesc: this.closeAndCloneCardDesc.trim()
+    };
+
+    this.http.post(url, payload).subscribe({
+      next: (response: any) => {
+        // Check if response indicates success
+        const isSuccess = response && (response.error === false || response.error === undefined || response.status === 'success');
+        
+        if (isSuccess) {
+          this.toastr.success('Kart kapatıldı ve yeni kart oluşturuldu', 'Başarılı');
+          this.closeCloseAndCloneModal();
+          
+          // Reload EmployeeCardGrid
+          if (this.dataTableComponent) {
+            const cardGrid = this.dataTableComponent.nestedGrids?.find(
+              (grid: DataTableComponent) => grid.id === 'EmployeeCardGrid'
+            );
+            if (cardGrid) {
+              cardGrid.reload();
+            }
+          }
+        } else {
+          const errorMessage = response?.message || response?.error || 'İşlem başarısız oldu';
+          this.toastr.error(errorMessage, 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error closing and cloning card:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Kart kapatma ve klonlama işlemi başarısız oldu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  /**
    * Reload a nested grid by ID in the main data table
    */
   reloadNestedGrid(gridId: string): void {
@@ -1364,6 +1473,13 @@ export class EmployeeComponent implements OnInit, OnDestroy {
               text: this.translate.instant('card.reset'),
               tooltip: this.translate.instant('card.resetTooltip'),
               onClick: (event: MouseEvent, item: any) => this.onCardReset(event, item)
+            };
+          } else if (item.id === 'kapat-ve-yeni-ekle') {
+            return {
+              ...item,
+              text: 'Kartı Kapat ve Yeni Ekle',
+              tooltip: 'Kartı Kapat ve Yeni Ekle',
+              onClick: (event: MouseEvent, item: any) => this.onCardCloseAndClone(event, item)
             };
           }
           return item;
