@@ -209,6 +209,17 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'CafeteriaApplications',
+        loadComponent: () =>
+          import('./pages/cafeteria-applications/cafeteria-applications.component').then(
+            (m) => m.CafeteriaApplicationsComponent
+          ),
+        data: {
+          title: 'Zaman Dilimleri',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {
