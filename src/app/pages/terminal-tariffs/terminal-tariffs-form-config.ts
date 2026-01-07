@@ -7,13 +7,6 @@ const apiUrl = environment.apiUrl;
 // Custom form fields for add/edit form
 export const formFields: TableColumn[] = [
   { 
-    field: 'ProjectID', 
-    label: 'Proje ID', 
-    text: 'Proje ID', 
-    type: 'text' as ColumnType,
-    fullWidth: false
-  },
-  { 
     field: 'ReaderID', 
     label: 'Terminal', 
     text: 'Terminal', 
@@ -25,8 +18,8 @@ export const formFields: TableColumn[] = [
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
         return data.records.map((item: any) => ({
-          id: item.ReaderID || item.Id || item.TerminalID,
-          text: item.TerminalName || item.Name || `ID: ${item.ReaderID || item.Id || item.TerminalID}`
+          id: item.ReaderID,
+          text: item.ReaderName 
         }));
       }
     }
@@ -54,28 +47,56 @@ export const formFields: TableColumn[] = [
     field: 'App1FirstPassFee', 
     label: 'Uyg.1 İlk Geçiş Ücreti', 
     text: 'Uyg.1 İlk Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App1SecondPassFee', 
     label: 'Uyg.1 İkinci Geçiş Ücreti', 
     text: 'Uyg.1 İkinci Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App1PassLimitBalance', 
     label: 'Uyg.1 Geçiş Limit Bakiye', 
     text: 'Uyg.1 Geçiş Limit Bakiye', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   { 
     field: 'App1PassLimitCredit', 
     label: 'Uyg.1 Geçiş Limit Kredi', 
     text: 'Uyg.1 Geçiş Limit Kredi', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   // Uygulama 2
@@ -83,28 +104,56 @@ export const formFields: TableColumn[] = [
     field: 'App2FirstPassFee', 
     label: 'Uyg.2 İlk Geçiş Ücreti', 
     text: 'Uyg.2 İlk Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App2SecondPassFee', 
     label: 'Uyg.2 İkinci Geçiş Ücreti', 
     text: 'Uyg.2 İkinci Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App2PassLimitBalance', 
     label: 'Uyg.2 Geçiş Limit Bakiye', 
     text: 'Uyg.2 Geçiş Limit Bakiye', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   { 
     field: 'App2PassLimitCredit', 
     label: 'Uyg.2 Geçiş Limit Kredi', 
     text: 'Uyg.2 Geçiş Limit Kredi', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   // Uygulama 3
@@ -112,28 +161,56 @@ export const formFields: TableColumn[] = [
     field: 'App3FirstPassFee', 
     label: 'Uyg.3 İlk Geçiş Ücreti', 
     text: 'Uyg.3 İlk Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App3SecondPassFee', 
     label: 'Uyg.3 İkinci Geçiş Ücreti', 
     text: 'Uyg.3 İkinci Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App3PassLimitBalance', 
     label: 'Uyg.3 Geçiş Limit Bakiye', 
     text: 'Uyg.3 Geçiş Limit Bakiye', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   { 
     field: 'App3PassLimitCredit', 
     label: 'Uyg.3 Geçiş Limit Kredi', 
     text: 'Uyg.3 Geçiş Limit Kredi', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   // Uygulama 4
@@ -141,28 +218,56 @@ export const formFields: TableColumn[] = [
     field: 'App4FirstPassFee', 
     label: 'Uyg.4 İlk Geçiş Ücreti', 
     text: 'Uyg.4 İlk Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App4SecondPassFee', 
     label: 'Uyg.4 İkinci Geçiş Ücreti', 
     text: 'Uyg.4 İkinci Geçiş Ücreti', 
-    type: 'float' as ColumnType,
+    type: 'currency' as ColumnType,
+    currencyPrefix: '',
+    currencySuffix: '₺',
+    currencyPrecision: 2,
     fullWidth: false
   },
   { 
     field: 'App4PassLimitBalance', 
     label: 'Uyg.4 Geçiş Limit Bakiye', 
     text: 'Uyg.4 Geçiş Limit Bakiye', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   },
   { 
     field: 'App4PassLimitCredit', 
     label: 'Uyg.4 Geçiş Limit Kredi', 
     text: 'Uyg.4 Geçiş Limit Kredi', 
-    type: 'float' as ColumnType,
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Limitsiz', value: -1 },
+      { label: 'Kapalı', value: 0 },
+      { label: '1', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4', value: 4 },
+      { label: '5', value: 5 },
+      { label: '6', value: 6 },
+      { label: '7', value: 7 }
+    ],
     fullWidth: false
   }
 ];
@@ -214,6 +319,23 @@ export const formDataMapper = (apiRecord: any) => {
   if (apiRecord.CafeteriaGroup && (apiRecord.CafeteriaGroup.CafeteriaGroupID || apiRecord.CafeteriaGroup.Id)) {
     formData['CafeteriaGroupID'] = apiRecord.CafeteriaGroup.CafeteriaGroupID || apiRecord.CafeteriaGroup.Id;
   }
+  
+  // Divide pass fee values by 100 for display (API stores them multiplied by 100)
+  const passFeeFields = [
+    'App1FirstPassFee', 'App1SecondPassFee',
+    'App2FirstPassFee', 'App2SecondPassFee',
+    'App3FirstPassFee', 'App3SecondPassFee',
+    'App4FirstPassFee', 'App4SecondPassFee'
+  ];
+  
+  passFeeFields.forEach(field => {
+    if (formData[field] != null && formData[field] !== '' && formData[field] !== undefined) {
+      const numValue = typeof formData[field] === 'string' ? parseFloat(formData[field]) : formData[field];
+      if (!isNaN(numValue)) {
+        formData[field] = numValue / 100;
+      }
+    }
+  });
   
   return formData;
 };

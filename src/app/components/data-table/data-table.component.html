@@ -257,8 +257,28 @@
        (paste)="onGridPaste($event)">
     <table class="ui-table" [class.ui-table-striped]="striped" [class.ui-table-hover]="hover" [class.ui-table-fixed-body]="fixedBody && height">
       <thead>
+        <!-- Column Groups Row -->
+        <tr *ngIf="columnGroups && columnGroups.length > 0">
+          <th *ngIf="selectable" class="ui-table-select-header" rowspan="2" style="vertical-align: middle;">
+            <input
+              type="checkbox"
+              [checked]="isAllSelected()"
+              [indeterminate]="isIndeterminate()"
+              (change)="onSelectAll($event)"
+            />
+          </th>
+          <th
+            *ngFor="let group of columnGroups"
+            class="ui-table-group-header"
+            [attr.colspan]="group.span"
+            [class.ui-table-group-main]="group.main"
+            [style]="group.style">
+            {{ group.text }}
+          </th>
+        </tr>
+        <!-- Column Headers Row -->
         <tr>
-          <th *ngIf="selectable" class="ui-table-select-header">
+          <th *ngIf="selectable && (!columnGroups || columnGroups.length === 0)" class="ui-table-select-header">
             <input
               type="checkbox"
               [checked]="isAllSelected()"
@@ -492,18 +512,16 @@
     </ui-form>
     
     <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem;">
-      <button 
-        type="button" 
-        class="ui-toolbar-btn"
+      <ui-button 
+        variant="outline"
         (click)="closeFormModal()">
         {{ translate.instant('form.cancel') }}
-      </button>
-      <button 
-        type="button" 
-        class="ui-toolbar-btn ui-toolbar-btn-primary"
+      </ui-button>
+      <ui-button 
+          variant="secondary"
         (click)="onFormSubmit(formData)">
         {{ isEditMode ? translate.instant('form.update') : translate.instant('form.save') }}
-      </button>
+      </ui-button>
     </div>
     
   </ui-modal>
@@ -791,19 +809,17 @@
       </div>
       
       <div class="ui-form-page-footer">
-        <button 
-          type="button" 
-          class="ui-toolbar-btn"
+        <ui-button 
+          variant="outline"
           (click)="closeFormModal()">
           İptal
-        </button>
-        <button 
-          type="button" 
-          class="ui-toolbar-btn ui-toolbar-btn-primary"
+        </ui-button>
+        <ui-button 
+          variant="secondary"
           (click)="onFormSubmit(formData)"
           [disabled]="isLoading">
           {{ isLoading ? translate.instant('form.saving') : (isEditMode ? translate.instant('form.update') : translate.instant('form.save')) }}
-        </button>
+        </ui-button>
       </div>
     </div>
     </div>

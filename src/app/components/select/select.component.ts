@@ -248,8 +248,9 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
     const dropdown = this.dropdown.nativeElement;
     const rect = container.getBoundingClientRect();
     
-    // Check if inside filter overlay
+    // Check if inside filter overlay or modal
     const isInFilterOverlay = container.closest('.ui-filter-overlay') || container.closest('.ui-filter-panel');
+    const isInModal = container.closest('.ui-modal-dialog') || container.closest('.ui-modal-content') || container.closest('.ui-modal-body');
     
     if (isInFilterOverlay) {
       // Use fixed positioning for filter overlay dropdowns
@@ -258,6 +259,13 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
       this.renderer.setStyle(dropdown, 'left', `${rect.left}px`);
       this.renderer.setStyle(dropdown, 'width', `${rect.width}px`);
       this.renderer.setStyle(dropdown, 'z-index', '1002');
+    } else if (isInModal) {
+      // Use fixed positioning for modal dropdowns
+      this.renderer.setStyle(dropdown, 'position', 'fixed');
+      this.renderer.setStyle(dropdown, 'top', `${rect.bottom + 4}px`);
+      this.renderer.setStyle(dropdown, 'left', `${rect.left}px`);
+      this.renderer.setStyle(dropdown, 'width', `${rect.width}px`);
+      this.renderer.setStyle(dropdown, 'z-index', '1003');
     }
   }
 

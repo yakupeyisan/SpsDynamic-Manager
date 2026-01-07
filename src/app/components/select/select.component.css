@@ -198,6 +198,13 @@
   z-index: 1002 !important;
 }
 
+/* Higher z-index for dropdowns inside modal */
+.ui-modal-body .ui-select-dropdown,
+.ui-modal-content .ui-select-dropdown,
+.ui-modal-dialog .ui-select-dropdown {
+  z-index: 1003 !important;
+}
+
 .ui-select-option {
   padding: var(--ui-spacing-sm) var(--ui-spacing-md);
   cursor: pointer;

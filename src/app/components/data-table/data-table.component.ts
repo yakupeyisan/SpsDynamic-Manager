@@ -17,6 +17,7 @@ import { TabsComponent } from '../tabs/tabs.component';
 import { TabItemComponent } from '../tabs/tab-item.component';
 import { AdvancedFilter, FilterCondition, FilterOperator, FILTER_OPERATORS } from './filter.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ButtonComponent } from '../button/button.component';
 
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 const PLACEHOLDERS = {
@@ -220,7 +221,7 @@ export interface ToolbarConfig {
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent,ButtonComponent],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

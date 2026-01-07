@@ -9,6 +9,12 @@ import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { FormComponent } from 'src/app/components/form/form.component';
+import { FormFieldComponent } from 'src/app/components/form/form-field.component';
+import { SelectComponent, SelectOption } from 'src/app/components/select/select.component';
+import { InputComponent } from 'src/app/components/input/input.component';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 
 // Import configurations
 import { joinOptions } from './terminal-tariffs-config';
@@ -22,8 +28,10 @@ import {
   ToolbarConfig, 
   GridResponse, 
   JoinOption,
-  FormTab
+  FormTab,
+  TableColumnGroup
 } from 'src/app/components/data-table/data-table.component';
+import { ButtonComponent } from 'src/app/components';
 
 @Component({
   selector: 'app-terminal-tariffs',
@@ -33,7 +41,15 @@ import {
     CommonModule, 
     TablerIconsModule,
     TranslateModule,
-    DataTableComponent
+    DataTableComponent,
+    ModalComponent,
+    FormComponent,
+    FormFieldComponent,
+    SelectComponent,
+    InputComponent,
+    FormsModule,
+    ReactiveFormsModule,
+    ButtonComponent
   ],
   templateUrl: './terminal-tariffs.component.html',
   styleUrls: ['./terminal-tariffs.component.scss']
@@ -43,13 +59,46 @@ export class TerminalTariffsComponent implements OnInit {
 
   private isReloading: boolean = false;
 
+  // Modal states
+  showBulkDefinitionModal: boolean = false;
+  showCopySettingsModal: boolean = false;
+
+  // Bulk Definition Form
+  bulkDefinitionForm: FormGroup;
+  
+  // Copy Settings Form
+  copySettingsForm: FormGroup;
+
+  // Dropdown options
+  cafeteriaGroups: SelectOption[] = [];
+  cafeteriaApplications: SelectOption[] = [];
+  dailyLimitOptions: SelectOption[] = [
+    { label: 'Limitsiz', value: -1 },
+    { label: 'Kapalı', value: 0 },
+    { label: '1', value: 1 },
+    { label: '2', value: 2 },
+    { label: '3', value: 3 },
+    { label: '4', value: 4 },
+    { label: '5', value: 5 },
+    { label: '6', value: 6 },
+    { label: '7', value: 7 }
+  ];
+  terminals: SelectOption[] = [];
+
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
+  columnGroups: TableColumnGroup[] = [
+    { span: 4, text: 'Genel', main: true },
+    { span: 4, text: 'Öğün 1' },
+    { span: 4, text: 'Öğün 2' },
+    { span: 4, text: 'Öğün 3' },
+    { span: 4, text: 'Öğün 4' }
+  ];
   joinOptions: JoinOption[] = joinOptions;
   
   // Form configuration
   formFields: TableColumn[] = formFields;
-  formTabs: FormTab[] = formTabs;
+  formTabs: FormTab[] = [];
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
@@ -86,14 +135,31 @@ export class TerminalTariffsComponent implements OnInit {
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          id: 'bulk-define',
+          type: 'button',
+          text: 'Toplu tanımla',
+          icon: 'plus',
+          tooltip: 'Toplu Kafeterya Tanımlama',
+          onClick: (event) => this.openBulkDefinitionModal()
+        },
+        {
+          id: 'copy-settings',
+          type: 'button',
+          text: 'Ayar kopyalama',
+          icon: 'copy',
+          tooltip: 'Terminal Tarifesi Kopyala',
+          onClick: (event) => this.openCopySettingsModal()
+        }
+      ],
       show: {
         reload: true,
         columns: true,
         search: true,
-        add: true,
+        add: false,
         edit: true,
-        delete: true,
+        delete: false,
         save: false
       }
     };
@@ -104,6 +170,23 @@ export class TerminalTariffsComponent implements OnInit {
     const url = `${environment.apiUrl}/api/TerminalTariffs/form`;
     const recid = data.TariffID || data.recid || null;
     const { TariffID, recid: _, ...record } = data;
+    
+    // Multiply pass fee values by 100 before sending to API (API expects values multiplied by 100)
+    const passFeeFields = [
+      'App1FirstPassFee', 'App1SecondPassFee',
+      'App2FirstPassFee', 'App2SecondPassFee',
+      'App3FirstPassFee', 'App3SecondPassFee',
+      'App4FirstPassFee', 'App4SecondPassFee'
+    ];
+    
+    passFeeFields.forEach(field => {
+      if (record[field] != null && record[field] !== '' && record[field] !== undefined) {
+        const numValue = typeof record[field] === 'string' ? parseFloat(record[field]) : record[field];
+        if (!isNaN(numValue)) {
+          record[field] = Math.round(numValue * 100);
+        }
+      }
+    });
     
     return this.http.post(url, {
       request: {
@@ -138,11 +221,118 @@ export class TerminalTariffsComponent implements OnInit {
     private http: HttpClient,
     private toastr: ToastrService,
     public translate: TranslateService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder
+  ) {
+    // Initialize forms
+    this.bulkDefinitionForm = this.fb.group({
+      CafeteriaGroupID: ['', Validators.required],
+      TimeZoneID: ['', Validators.required],
+      FirstPassFee: [''],
+      SecondPassFee: [''],
+      DailyLimitCredit: [''],
+      DailyLimitBalance: ['']
+    });
+
+    this.copySettingsForm = this.fb.group({
+      SourceReaderID: ['', Validators.required],
+      TargetReaderID: ['', Validators.required]
+    });
+  }
 
   ngOnInit(): void {
-    // Component initialization
+    // Load CafeteriaApplications to update column group labels
+    this.loadCafeteriaApplications();
+    // Load dropdown options
+    this.loadCafeteriaGroups();
+    this.loadTerminals();
+  }
+
+  private loadCafeteriaApplications(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaApplications`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: GridResponse) => {
+        const records = response.records || [];
+        this.cafeteriaApplications = records.map((item: any) => ({
+          label: item.ApplicationName,
+          value: item.CafeteriaApplicationID 
+        }));
+        // Create a map of application IDs to names
+        const applicationMap: { [key: number]: string } = {};
+        records.forEach((app: any) => {
+          const id = app.CafeteriaApplicationID;
+          const name = app.ApplicationName;
+          if (id && name) {
+            applicationMap[id] = name;
+          }
+        });
+
+        // Update column groups with application names
+        this.columnGroups = [
+          { span: 4, text: 'Genel', main: true },
+          { span: 4, text: applicationMap[1] || 'Öğün 1' },
+          { span: 4, text: applicationMap[2] || 'Öğün 2' },
+          { span: 4, text: applicationMap[3] || 'Öğün 3' },
+          { span: 4, text: applicationMap[4] || 'Öğün 4' }
+        ];
+
+        // Update form tabs with application names
+        this.formTabs = [
+          { 
+            label: 'Genel Bilgiler', 
+            fields: ['ProjectID', 'ReaderID', 'CafeteriaGroupID'] 
+          },
+          { 
+            label: applicationMap[1] || 'Uygulama 1', 
+            fields: ['App1FirstPassFee', 'App1SecondPassFee', 'App1PassLimitBalance', 'App1PassLimitCredit'] 
+          },
+          { 
+            label: applicationMap[2] || 'Uygulama 2', 
+            fields: ['App2FirstPassFee', 'App2SecondPassFee', 'App2PassLimitBalance', 'App2PassLimitCredit'] 
+          },
+          { 
+            label: applicationMap[3] || 'Uygulama 3', 
+            fields: ['App3FirstPassFee', 'App3SecondPassFee', 'App3PassLimitBalance', 'App3PassLimitCredit'] 
+          },
+          { 
+            label: applicationMap[4] || 'Uygulama 4', 
+            fields: ['App4FirstPassFee', 'App4SecondPassFee', 'App4PassLimitBalance', 'App4PassLimitCredit'] 
+          }
+        ];
+
+        this.cdr.detectChanges();
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error loading cafeteria applications:', error);
+        // Keep default column groups and form tabs on error
+        this.formTabs = [
+          { 
+            label: 'Genel Bilgiler', 
+            fields: ['ProjectID', 'ReaderID', 'CafeteriaGroupID'] 
+          },
+          { 
+            label: 'Uygulama 1', 
+            fields: ['App1FirstPassFee', 'App1SecondPassFee', 'App1PassLimitBalance', 'App1PassLimitCredit'] 
+          },
+          { 
+            label: 'Uygulama 2', 
+            fields: ['App2FirstPassFee', 'App2SecondPassFee', 'App2PassLimitBalance', 'App2PassLimitCredit'] 
+          },
+          { 
+            label: 'Uygulama 3', 
+            fields: ['App3FirstPassFee', 'App3SecondPassFee', 'App3PassLimitBalance', 'App3PassLimitCredit'] 
+          },
+          { 
+            label: 'Uygulama 4', 
+            fields: ['App4FirstPassFee', 'App4SecondPassFee', 'App4PassLimitBalance', 'App4PassLimitCredit'] 
+          }
+        ];
+        return of(null);
+      })
+    ).subscribe();
   }
 
   // Event handlers
@@ -239,5 +429,130 @@ export class TerminalTariffsComponent implements OnInit {
 
   onAdvancedFilterChange(event: any): void {
     // Handle advanced filter change
+  }
+
+  // Modal handlers
+  openBulkDefinitionModal(): void {
+    this.bulkDefinitionForm.reset();
+    this.showBulkDefinitionModal = true;
+  }
+
+  closeBulkDefinitionModal(): void {
+    this.showBulkDefinitionModal = false;
+    this.bulkDefinitionForm.reset();
+  }
+
+  openCopySettingsModal(): void {
+    this.copySettingsForm.reset();
+    this.showCopySettingsModal = true;
+  }
+
+  closeCopySettingsModal(): void {
+    this.showCopySettingsModal = false;
+    this.copySettingsForm.reset();
+  }
+
+  // Load dropdown options
+  private loadCafeteriaGroups(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaGroups`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: GridResponse) => {
+        this.cafeteriaGroups = (response.records || []).map((item: any) => ({
+          label: item.CafeteriaGroupName || item.Name || '',
+          value: item.CafeteriaGroupID || item.Id || item.id
+        }));
+        this.cdr.detectChanges();
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error loading cafeteria groups:', error);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  private loadTerminals(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: GridResponse) => {
+        this.terminals = (response.records || []).map((item: any) => ({
+          label: item.ReaderName || item.TerminalName || item.Name || '',
+          value: item.ReaderID || item.TerminalID || item.Id || item.id
+        }));
+        this.cdr.detectChanges();
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error loading terminals:', error);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  // Form submit handlers
+  onBulkDefinitionSubmit(): void {
+    if (this.bulkDefinitionForm.valid) {
+      const formData = this.bulkDefinitionForm.value;
+      // TODO: Implement bulk definition API call
+      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/bulk`, {
+        request: {
+          action: 'bulk',
+          record: formData
+        }
+      }).subscribe({
+        next: (response: any) => {
+          if (response.error === false || response.status === 'success') {
+            this.toastr.success('Toplu tanımlama başarılı', 'Başarılı');
+            this.closeBulkDefinitionModal();
+            if (this.dataTableComponent) {
+              this.dataTableComponent.reload();
+            }
+          } else {
+            this.toastr.error(response.message || 'Toplu tanımlama başarısız', 'Hata');
+          }
+        },
+        error: (error) => {
+          console.error('Bulk definition error:', error);
+          this.toastr.error('Toplu tanımlama başarısız', 'Hata');
+        }
+      });
+    } else {
+      this.toastr.warning('Lütfen tüm zorunlu alanları doldurun', 'Uyarı');
+    }
+  }
+
+  onCopySettingsSubmit(): void {
+    if (this.copySettingsForm.valid) {
+      const formData = this.copySettingsForm.value;
+      // TODO: Implement copy settings API call
+      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/copy`, {
+        request: {
+          action: 'copy',
+          record: formData
+        }
+      }).subscribe({
+        next: (response: any) => {
+          if (response.error === false || response.status === 'success') {
+            this.toastr.success('Ayar kopyalama başarılı', 'Başarılı');
+            this.closeCopySettingsModal();
+            if (this.dataTableComponent) {
+              this.dataTableComponent.reload();
+            }
+          } else {
+            this.toastr.error(response.message || 'Ayar kopyalama başarısız', 'Hata');
+          }
+        },
+        error: (error) => {
+          console.error('Copy settings error:', error);
+          this.toastr.error('Ayar kopyalama başarısız', 'Hata');
+        }
+      });
+    } else {
+      this.toastr.warning('Lütfen tüm zorunlu alanları doldurun', 'Uyarı');
+    }
   }
 }

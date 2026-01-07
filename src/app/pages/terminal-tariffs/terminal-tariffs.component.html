@@ -9,6 +9,7 @@
           [showFooter]="true"
           [page]="1"
           [columns]="tableColumns"
+          [columnGroups]="columnGroups"
           [dataSource]="tableDataSource"
           [joinOptions]="joinOptions"
           [canViewDeleted]="true"
@@ -55,4 +56,131 @@
       </div>
     </div>
   </div>
+
+  <!-- Toplu Kafeterya Tanımlama Modal -->
+  <ui-modal
+    [title]="'Toplu Kafeterya Tanımlama'"
+    [show]="showBulkDefinitionModal"
+    [size]="'md'"
+    [closable]="true"
+    [showFooter]="true"
+    (showChange)="showBulkDefinitionModal = $event"
+    (closed)="closeBulkDefinitionModal()"
+    (confirm)="onBulkDefinitionSubmit()"
+    (cancel)="closeBulkDefinitionModal()">
+    <ui-form [formGroup]="bulkDefinitionForm" [showJsonOutput]="false">
+      <ui-form-field>
+        <label>Kafeterya Grup</label>
+        <ui-select
+          [options]="cafeteriaGroups"
+          [placeholder]="'Kafeterya Grup seçin'"
+          formControlName="CafeteriaGroupID">
+        </ui-select>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>Kafeterya Öğünü</label>
+        <ui-select
+          [options]="cafeteriaApplications"
+          [placeholder]="'Kafeterya Öğünü seçin'"
+          formControlName="CafeteriaApplicationID">
+        </ui-select>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>1. Geçiş</label>
+        <ui-input
+          type="number"
+          [placeholder]="'1. Geçiş ücreti'"
+          formControlName="FirstPassFee">
+        </ui-input>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>2. Geçiş</label>
+        <ui-input
+          type="number"
+          [placeholder]="'2. Geçiş ücreti'"
+          formControlName="SecondPassFee">
+        </ui-input>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>Günlük Limit (Kredi)</label>
+        <ui-select
+          [options]="dailyLimitOptions"
+          [placeholder]="'Günlük Limit (Kredi) seçin'"
+          formControlName="DailyLimitCredit">
+        </ui-select>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>Günlük Limit (Abone)</label>
+        <ui-select
+          [options]="dailyLimitOptions"
+          [placeholder]="'Günlük Limit (Abone) seçin'"
+          formControlName="DailyLimitBalance">
+        </ui-select>
+      </ui-form-field>
+    </ui-form>
+    
+    <div slot="footer" class="modal-footer-buttons">
+      <ui-button 
+        variant="outline"
+        (click)="closeBulkDefinitionModal()">
+        {{ translate.instant('form.cancel') }}
+      </ui-button>
+      <ui-button 
+        variant="secondary"
+        (click)="onBulkDefinitionSubmit()">
+        {{ translate.instant('form.save') }}
+      </ui-button>
+    </div>
+
+  </ui-modal>
+
+  <!-- Terminal Tarifesi Kopyala Modal -->
+  <ui-modal
+    [title]="'Terminal Tarifesi Kopyala'"
+    [show]="showCopySettingsModal"
+    [size]="'md'"
+    [closable]="true"
+    [showFooter]="true"
+    (showChange)="showCopySettingsModal = $event"
+    (closed)="closeCopySettingsModal()"
+    (confirm)="onCopySettingsSubmit()"
+    (cancel)="closeCopySettingsModal()">
+    <ui-form [formGroup]="copySettingsForm" [showJsonOutput]="false">
+      <ui-form-field>
+        <label>Kaynak Okuyucu</label>
+        <ui-select
+          [options]="terminals"
+          [placeholder]="'Kaynak Okuyucu seçin'"
+          formControlName="SourceReaderID">
+        </ui-select>
+      </ui-form-field>
+
+      <ui-form-field>
+        <label>Hedef Okuyucu</label>
+        <ui-select
+          [options]="terminals"
+          [placeholder]="'Hedef Okuyucu seçin'"
+          formControlName="TargetReaderID">
+        </ui-select>
+      </ui-form-field>
+    </ui-form>
+
+    <div slot="footer" class="modal-footer-buttons">
+      <ui-button 
+        variant="outline"
+        (click)="closeCopySettingsModal()">
+        {{ translate.instant('form.cancel') }}
+      </ui-button>
+      <ui-button 
+        variant="secondary"
+        (click)="onCopySettingsSubmit()">
+        {{ translate.instant('form.save') }}
+      </ui-button>
+    </div>
+  </ui-modal>
 </div>

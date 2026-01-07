@@ -6,4 +6,14 @@
     width: 100%;
     max-width: 100%;
   }
+
+  // Modal Footer Buttons
+  ::ng-deep .ui-modal-footer {
+    .modal-footer-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      width: 100%;
+    } 
+  }
 }

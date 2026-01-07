@@ -661,6 +661,28 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.ui-table-group-header {
+  padding: var(--ui-spacing-sm) var(--ui-spacing-md);
+  text-align: center;
+  font-weight: var(--ui-font-weight-semibold);
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-gray-800);
+  border-bottom: 2px solid var(--ui-border-color);
+  border-right: 1px solid var(--ui-border-color);
+  white-space: nowrap;
+  background-color: var(--ui-gray-100);
+  position: relative;
+}
+
+.ui-table-group-header:last-child {
+  border-right: none;
+}
+
+.ui-table-group-main {
+  background-color: var(--ui-gray-200);
+  font-weight: var(--ui-font-weight-bold);
+}
+
 .ui-table-header {
   padding: var(--ui-spacing-sm) var(--ui-spacing-md);
   text-align: left;
@@ -856,6 +878,7 @@
 .ui-table-select-header {
   background-color: var(--ui-gray-50);
   z-index: 21; /* Higher than thead z-index (20) to stay on top */
+  vertical-align: middle;
 }
 
 /* Ensure frozen column stays on top during scroll */
