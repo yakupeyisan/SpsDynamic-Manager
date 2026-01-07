@@ -1,3 +1,4 @@
+@if(item.visible !== false) {
 @if(item.navCap){ @if(item.divider){ <span class="sidebar-divider"></span>}
 <div mat-subheader class="nav-caption">
   <i class="iconify icon-18 caption-icon" data-icon="solar:menu-dots-linear"></i>
@@ -53,6 +54,9 @@
 
 <!-- children -->
 @if(expanded) { @for(child of item.children; track child) {
+@if(child.visible !== false) {
 <app-nav-item [item]="child" (click)="onSubItemSelected(child)" [depth]="depth + 1">
 </app-nav-item>
+}
 } }
+}

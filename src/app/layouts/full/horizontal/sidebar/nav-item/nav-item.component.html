@@ -1,3 +1,4 @@
+@if(item.visible !== false) {
 @if(!item.navCap) {
   <a
     class="cursor-pointer menuLink"
@@ -29,9 +30,12 @@
   } @if(item.children){
   <div class="childBox">
     @for(child of item.children; track child) {
+    @if(child.visible !== false) {
     <app-horizontal-nav-item [item]="child" class="ddmenu">
     </app-horizontal-nav-item>
     }
+    }
   </div>
   }
+}
   

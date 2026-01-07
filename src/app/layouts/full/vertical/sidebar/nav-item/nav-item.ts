@@ -15,5 +15,6 @@ export interface NavItem {
     ddType?: string;
     id?: number;
     subItemIcon?: boolean;
+    visible?: boolean;
   }
   

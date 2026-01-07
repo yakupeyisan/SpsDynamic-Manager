@@ -366,10 +366,6 @@ export const navItems: NavItem[] = [
         route: '/PayStations',
       },
       {
-        displayName: 'Hes Ayarları',
-        route: '/Hes',
-      },
-      {
         displayName: 'Rosslare Senkronizasyon',
         disabled: true,
       },
@@ -390,6 +386,7 @@ export const navItems: NavItem[] = [
   {
     displayName: 'Yönetim',
     iconName: 'mdi:view-dashboard',
+    visible: false,
     children: [
       {
         displayName: 'Menus',

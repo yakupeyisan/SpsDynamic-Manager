@@ -7,6 +7,7 @@ import { AppSettings } from 'src/app/config';
 import { filter } from 'rxjs/operators';
 import { NavigationEnd, Router } from '@angular/router';
 import { navItems } from './vertical/sidebar/sidebar-data';
+import { NavItem } from './vertical/sidebar/nav-item/nav-item';
 import { NavService } from '../../services/nav.service';
 import { AppNavItemComponent } from './vertical/sidebar/nav-item/nav-item.component';
 import { RouterModule } from '@angular/router';
@@ -68,7 +69,17 @@ interface quicklinks {
   encapsulation: ViewEncapsulation.None,
 })
 export class FullComponent implements OnInit {
-  navItems = navItems;
+  navItems = this.filterVisibleItems(navItems);
+  
+  private filterVisibleItems(items: NavItem[]): NavItem[] {
+    return items.filter(item => {
+      if (item.visible === false) return false;
+      if (item.children) {
+        item.children = this.filterVisibleItems(item.children);
+      }
+      return true;
+    });
+  }
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;

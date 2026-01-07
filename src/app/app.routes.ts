@@ -308,6 +308,105 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: 'Authorizations',
+        loadComponent: () =>
+          import('./pages/authorizations/authorizations.component').then(
+            (m) => m.AuthorizationsComponent
+          ),
+        data: {
+          title: 'Yetkiler',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'OperationClaims',
+        loadComponent: () =>
+          import('./pages/operation-claims/operation-claims.component').then(
+            (m) => m.OperationClaimsComponent
+          ),
+        data: {
+          title: 'İstek Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'LiveViewSettings',
+        loadComponent: () =>
+          import('./pages/live-view-settings/live-view-settings.component').then(
+            (m) => m.LiveViewSettingsComponent
+          ),
+        data: {
+          title: 'Canlı İzleme Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'SmsSettings',
+        loadComponent: () =>
+          import('./pages/sms-settings/sms-settings.component').then(
+            (m) => m.SmsSettingsComponent
+          ),
+        data: {
+          title: 'Sms Ayarları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'MailSettings',
+        loadComponent: () =>
+          import('./pages/mail-settings/mail-settings.component').then(
+            (m) => m.MailSettingsComponent
+          ),
+        data: {
+          title: 'Mail Ayarları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'Terminals',
+        loadComponent: () =>
+          import('./pages/terminals/terminals.component').then(
+            (m) => m.TerminalsComponent
+          ),
+        data: {
+          title: 'Terminaller',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PayStations',
+        loadComponent: () =>
+          import('./pages/pay-stations/pay-stations.component').then(
+            (m) => m.PayStationsComponent
+          ),
+        data: {
+          title: 'Otomat Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'HesSettings',
+        loadComponent: () =>
+          import('./pages/hes-settings/hes-settings.component').then(
+            (m) => m.HesSettingsComponent
+          ),
+        data: {
+          title: 'Hes Kontrol Ayarı',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PosDevices',
+        loadComponent: () =>
+          import('./pages/pos-devices/pos-devices.component').then(
+            (m) => m.PosDevicesComponent
+          ),
+        data: {
+          title: 'Pos Teminalleri',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {
