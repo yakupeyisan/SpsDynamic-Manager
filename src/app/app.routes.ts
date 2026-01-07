@@ -117,6 +117,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AccessZones',
+        loadComponent: () =>
+          import('./pages/access-zones/access-zones.component').then(
+            (m) => m.AccessZonesComponent
+          ),
+        data: {
+          title: 'Bölge Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'CardTemplates',
         children: [
           {
@@ -153,6 +164,50 @@ export const routes: Routes = [
             },
           },
         ],
+      },
+      {
+        path: 'CardWriteList',
+        loadComponent: () =>
+          import('./pages/card-write-list/card-write-list.component').then(
+            (m) => m.CardWriteListComponent
+          ),
+        data: {
+          title: 'Kart Baskı Listesi',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'SubscriptionPackages',
+        loadComponent: () =>
+          import('./pages/subscription-packages/subscription-packages.component').then(
+            (m) => m.SubscriptionPackagesComponent
+          ),
+        data: {
+          title: 'Paket Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaGroup',
+        loadComponent: () =>
+          import('./pages/cafeteria-group/cafeteria-group.component').then(
+            (m) => m.CafeteriaGroupComponent
+          ),
+        data: {
+          title: 'Kafeterya Grupları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'TerminalTariffs',
+        loadComponent: () =>
+          import('./pages/terminal-tariffs/terminal-tariffs.component').then(
+            (m) => m.TerminalTariffsComponent
+          ),
+        data: {
+          title: 'Kafeterya Geçiş Tarifeleri',
+          breadcrumb: false,
+        },
       },
     ],
   },
