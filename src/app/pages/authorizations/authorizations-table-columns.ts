@@ -33,17 +33,14 @@ export const tableColumns: TableColumn[] = [
     width: '200px', 
     size: '200px',
     searchable: 'text',
-    resizable: true
-  },
-  { 
-    field: 'Claims', 
-    label: 'İstekler', 
-    text: 'İstekler',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '300px', 
-    size: '300px',
-    searchable: 'text',
-    resizable: true
+    resizable: true,
+    render: (record: any) => {
+      if (record.AuthorizationGroup === '0' || record.AuthorizationGroup === 0) {
+        return 'Kişisel Sayfa';
+      } else if (record.AuthorizationGroup === '1' || record.AuthorizationGroup === 1) {
+        return 'Yönetim Sayfası';
+      }
+      return record.AuthorizationGroup || '';
+    }
   }
 ];

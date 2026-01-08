@@ -17,15 +17,12 @@ export const formFields: TableColumn[] = [
     field: 'AuthorizationGroup', 
     label: 'Yetki Grubu', 
     text: 'Yetki Grubu', 
-    type: 'text' as ColumnType,
-    fullWidth: true
-  },
-  { 
-    field: 'Claims', 
-    label: 'İstekler', 
-    text: 'İstekler', 
-    type: 'textarea' as ColumnType,
-    fullWidth: true
+    type: 'list' as ColumnType,
+    options: [
+      { label: 'Kişisel Sayfa', value: '0' },
+      { label: 'Yönetim Sayfası', value: '1' }
+    ],
+    fullWidth: false
   }
 ];
 
@@ -33,7 +30,7 @@ export const formFields: TableColumn[] = [
 export const formTabs: FormTab[] = [
   { 
     label: 'Yetki Bilgileri', 
-    fields: ['Name', 'AuthorizationGroup', 'Claims'] 
+    fields: ['Name', 'AuthorizationGroup'] 
   }
 ];
 

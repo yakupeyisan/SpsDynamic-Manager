@@ -104,8 +104,13 @@
                 [title]="item.tooltip || ''"
                 (click)="toggleToolbarMenu(item.id, $event)"
                 type="button">
+                <!-- Settings Icon -->
+                <svg *ngIf="item.icon === 'settings' || item.icon === 'gear'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 4px;">
+                  <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <path d="M12.5 8.5l-1.05.7a2.5 2.5 0 01-.3.2l-.2 1.1.2 1.1a2.5 2.5 0 01.3.2l1.05.7.7-1.05a2.5 2.5 0 01.2-.3l1.1-.2-1.1-.2a2.5 2.5 0 01-.2-.3l-.7-1.05zM3.5 7.5l1.05-.7a2.5 2.5 0 01.3-.2l.2-1.1-.2-1.1a2.5 2.5 0 01-.3-.2L3.5 3.5l-.7 1.05a2.5 2.5 0 01-.2.3l-1.1.2 1.1.2a2.5 2.5 0 01.2.3l.7 1.05zM8 2.5l.5 1.1a2.5 2.5 0 01.2.3l1.1.2-1.1.2a2.5 2.5 0 01-.2.3L8 6.5l-.5-1.1a2.5 2.5 0 01-.2-.3L6.2 4.9l1.1-.2a2.5 2.5 0 01.2-.3L8 2.5zM8 9.5l.5 1.1a2.5 2.5 0 01.2.3l1.1.2-1.1.2a2.5 2.5 0 01-.2.3L8 13.5l-.5-1.1a2.5 2.5 0 01-.2-.3l-1.1-.2 1.1-.2a2.5 2.5 0 01.2-.3L8 9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
                 <span *ngIf="item.text">{{ item.text }}</span>
-                <svg *ngIf="!item.text && item.icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg *ngIf="!item.text && item.icon && item.icon !== 'settings' && item.icon !== 'gear'" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <svg *ngIf="item.text" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;">
