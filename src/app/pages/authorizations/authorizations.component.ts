@@ -42,6 +42,7 @@ export class AuthorizationsComponent implements OnInit {
   showDepartmentPermissionsModal: boolean = false;
   showCardPermissionsModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
+  gridHeight: string = '500px';
   selectedUnselectedClaims: any[] = [];
   selectedSelectedClaims: any[] = [];
   selectedUnselectedCompanies: any[] = [];
