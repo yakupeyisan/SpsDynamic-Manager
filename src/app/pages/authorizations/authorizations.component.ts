@@ -32,12 +32,15 @@ export class AuthorizationsComponent implements OnInit {
   @ViewChild('unselectedStaffsTable') unselectedStaffsTable?: DataTableComponent;
   @ViewChild('selectedDepartmentsTable') selectedDepartmentsTable?: DataTableComponent;
   @ViewChild('unselectedDepartmentsTable') unselectedDepartmentsTable?: DataTableComponent;
+  @ViewChild('selectedCardsTable') selectedCardsTable?: DataTableComponent;
+  @ViewChild('unselectedCardsTable') unselectedCardsTable?: DataTableComponent;
   private isReloading: boolean = false;
   selectedAuthorization: any = null;
   showPermissionsModal: boolean = false;
   showCompanyPermissionsModal: boolean = false;
   showStaffPermissionsModal: boolean = false;
   showDepartmentPermissionsModal: boolean = false;
+  showCardPermissionsModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
   selectedUnselectedClaims: any[] = [];
   selectedSelectedClaims: any[] = [];
@@ -47,6 +50,8 @@ export class AuthorizationsComponent implements OnInit {
   selectedSelectedStaffs: any[] = [];
   selectedUnselectedDepartments: any[] = [];
   selectedSelectedDepartments: any[] = [];
+  selectedUnselectedCards: any[] = [];
+  selectedSelectedCards: any[] = [];
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
@@ -203,6 +208,18 @@ export class AuthorizationsComponent implements OnInit {
           this.unselectedDepartmentsTable.reload();
         }
       }, 100);
+    } else if (settingsType === 'card-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showCardPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedCardsTable) {
+          this.selectedCardsTable.reload();
+        }
+        if (this.unselectedCardsTable) {
+          this.unselectedCardsTable.reload();
+        }
+      }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
@@ -235,6 +252,13 @@ export class AuthorizationsComponent implements OnInit {
     this.authorizationIdForPermissions = null;
     this.selectedUnselectedDepartments = [];
     this.selectedSelectedDepartments = [];
+  }
+
+  closeCardPermissionsModal(): void {
+    this.showCardPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedCards = [];
+    this.selectedSelectedCards = [];
   }
 
   // Data source for selected claims
@@ -961,6 +985,237 @@ export class AuthorizationsComponent implements OnInit {
       sortable: true, 
       width: '300px', 
       size: '300px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
+  // Data source for selected cards
+  selectedCardsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected cards:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected cards
+  unselectedCardsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected cards:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected cards from unselected to selected
+  transferCardsToSelected(): void {
+    if (!this.unselectedCardsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedCards || this.selectedUnselectedCards.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak kart seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedCards.map((row: any) => {
+      const id = row.CardID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli kart seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Cards/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Kartlar başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedCards = [];
+          // Reload both tables
+          if (this.selectedCardsTable) {
+            this.selectedCardsTable.reload();
+          }
+          if (this.unselectedCardsTable) {
+            this.unselectedCardsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Kartlar eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding cards:', error);
+        const errorMessage = error.error?.message || error.message || 'Kartlar eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected cards from selected to unselected
+  transferCardsToUnselected(): void {
+    if (!this.selectedCardsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedCards || this.selectedSelectedCards.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak kart seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedCards.map((row: any) => {
+      const id = row.CardID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli kart seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Cards/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Kartlar başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedCards = [];
+          // Reload both tables
+          if (this.selectedCardsTable) {
+            this.selectedCardsTable.reload();
+          }
+          if (this.unselectedCardsTable) {
+            this.unselectedCardsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Kartlar kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing cards:', error);
+        const errorMessage = error.error?.message || error.message || 'Kartlar kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Table columns for cards
+  cardsTableColumns: TableColumn[] = [
+    { 
+      field: 'CardID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'CardCode', 
+      label: 'Kart Kodu', 
+      text: 'Kart Kodu',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'CardCodeType', 
+      label: 'Kart Kodu Tipi', 
+      text: 'Kart Kodu Tipi',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'CardDesc', 
+      label: 'Açıklama', 
+      text: 'Açıklama',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '200px', 
+      size: '200px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'CardUID', 
+      label: 'UID', 
+      text: 'UID',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'TagCode', 
+      label: 'Tag Kodu', 
+      text: 'Tag Kodu',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'Status', 
+      label: 'Durum', 
+      text: 'Durum',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '100px', 
+      size: '100px',
       searchable: 'text',
       resizable: true
     }

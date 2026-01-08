@@ -386,3 +386,86 @@
     </div>
   </div>
 </ui-modal>
+
+<!-- Card Permissions Selection Modal -->
+<ui-modal
+  [title]="'Kart Yetkileri'"
+  [show]="showCardPermissionsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showCardPermissionsModal = $event"
+  (closed)="closeCardPermissionsModal()">
+  
+  <div class="permissions-transfer-container">
+    <!-- Left Panel: Unselected Cards -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Kartlar</h4>
+        <button class="transfer-btn" (click)="transferCardsToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedCardsTable
+          [id]="'unselected-cards-grid'"
+          [columns]="cardsTableColumns"
+          [dataSource]="unselectedCardsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="'500px'"
+          [recid]="'CardID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedCards = $event">
+        </ui-data-table>
+      </div>
+    </div>
+
+    <!-- Right Panel: Selected Cards -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Kartlar</h4>
+        <button class="transfer-btn" (click)="transferCardsToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedCardsTable
+          [id]="'selected-cards-grid'"
+          [columns]="cardsTableColumns"
+          [dataSource]="selectedCardsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="'500px'"
+          [recid]="'CardID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedCards = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>
