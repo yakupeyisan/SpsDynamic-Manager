@@ -26,12 +26,17 @@ export class AuthorizationsComponent implements OnInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
   @ViewChild('selectedClaimsTable') selectedClaimsTable?: DataTableComponent;
   @ViewChild('unselectedClaimsTable') unselectedClaimsTable?: DataTableComponent;
+  @ViewChild('selectedCompaniesTable') selectedCompaniesTable?: DataTableComponent;
+  @ViewChild('unselectedCompaniesTable') unselectedCompaniesTable?: DataTableComponent;
   private isReloading: boolean = false;
   selectedAuthorization: any = null;
   showPermissionsModal: boolean = false;
+  showCompanyPermissionsModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
   selectedUnselectedClaims: any[] = [];
   selectedSelectedClaims: any[] = [];
+  selectedUnselectedCompanies: any[] = [];
+  selectedSelectedCompanies: any[] = [];
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
@@ -152,6 +157,18 @@ export class AuthorizationsComponent implements OnInit {
           this.unselectedClaimsTable.reload();
         }
       }, 100);
+    } else if (settingsType === 'company-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showCompanyPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedCompaniesTable) {
+          this.selectedCompaniesTable.reload();
+        }
+        if (this.unselectedCompaniesTable) {
+          this.unselectedCompaniesTable.reload();
+        }
+      }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
@@ -161,6 +178,15 @@ export class AuthorizationsComponent implements OnInit {
   closePermissionsModal(): void {
     this.showPermissionsModal = false;
     this.authorizationIdForPermissions = null;
+    this.selectedUnselectedClaims = [];
+    this.selectedSelectedClaims = [];
+  }
+
+  closeCompanyPermissionsModal(): void {
+    this.showCompanyPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedCompanies = [];
+    this.selectedSelectedCompanies = [];
   }
 
   // Data source for selected claims
@@ -363,6 +389,182 @@ export class AuthorizationsComponent implements OnInit {
       }
     };
   }
+
+  // Data source for selected companies
+  selectedCompaniesDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanys/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected companies:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected companies
+  unselectedCompaniesDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanys/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected companies:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected companies from unselected to selected
+  transferCompaniesToSelected(): void {
+    if (!this.unselectedCompaniesTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedCompanies || this.selectedUnselectedCompanies.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak firma seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedCompanies.map((row: any) => {
+      const id = row.PdksCompanyID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli firma seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/PdksCompanys/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Firmalar başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedCompanies = [];
+          // Reload both tables
+          if (this.selectedCompaniesTable) {
+            this.selectedCompaniesTable.reload();
+          }
+          if (this.unselectedCompaniesTable) {
+            this.unselectedCompaniesTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Firmalar eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding companies:', error);
+        const errorMessage = error.error?.message || error.message || 'Firmalar eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected companies from selected to unselected
+  transferCompaniesToUnselected(): void {
+    if (!this.selectedCompaniesTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedCompanies || this.selectedSelectedCompanies.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak firma seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedCompanies.map((row: any) => {
+      const id = row.PdksCompanyID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli firma seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/PdksCompanys/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Firmalar başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedCompanies = [];
+          // Reload both tables
+          if (this.selectedCompaniesTable) {
+            this.selectedCompaniesTable.reload();
+          }
+          if (this.unselectedCompaniesTable) {
+            this.unselectedCompaniesTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Firmalar kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing companies:', error);
+        const errorMessage = error.error?.message || error.message || 'Firmalar kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Table columns for companies
+  companiesTableColumns: TableColumn[] = [
+    { 
+      field: 'PdksCompanyID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'PdksCompanyName', 
+      label: 'Adı', 
+      text: 'Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
     const url = `${environment.apiUrl}/api/Authorizations/form`;

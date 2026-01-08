@@ -28,7 +28,7 @@
           [advancedFilter]="true"
           [showRefresh]="true"
           [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
-          [recid]="'Id'"
+          [recid]="'PdksCompanyID'"
           [selectType]="'row'"
           [multiSelect]="true"
           [multiSort]="true"
@@ -88,7 +88,7 @@
           [pagination]="true"
           [pageSize]="100"
           [height]="'500px'"
-          [recid]="'Id'"
+          [recid]="'PdksCompanyID'"
           [selectType]="'row'"
           [multiSelect]="true"
           [showRefresh]="true"
@@ -123,7 +123,7 @@
           [pagination]="true"
           [pageSize]="100"
           [height]="'500px'"
-          [recid]="'Id'"
+          [recid]="'PdksCompanyID'"
           [selectType]="'row'"
           [multiSelect]="true"
           [showRefresh]="true"
@@ -132,6 +132,89 @@
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedClaims = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>
+
+<!-- Company Permissions Selection Modal -->
+<ui-modal
+  [title]="'Firma Yetkileri'"
+  [show]="showCompanyPermissionsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showCompanyPermissionsModal = $event"
+  (closed)="closeCompanyPermissionsModal()">
+  
+  <div class="permissions-transfer-container">
+    <!-- Left Panel: Unselected Companies -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Firmalar</h4>
+        <button class="transfer-btn" (click)="transferCompaniesToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedCompaniesTable
+          [id]="'unselected-companies-grid'"
+          [columns]="companiesTableColumns"
+          [dataSource]="unselectedCompaniesDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="'500px'"
+          [recid]="'PdksCompanyID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedCompanies = $event">
+        </ui-data-table>
+      </div>
+    </div>
+
+    <!-- Right Panel: Selected Companies -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Firmalar</h4>
+        <button class="transfer-btn" (click)="transferCompaniesToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedCompaniesTable
+          [id]="'selected-companies-grid'"
+          [columns]="companiesTableColumns"
+          [dataSource]="selectedCompaniesDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="'500px'"
+          [recid]="'PdksCompanyID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedCompanies = $event">
         </ui-data-table>
       </div>
     </div>
