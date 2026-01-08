@@ -28,15 +28,25 @@ export class AuthorizationsComponent implements OnInit {
   @ViewChild('unselectedClaimsTable') unselectedClaimsTable?: DataTableComponent;
   @ViewChild('selectedCompaniesTable') selectedCompaniesTable?: DataTableComponent;
   @ViewChild('unselectedCompaniesTable') unselectedCompaniesTable?: DataTableComponent;
+  @ViewChild('selectedStaffsTable') selectedStaffsTable?: DataTableComponent;
+  @ViewChild('unselectedStaffsTable') unselectedStaffsTable?: DataTableComponent;
+  @ViewChild('selectedDepartmentsTable') selectedDepartmentsTable?: DataTableComponent;
+  @ViewChild('unselectedDepartmentsTable') unselectedDepartmentsTable?: DataTableComponent;
   private isReloading: boolean = false;
   selectedAuthorization: any = null;
   showPermissionsModal: boolean = false;
   showCompanyPermissionsModal: boolean = false;
+  showStaffPermissionsModal: boolean = false;
+  showDepartmentPermissionsModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
   selectedUnselectedClaims: any[] = [];
   selectedSelectedClaims: any[] = [];
   selectedUnselectedCompanies: any[] = [];
   selectedSelectedCompanies: any[] = [];
+  selectedUnselectedStaffs: any[] = [];
+  selectedSelectedStaffs: any[] = [];
+  selectedUnselectedDepartments: any[] = [];
+  selectedSelectedDepartments: any[] = [];
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
@@ -169,6 +179,30 @@ export class AuthorizationsComponent implements OnInit {
           this.unselectedCompaniesTable.reload();
         }
       }, 100);
+    } else if (settingsType === 'staff-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showStaffPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedStaffsTable) {
+          this.selectedStaffsTable.reload();
+        }
+        if (this.unselectedStaffsTable) {
+          this.unselectedStaffsTable.reload();
+        }
+      }, 100);
+    } else if (settingsType === 'department-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showDepartmentPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedDepartmentsTable) {
+          this.selectedDepartmentsTable.reload();
+        }
+        if (this.unselectedDepartmentsTable) {
+          this.unselectedDepartmentsTable.reload();
+        }
+      }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
@@ -187,6 +221,20 @@ export class AuthorizationsComponent implements OnInit {
     this.authorizationIdForPermissions = null;
     this.selectedUnselectedCompanies = [];
     this.selectedSelectedCompanies = [];
+  }
+
+  closeStaffPermissionsModal(): void {
+    this.showStaffPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedStaffs = [];
+    this.selectedSelectedStaffs = [];
+  }
+
+  closeDepartmentPermissionsModal(): void {
+    this.showDepartmentPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedDepartments = [];
+    this.selectedSelectedDepartments = [];
   }
 
   // Data source for selected claims
@@ -555,6 +603,358 @@ export class AuthorizationsComponent implements OnInit {
     },
     { 
       field: 'PdksCompanyName', 
+      label: 'Adı', 
+      text: 'Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
+  // Data source for selected staffs
+  selectedStaffsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksStaffs/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected staffs:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected staffs
+  unselectedStaffsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksStaffs/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected staffs:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected staffs from unselected to selected
+  transferStaffsToSelected(): void {
+    if (!this.unselectedStaffsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedStaffs || this.selectedUnselectedStaffs.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak kadro seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedStaffs.map((row: any) => {
+      const id = row.ID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli kadro seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/PdksStaffs/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Kadrolar başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedStaffs = [];
+          // Reload both tables
+          if (this.selectedStaffsTable) {
+            this.selectedStaffsTable.reload();
+          }
+          if (this.unselectedStaffsTable) {
+            this.unselectedStaffsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Kadrolar eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding staffs:', error);
+        const errorMessage = error.error?.message || error.message || 'Kadrolar eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected staffs from selected to unselected
+  transferStaffsToUnselected(): void {
+    if (!this.selectedStaffsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedStaffs || this.selectedSelectedStaffs.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak kadro seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedStaffs.map((row: any) => {
+      const id = row.ID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli kadro seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/PdksStaffs/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Kadrolar başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedStaffs = [];
+          // Reload both tables
+          if (this.selectedStaffsTable) {
+            this.selectedStaffsTable.reload();
+          }
+          if (this.unselectedStaffsTable) {
+            this.unselectedStaffsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Kadrolar kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing staffs:', error);
+        const errorMessage = error.error?.message || error.message || 'Kadrolar kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Table columns for staffs
+  staffsTableColumns: TableColumn[] = [
+    { 
+      field: 'ID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'Name', 
+      label: 'Adı', 
+      text: 'Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
+  // Data source for selected departments
+  selectedDepartmentsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Departments/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected departments:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected departments
+  unselectedDepartmentsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Departments/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected departments:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected departments from unselected to selected
+  transferDepartmentsToSelected(): void {
+    if (!this.unselectedDepartmentsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedDepartments || this.selectedUnselectedDepartments.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak bölüm seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedDepartments.map((row: any) => {
+      const id = row.DepartmentID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli bölüm seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Departments/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Bölümler başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedDepartments = [];
+          // Reload both tables
+          if (this.selectedDepartmentsTable) {
+            this.selectedDepartmentsTable.reload();
+          }
+          if (this.unselectedDepartmentsTable) {
+            this.unselectedDepartmentsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Bölümler eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding departments:', error);
+        const errorMessage = error.error?.message || error.message || 'Bölümler eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected departments from selected to unselected
+  transferDepartmentsToUnselected(): void {
+    if (!this.selectedDepartmentsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedDepartments || this.selectedSelectedDepartments.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak bölüm seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedDepartments.map((row: any) => {
+      const id = row.DepartmentID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli bölüm seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Departments/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Bölümler başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedDepartments = [];
+          // Reload both tables
+          if (this.selectedDepartmentsTable) {
+            this.selectedDepartmentsTable.reload();
+          }
+          if (this.unselectedDepartmentsTable) {
+            this.unselectedDepartmentsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Bölümler kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing departments:', error);
+        const errorMessage = error.error?.message || error.message || 'Bölümler kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Table columns for departments
+  departmentsTableColumns: TableColumn[] = [
+    { 
+      field: 'DepartmentID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'DepartmentName', 
       label: 'Adı', 
       text: 'Adı',
       type: 'text' as ColumnType, 
