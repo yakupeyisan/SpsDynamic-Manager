@@ -17,10 +17,13 @@ export class ModalComponent implements OnInit, OnDestroy {
   @Input() backdrop: boolean = true;
   @Input() backdropClose: boolean = true;
   @Input() showFooter: boolean = true;
+  @Input() allowFullscreen: boolean = true; // Allow fullscreen toggle
   
   @Output() showChange = new EventEmitter<boolean>();
   @Output() closed = new EventEmitter<void>();
   @Output() opened = new EventEmitter<void>();
+  
+  isFullscreen: boolean = false;
 
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(event: Event) {
@@ -43,6 +46,7 @@ export class ModalComponent implements OnInit, OnDestroy {
 
   open() {
     this.show = true;
+    this.isFullscreen = false; // Reset fullscreen state when opening
     this.showChange.emit(true);
     this.opened.emit();
     this.preventBodyScroll();
@@ -53,6 +57,7 @@ export class ModalComponent implements OnInit, OnDestroy {
   close() {
     if (this.closable) {
       this.show = false;
+      this.isFullscreen = false; // Reset fullscreen state when closing
       this.showChange.emit(false);
       this.closed.emit();
       this.restoreBodyScroll();
@@ -75,10 +80,44 @@ export class ModalComponent implements OnInit, OnDestroy {
     document.body.style.overflow = '';
   }
 
+  toggleFullscreen() {
+    if (this.allowFullscreen) {
+      this.isFullscreen = !this.isFullscreen;
+      // Update body class to prevent scroll when fullscreen
+      if (this.isFullscreen) {
+        document.body.style.overflow = 'hidden';
+        
+        // Sidebar genişliğini al (sadece açık ve görünür ise)
+        const sidebar = document.querySelector('.mat-drawer.sidebarNav') as HTMLElement;
+        let sidebarWidth = 0;
+        
+        if (sidebar && sidebar.offsetWidth > 0 && window.getComputedStyle(sidebar).visibility !== 'hidden') {
+          sidebarWidth = sidebar.offsetWidth;
+        }
+        
+        // CSS custom property olarak set et
+        document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth+50}px`);
+        
+      } else {
+        // Fullscreen'den çıkarken custom property'yi temizle
+        document.documentElement.style.removeProperty('--sidebar-width');
+        this.preventBodyScroll();
+      }
+    }
+  }
+
   get modalClasses(): string {
     return [
       'ui-modal-dialog',
-      `ui-modal-${this.size}`
+      `ui-modal-${this.size}`,
+      this.isFullscreen ? 'ui-modal-fullscreen' : ''
+    ].filter(Boolean).join(' ');
+  }
+
+  get backdropClasses(): string {
+    return [
+      'ui-modal-backdrop',
+      this.isFullscreen ? 'ui-modal-backdrop-fullscreen' : ''
     ].filter(Boolean).join(' ');
   }
 }

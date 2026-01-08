@@ -1,9 +1,9 @@
 .ui-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -11,6 +11,12 @@
   z-index: var(--ui-z-modal-backdrop);
   padding: var(--ui-spacing-lg);
   overflow-y: auto;
+}
+
+.ui-modal-backdrop-fullscreen {
+  padding: 10px !important;
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .ui-modal-dialog {
@@ -70,6 +76,12 @@
   flex-shrink: 0;
 }
 
+.ui-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-spacing-xs);
+}
+
 .ui-modal-title {
   margin: 0;
   font-size: var(--ui-font-size-lg);
@@ -97,6 +109,39 @@
 .ui-modal-close:hover {
   background-color: var(--ui-gray-100);
   color: var(--ui-gray-900);
+}
+
+.ui-modal-fullscreen-toggle {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ui-gray-500);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ui-border-radius);
+  transition: all var(--ui-transition-fast);
+}
+
+.ui-modal-fullscreen-toggle:hover {
+  background-color: var(--ui-gray-100);
+  color: var(--ui-gray-900);
+}
+
+.ui-modal-fullscreen {
+  max-width: calc(100vw - var(--sidebar-width, 0px)) !important;
+  width: calc(100vw - var(--sidebar-width, 0px)) !important;
+  height: calc(100vh - 55px) !important;
+  max-height: calc(100vh - 55px) !important;
+  border-radius: 10px !important;
+  margin: 0px !important;
+  align-self: stretch;
+  box-sizing: content-box;
 }
 
 .ui-modal-body {
