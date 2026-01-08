@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, OnInit, OnDestroy, HostListener, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ModalComponent implements OnInit, OnDestroy {
+export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() title?: string;
   @Input() show: boolean = false;
   @Input() size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md';
@@ -22,8 +22,12 @@ export class ModalComponent implements OnInit, OnDestroy {
   @Output() showChange = new EventEmitter<boolean>();
   @Output() closed = new EventEmitter<void>();
   @Output() opened = new EventEmitter<void>();
+  @Output() onResize = new EventEmitter<{width: number, height: number}>();
+  
+  @ViewChild('modalBody', { static: false }) modalBodyRef!: ElementRef<HTMLDivElement>;
   
   isFullscreen: boolean = false;
+  private resizeObserver?: ResizeObserver;
 
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(event: Event) {
@@ -39,9 +43,34 @@ export class ModalComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit() {
+    this.setupResizeObserver();
+  }
+
   ngOnDestroy() {
+    this.cleanupResizeObserver();
     this.restoreBodyScroll();
     document.body.classList.remove('modal-open');
+  }
+
+  private setupResizeObserver() {
+    if (typeof ResizeObserver !== 'undefined' && this.modalBodyRef?.nativeElement) {
+      this.resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          this.onResize.emit({ width, height });
+        }
+      });
+      
+      this.resizeObserver.observe(this.modalBodyRef.nativeElement);
+    }
+  }
+
+  private cleanupResizeObserver() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined;
+    }
   }
 
   open() {
@@ -52,6 +81,10 @@ export class ModalComponent implements OnInit, OnDestroy {
     this.preventBodyScroll();
     // Add class to body to hide sidebar when modal is open
     document.body.classList.add('modal-open');
+    // Setup resize observer after modal is shown
+    setTimeout(() => {
+      this.setupResizeObserver();
+    }, 0);
   }
 
   close() {
@@ -60,6 +93,7 @@ export class ModalComponent implements OnInit, OnDestroy {
       this.isFullscreen = false; // Reset fullscreen state when closing
       this.showChange.emit(false);
       this.closed.emit();
+      this.cleanupResizeObserver();
       this.restoreBodyScroll();
       // Remove class from body when modal is closed
       document.body.classList.remove('modal-open');
@@ -103,6 +137,14 @@ export class ModalComponent implements OnInit, OnDestroy {
         document.documentElement.style.removeProperty('--sidebar-width');
         this.preventBodyScroll();
       }
+      
+      // Resize observer will automatically detect the size change
+      setTimeout(() => {
+        if (this.modalBodyRef?.nativeElement) {
+          const rect = this.modalBodyRef.nativeElement.getBoundingClientRect();
+          this.onResize.emit({ width: rect.width, height: rect.height });
+        }
+      }, 0);
     }
   }
 

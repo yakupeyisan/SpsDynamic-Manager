@@ -14,11 +14,14 @@ import { tableColumns } from './authorizations-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './authorizations-form-config';
 import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, ColumnType } from 'src/app/components/data-table/data-table.component';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { InputComponent } from 'src/app/components/input/input.component';
+import { ButtonComponent } from 'src/app/components/button/button.component';
 
 @Component({
   selector: 'app-authorizations',
   standalone: true,
-  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent],
+  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, ReactiveFormsModule, FormsModule, InputComponent, ButtonComponent],
   templateUrl: './authorizations.component.html',
   styleUrls: ['./authorizations.component.scss']
 })
@@ -34,6 +37,11 @@ export class AuthorizationsComponent implements OnInit {
   @ViewChild('unselectedDepartmentsTable') unselectedDepartmentsTable?: DataTableComponent;
   @ViewChild('selectedCardsTable') selectedCardsTable?: DataTableComponent;
   @ViewChild('unselectedCardsTable') unselectedCardsTable?: DataTableComponent;
+  @ViewChild('selectedAccessGroupsTable') selectedAccessGroupsTable?: DataTableComponent;
+  @ViewChild('unselectedAccessGroupsTable') unselectedAccessGroupsTable?: DataTableComponent;
+  @ViewChild('selectedTerminalsTable') selectedTerminalsTable?: DataTableComponent;
+  @ViewChild('unselectedTerminalsTable') unselectedTerminalsTable?: DataTableComponent;
+  @ViewChild('secureFieldsTable') secureFieldsTable?: DataTableComponent;
   private isReloading: boolean = false;
   selectedAuthorization: any = null;
   showPermissionsModal: boolean = false;
@@ -41,6 +49,9 @@ export class AuthorizationsComponent implements OnInit {
   showStaffPermissionsModal: boolean = false;
   showDepartmentPermissionsModal: boolean = false;
   showCardPermissionsModal: boolean = false;
+  showAccessPermissionsModal: boolean = false;
+  showTerminalPermissionsModal: boolean = false;
+  showSecureFieldsPermissionsModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
   gridHeight: string = '500px';
   selectedUnselectedClaims: any[] = [];
@@ -53,6 +64,10 @@ export class AuthorizationsComponent implements OnInit {
   selectedSelectedDepartments: any[] = [];
   selectedUnselectedCards: any[] = [];
   selectedSelectedCards: any[] = [];
+  selectedUnselectedAccessGroups: any[] = [];
+  selectedSelectedAccessGroups: any[] = [];
+  selectedUnselectedTerminals: any[] = [];
+  selectedSelectedTerminals: any[] = [];
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
@@ -139,6 +154,11 @@ export class AuthorizationsComponent implements OnInit {
               id: 'live-view-settings',
               text: 'Canlı İzleme Ayarları',
               onClick: (event) => this.openSettingsModal('live-view-settings')
+            },
+            {
+              id: 'secure-fields-permissions',
+              text: 'Güvenli Girdi Yetkileri',
+              onClick: (event) => this.openSettingsModal('secure-fields-permissions')
             }
           ]
         }
@@ -221,6 +241,30 @@ export class AuthorizationsComponent implements OnInit {
           this.unselectedCardsTable.reload();
         }
       }, 100);
+    } else if (settingsType === 'access-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showAccessPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedAccessGroupsTable) {
+          this.selectedAccessGroupsTable.reload();
+        }
+        if (this.unselectedAccessGroupsTable) {
+          this.unselectedAccessGroupsTable.reload();
+        }
+      }, 100);
+    } else if (settingsType === 'terminal-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showTerminalPermissionsModal = true;
+      // Reload tables after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.selectedTerminalsTable) {
+          this.selectedTerminalsTable.reload();
+        }
+        if (this.unselectedTerminalsTable) {
+          this.unselectedTerminalsTable.reload();
+        }
+      }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
@@ -260,6 +304,181 @@ export class AuthorizationsComponent implements OnInit {
     this.authorizationIdForPermissions = null;
     this.selectedUnselectedCards = [];
     this.selectedSelectedCards = [];
+  }
+
+  closeAccessPermissionsModal(): void {
+    this.showAccessPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedAccessGroups = [];
+    this.selectedSelectedAccessGroups = [];
+  }
+
+  closeTerminalPermissionsModal(): void {
+    this.showTerminalPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.selectedUnselectedTerminals = [];
+    this.selectedSelectedTerminals = [];
+  }
+
+  // SecureFields form
+  secureFieldForm: FormGroup;
+
+  // SecureFields table columns
+  secureFieldsTableColumns: TableColumn[] = [
+    { 
+      field: 'Id', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'Source', 
+      label: 'Kaynak', 
+      text: 'Kaynak',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '200px', 
+      size: '200px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'Field', 
+      label: 'Alan', 
+      text: 'Alan',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '200px', 
+      size: '200px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
+  // Data source for secure fields
+  secureFieldsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/SecureFields`, {
+      page: params.page || 1,
+      limit: params.limit || 100,
+      offset: ((params.page || 1) - 1) * (params.limit || 100),
+      search: params.search || undefined,
+      searchLogic: params.searchLogic || 'AND',
+      sort: params.sort,
+      join: params.join,
+      showDeleted: params.showDeleted,
+      columns: this.secureFieldsTableColumns,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading secure fields:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Save secure field
+  saveSecureField(): void {
+    if (!this.secureFieldForm.valid) {
+      this.toastr.warning('Lütfen tüm alanları doldurun', 'Uyarı');
+      return;
+    }
+
+    if (!this.authorizationIdForPermissions) {
+      this.toastr.warning('Geçersiz yetki seçimi', 'Uyarı');
+      return;
+    }
+
+    const formValue = this.secureFieldForm.value;
+    this.http.post(`${environment.apiUrl}/api/SecureFields/form`, {
+      request: {
+        action: 'save',
+        recid: null,
+        name: 'AddSecureField',
+        record: {
+          Source: formValue.Source,
+          Field: formValue.Field,
+          AuthorizationId: this.authorizationIdForPermissions
+        }
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.error === false || response.status === 'success') {
+          this.toastr.success('Güvenli girdi başarıyla eklendi', 'Başarılı');
+          this.secureFieldForm.reset();
+          if (this.secureFieldsTable) {
+            this.secureFieldsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Güvenli girdi eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error saving secure field:', error);
+        const errorMessage = error.error?.message || error.message || 'Güvenli girdi eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Delete secure field
+  deleteSecureField(event: any): void {
+    if (!event || (Array.isArray(event) && event.length === 0)) {
+      this.toastr.warning('Lütfen silinecek kayıt seçin', 'Uyarı');
+      return;
+    }
+
+    const selectedIds: number[] = [];
+    const rows = Array.isArray(event) ? event : [event];
+    rows.forEach((row: any) => {
+      const id = row.Id || row.recid || row.id;
+      if (id !== null && id !== undefined) {
+        selectedIds.push(Number(id));
+      }
+    });
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Lütfen silinecek kayıt seçin', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/SecureFields/delete`, {
+      request: { action: 'delete', recid: selectedIds }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success') {
+          this.toastr.success('Güvenli girdi başarıyla silindi', 'Başarılı');
+          if (this.secureFieldsTable) {
+            this.secureFieldsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Güvenli girdi silinirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Delete error:', error);
+        const errorMessage = error.error?.message || error.message || 'Güvenli girdi silinirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  closeSecureFieldsPermissionsModal(): void {
+    this.showSecureFieldsPermissionsModal = false;
+    this.authorizationIdForPermissions = null;
+    this.secureFieldForm.reset();
   }
 
   // Data source for selected claims
@@ -458,6 +677,22 @@ export class AuthorizationsComponent implements OnInit {
         add: false,
         edit: false,
         delete: false,
+        save: false
+      }
+    };
+  }
+
+  // Toolbar config for secure fields table
+  get secureFieldsTableToolbarConfig(): ToolbarConfig {
+    return {
+      items: [],
+      show: {
+        reload: true,
+        columns: true,
+        search: true,
+        add: false,
+        edit: false,
+        delete: true,
         save: false
       }
     };
@@ -1141,6 +1376,380 @@ export class AuthorizationsComponent implements OnInit {
     });
   }
 
+  // Data source for selected access groups
+  selectedAccessGroupsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroups/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected access groups:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected access groups
+  unselectedAccessGroupsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroups/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected access groups:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected access groups from unselected to selected
+  transferAccessGroupsToSelected(): void {
+    if (!this.unselectedAccessGroupsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedAccessGroups || this.selectedUnselectedAccessGroups.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak geçiş grubu seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedAccessGroups.map((row: any) => {
+      const id = row.AccessGroupID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli geçiş grubu seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/AccessGroups/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Geçiş grupları başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedAccessGroups = [];
+          // Reload both tables
+          if (this.selectedAccessGroupsTable) {
+            this.selectedAccessGroupsTable.reload();
+          }
+          if (this.unselectedAccessGroupsTable) {
+            this.unselectedAccessGroupsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Geçiş grupları eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding access groups:', error);
+        const errorMessage = error.error?.message || error.message || 'Geçiş grupları eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected access groups from selected to unselected
+  transferAccessGroupsToUnselected(): void {
+    if (!this.selectedAccessGroupsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedAccessGroups || this.selectedSelectedAccessGroups.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak geçiş grubu seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedAccessGroups.map((row: any) => {
+      const id = row.AccessGroupID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli geçiş grubu seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/AccessGroups/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Geçiş grupları başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedAccessGroups = [];
+          // Reload both tables
+          if (this.selectedAccessGroupsTable) {
+            this.selectedAccessGroupsTable.reload();
+          }
+          if (this.unselectedAccessGroupsTable) {
+            this.unselectedAccessGroupsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Geçiş grupları kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing access groups:', error);
+        const errorMessage = error.error?.message || error.message || 'Geçiş grupları kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Data source for selected terminals
+  selectedTerminalsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected terminals:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for unselected terminals
+  unselectedTerminalsDataSource = (params: any) => {
+    if (!this.authorizationIdForPermissions) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetUnSelectedByAuthorizationId`, {
+      request: {
+        limit: params.limit || 100,
+        offset: params.offset || 0,
+        AuthorizationId: this.authorizationIdForPermissions
+      }
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected terminals:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Transfer selected terminals from unselected to selected
+  transferTerminalsToSelected(): void {
+    if (!this.unselectedTerminalsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedTerminals || this.selectedUnselectedTerminals.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak terminal seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedTerminals.map((row: any) => {
+      const id = row.ReaderID || row.TerminalID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli terminal seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Terminals/AppendAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Terminaller başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedTerminals = [];
+          // Reload both tables
+          if (this.selectedTerminalsTable) {
+            this.selectedTerminalsTable.reload();
+          }
+          if (this.unselectedTerminalsTable) {
+            this.unselectedTerminalsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Terminaller eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding terminals:', error);
+        const errorMessage = error.error?.message || error.message || 'Terminaller eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Transfer selected terminals from selected to unselected
+  transferTerminalsToUnselected(): void {
+    if (!this.selectedTerminalsTable || !this.authorizationIdForPermissions) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedTerminals || this.selectedSelectedTerminals.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak terminal seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedTerminals.map((row: any) => {
+      const id = row.ReaderID || row.TerminalID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli terminal seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Terminals/RemoveListAuthorizationId`, {
+      Selecteds: selectedIds,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Terminaller başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedTerminals = [];
+          // Reload both tables
+          if (this.selectedTerminalsTable) {
+            this.selectedTerminalsTable.reload();
+          }
+          if (this.unselectedTerminalsTable) {
+            this.unselectedTerminalsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Terminaller kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing terminals:', error);
+        const errorMessage = error.error?.message || error.message || 'Terminaller kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Table columns for terminals
+  terminalsTableColumns: TableColumn[] = [
+    { 
+      field: 'ReaderID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'SerialNumber', 
+      label: 'Seri Numarası', 
+      text: 'Seri Numarası',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'ReaderName', 
+      label: 'Terminal Adı', 
+      text: 'Terminal Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'IpAddress', 
+      label: 'IP Adresi', 
+      text: 'IP Adresi',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
+  // Table columns for access groups
+  accessGroupsTableColumns: TableColumn[] = [
+    { 
+      field: 'AccessGroupID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'AccessGroupName', 
+      label: 'Adı', 
+      text: 'Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+
   // Table columns for cards
   cardsTableColumns: TableColumn[] = [
     { 
@@ -1246,7 +1855,19 @@ export class AuthorizationsComponent implements OnInit {
   };
 
   onFormChange = (formData: any) => {};
-  constructor(private http: HttpClient, private toastr: ToastrService, public translate: TranslateService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient, 
+    private toastr: ToastrService, 
+    public translate: TranslateService, 
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder
+  ) {
+    // Initialize secure field form
+    this.secureFieldForm = this.fb.group({
+      Source: ['', Validators.required],
+      Field: ['', Validators.required]
+    });
+  }
   ngOnInit(): void {}
   onTableRowClick(event: any): void {}
   onTableRowDblClick(event: any): void {}

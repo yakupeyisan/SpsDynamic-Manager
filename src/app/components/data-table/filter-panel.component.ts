@@ -501,7 +501,16 @@ export class FilterPanelComponent implements OnInit {
   private loadColumnOption(column: TableColumn): void {
     if (!column.load || !column.load.url) return;
 
-    const cacheKey = `${column.field}_${column.load.url}`;
+    // Check if URL is a function (dynamic URL)
+    // For filter panel, we don't have formData, so we can't use dynamic URLs
+    // If URL is a function, skip loading in filter panel context
+    if (typeof column.load.url === 'function') {
+      console.warn(`[FilterPanel] ${column.field} - Dynamic URL not supported in filter panel, skipping`);
+      return;
+    }
+
+    const url = column.load.url;
+    const cacheKey = `${column.field}_${url}`;
     
     // Check if already loaded or loading
     if (this.columnOptionsCache.has(cacheKey) || this.columnOptionsLoading.get(cacheKey)) {
@@ -511,7 +520,6 @@ export class FilterPanelComponent implements OnInit {
     this.columnOptionsLoading.set(cacheKey, true);
 
     const method = column.load.method || 'GET';
-    const url = column.load.url;
     const data = column.load.data || {};
 
     let request: Observable<any>;

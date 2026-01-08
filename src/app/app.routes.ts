@@ -342,6 +342,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'SecureFields',
+        loadComponent: () =>
+          import('./pages/secure-fields/secure-fields.component').then(
+            (m) => m.SecureFieldsComponent
+          ),
+        data: {
+          title: 'Güvenli Girdi Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'SmsSettings',
         loadComponent: () =>
           import('./pages/sms-settings/sms-settings.component').then(

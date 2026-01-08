@@ -338,6 +338,10 @@ export const navItems: NavItem[] = [
             displayName: 'Canlı İzleme Tanımları',
             route: '/LiveViewSettings',
           },
+          {
+            displayName: 'Güvenli Girdi Tanımları',
+            route: '/SecureFields',
+          },
         ],
       },
       {

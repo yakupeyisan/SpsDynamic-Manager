@@ -63,7 +63,7 @@ export interface TableColumnOption {
 }
 
 export interface TableColumnLoad {
-  url: string;
+  url: string | ((formData?: any) => string); // Can be static string or function that receives formData and returns URL
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   data?: any | ((formData?: any) => any); // Can be static object or function that receives formData
   injectAuth?: boolean;
@@ -4295,6 +4295,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     });
   }
 
+  private formFieldOptionsLoading: Set<string> = new Set(); // Track which fields are being loaded
+
   /**
    * Load options for form fields that have load configuration
    * Called when form is opened (add or edit mode)
@@ -4303,24 +4305,64 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (!this.formFields || this.formFields.length === 0) return;
 
     // Load all static options in parallel
-    const loadPromises: Promise<void>[] = [];
-    
     this.formFields.forEach(column => {
       if (column.load && column.load.url) {
         // Skip if data is a function (dynamic) - will be loaded by loadDynamicFieldOptions
         if (typeof column.load.data === 'function') {
           return;
         }
-        // Clear cache for this column to ensure fresh data when form opens
-        const cacheKey = `${column.field}_${column.load.url}`;
-        this.columnOptionsCache.delete(cacheKey);
-        this.columnOptionsLoading.delete(cacheKey);
         
-        // Clear column.options to force reload
+        // Get actual URL (might be a function, but for static fields it should be string)
+        let actualUrl: string;
+        if (typeof column.load.url === 'function') {
+          // For static fields, URL should not be a function, but handle it anyway
+          actualUrl = column.load.url(this.formData);
+        } else {
+          actualUrl = column.load.url;
+        }
+        
+        // Build cache key with actual URL
+        const cacheKey = `${column.field}_${actualUrl}`;
+        
+        // Check if already loading for this field - prevent duplicate requests
+        if (this.formFieldOptionsLoading.has(column.field)) {
+          console.log(`[loadFormFieldOptions] ${column.field} - Already loading (field), skipping`);
+          return;
+        }
+        
+        // Check if already loading globally - prevent duplicate requests
+        if (this.columnOptionsLoading.get(cacheKey)) {
+          console.log(`[loadFormFieldOptions] ${column.field} - Already loading (global), skipping`);
+          return;
+        }
+        
+        // Check if already cached - use cached data instead of reloading
+        if (this.columnOptionsCache.has(cacheKey)) {
+          console.log(`[loadFormFieldOptions] ${column.field} - Already cached, using cached options`);
+          // Set column.options from cache
+          const cachedOptions = this.columnOptionsCache.get(cacheKey);
+          if (cachedOptions && Array.isArray(cachedOptions)) {
+            column.options = cachedOptions;
+          }
+          return;
+        }
+        
+        // Mark as loading to prevent duplicate requests
+        this.formFieldOptionsLoading.add(column.field);
+        
+        // Clear column.options to force reload (only if not cached)
         column.options = undefined;
         
         // Load static options immediately
+        // loadColumnOption will handle the loading state and cache
         this.loadColumnOption(column);
+        
+        // Note: We don't remove from formFieldOptionsLoading here because
+        // loadColumnOption handles the loading state via columnOptionsLoading
+        // We'll clear it after a short delay to allow the request to complete
+        setTimeout(() => {
+          this.formFieldOptionsLoading.delete(column.field);
+        }, 1000);
       }
     });
   }
@@ -4349,6 +4391,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     let method: string;
     let url: string;
 
+    // Check if URL is a function (dynamic URL)
+    let actualUrl: string;
+    if (typeof load.url === 'function') {
+      actualUrl = load.url(this.formData);
+    } else {
+      actualUrl = load.url;
+    }
+    
     // If data is a function, check if required formData values are available
     if (typeof load.data === 'function') {
       // Get dynamic data to check if required values exist
@@ -4360,19 +4410,31 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       
       // Check if EmployeeID is in the returned data (for GetCardsByEmployeeID, etc.)
       const employeeId = dynamicData?.EmployeeID;
+      // Check if source is in the returned data (for GetFields, etc.)
+      const source = dynamicData?.source;
+      // Also check formData for Source field
+      const sourceFromFormData = this.formData?.['Source'];
       
-      // If EmployeeID is required but not available, skip loading
-      if (employeeId == null || employeeId === undefined) {
-        console.warn(`[loadColumnOption] ${column.field} - EmployeeID not found in dynamicData, skipping`);
-        return;
+      // For Field dropdown, check if Source is available
+      if (column.field === 'Field') {
+        if (sourceFromFormData == null || sourceFromFormData === undefined || sourceFromFormData === '') {
+          console.warn(`[loadColumnOption] ${column.field} - Source not found in formData, skipping`);
+          return;
+        }
+        // Use sourceFromFormData for cache key
+        cacheKey = `${column.field}_${actualUrl}_${sourceFromFormData}`;
+        console.log(`[loadColumnOption] ${column.field} - Loading with Source: ${sourceFromFormData}, cacheKey: ${cacheKey}`);
+      } else if (employeeId != null && employeeId !== undefined) {
+        // For other fields that require EmployeeID
+        cacheKey = `${column.field}_${actualUrl}_${employeeId}`;
+      } else {
+        // Fallback
+        cacheKey = `${column.field}_${actualUrl}`;
       }
-      
-      // Include relevant formData values in cache key for dynamic data
-      cacheKey = `${column.field}_${load.url}_${employeeId}`;
       data = dynamicData;
     } else {
       // Static data - use existing logic
-      cacheKey = `${column.field}_${load.url}`;
+      cacheKey = `${column.field}_${actualUrl}`;
       data = load.data || {};
       console.log(`[loadColumnOption] ${column.field} - Static data:`, data);
     }
@@ -4391,7 +4453,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.columnOptionsLoading.set(cacheKey, true);
 
     method = load.method || 'GET';
-    url = load.url;
+    url = actualUrl;
 
     let request: Observable<any>;
 
@@ -4601,14 +4663,37 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       
       // Load options for each dynamic column
       dynamicColumns.forEach(column => {
-        // Check if formData has required values (e.g., EmployeeID for SubscriptionCard)
+        // Check if formData has required values (e.g., EmployeeID for SubscriptionCard, Source for Field)
         const dynamicData = column.load!.data!(this.formData);
         const employeeId = dynamicData?.EmployeeID;
+        const source = this.formData?.['Source'];
         
-        // Only load if required data is available
-        if (employeeId != null && employeeId !== undefined) {
+        // Get actual URL (might be a function)
+        let actualUrl: string;
+        if (typeof column.load!.url === 'function') {
+          actualUrl = column.load!.url(this.formData);
+        } else {
+          actualUrl = column.load!.url;
+        }
+        
+        // For Field dropdown, check if Source is available
+        if (column.field === 'Field') {
+          if (source != null && source !== undefined) {
+            // Build cache key to check if already loaded for this Source
+            const cacheKey = `${column.field}_${actualUrl}_${source}`;
+            
+            // Only load if not already cached
+            if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
+              // Clear column.options to force reload
+              column.options = undefined;
+              // Load options
+              this.loadColumnOption(column);
+            }
+          }
+        } else if (employeeId != null && employeeId !== undefined) {
+          // For other fields that require EmployeeID
           // Build cache key to check if already loaded for this EmployeeID
-          const cacheKey = `${column.field}_${column.load!.url}_${employeeId}`;
+          const cacheKey = `${column.field}_${actualUrl}_${employeeId}`;
           
           // Only load if not already cached
           if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
@@ -4628,8 +4713,50 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Handle form field change - update formData and trigger onFormDataChange
    */
   onFormFieldChange(fieldName: string, value: any): void {
+    // Store previous value before updating
+    const previousValue = this.formData[fieldName];
+    
     // Update formData
     this.formData[fieldName] = value;
+    
+    // If Source field changed, immediately reload Field options
+    if (fieldName === 'Source' && previousValue !== value && value != null && value !== undefined && value !== '') {
+      console.log(`[onFormFieldChange] Source changed from ${previousValue} to ${value}, reloading Field options`);
+      
+      // Find Field column
+      let fieldColumn = this.formFields?.find(col => col.field === 'Field');
+      if (!fieldColumn) {
+        fieldColumn = this.getEditableColumns().find(col => col.field === 'Field');
+      }
+      
+      if (fieldColumn && fieldColumn.load) {
+        // Clear all Field caches
+        const cacheKeysToDelete: string[] = [];
+        this.columnOptionsCache.forEach((val, key) => {
+          if (key.startsWith('Field_')) {
+            cacheKeysToDelete.push(key);
+          }
+        });
+        cacheKeysToDelete.forEach(key => this.columnOptionsCache.delete(key));
+        
+        // Clear loading states
+        this.columnOptionsLoading.forEach((val, key) => {
+          if (key.startsWith('Field_')) {
+            this.columnOptionsLoading.delete(key);
+          }
+        });
+        
+        // Clear Field value and options
+        this.formData['Field'] = null;
+        fieldColumn.options = undefined;
+        
+        // Reload Field options with new Source
+        setTimeout(() => {
+          this.loadColumnOption(fieldColumn!);
+        }, 50);
+      }
+    }
+    
     // Trigger onFormDataChange with the changed field
     this.onFormDataChange({ [fieldName]: value });
   }
@@ -4641,6 +4768,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Check if EmployeeID changed - if so, reload SubscriptionCard options
     const previousEmployeeId = this.formData?.['EmployeeID'];
     const newEmployeeId = formData?.['EmployeeID'];
+    
+    // Check if Source changed - if so, reload Field options
+    const previousSource = this.formData?.['Source'];
+    const newSource = formData?.['Source'];
     
     // Update internal formData
     this.formData = { ...this.formData, ...formData };
@@ -4662,6 +4793,58 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         subscriptionCardColumn.options = undefined;
         // Reload options with new EmployeeID
         this.loadColumnOption(subscriptionCardColumn);
+      }
+    }
+    
+    // If Source changed, reload Field field options
+    if (previousSource !== newSource && newSource != null && newSource !== undefined) {
+      console.log(`[onFormDataChange] Source changed from ${previousSource} to ${newSource}, reloading Field options`);
+      
+      // Check in formFields first
+      let fieldColumn = this.formFields?.find(col => col.field === 'Field');
+      // If not found, check in editable columns
+      if (!fieldColumn) {
+        fieldColumn = this.getEditableColumns().find(col => col.field === 'Field');
+      }
+      
+      if (fieldColumn && fieldColumn.load) {
+        // Get actual URL (might be a function)
+        let oldUrl: string;
+        if (typeof fieldColumn.load.url === 'function') {
+          const oldFormData = { ...this.formData, Source: previousSource };
+          oldUrl = fieldColumn.load.url(oldFormData);
+        } else {
+          oldUrl = fieldColumn.load.url;
+        }
+        
+        // Clear all Field caches to ensure fresh load
+        const cacheKeysToDelete: string[] = [];
+        this.columnOptionsCache.forEach((value, key) => {
+          if (key.startsWith('Field_')) {
+            cacheKeysToDelete.push(key);
+          }
+        });
+        cacheKeysToDelete.forEach(key => this.columnOptionsCache.delete(key));
+        
+        // Clear loading state
+        this.columnOptionsLoading.forEach((value, key) => {
+          if (key.startsWith('Field_')) {
+            this.columnOptionsLoading.delete(key);
+          }
+        });
+        
+        // Clear column.options to force reload
+        fieldColumn.options = undefined;
+        // Clear Field value when Source changes
+        this.formData['Field'] = null;
+        
+        // Small delay to ensure formData is updated
+        setTimeout(() => {
+          // Reload options with new Source
+          this.loadColumnOption(fieldColumn!);
+        }, 50);
+      } else {
+        console.warn(`[onFormDataChange] Field column not found or has no load configuration`);
       }
     }
     

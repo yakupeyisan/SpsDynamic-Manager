@@ -63,9 +63,10 @@
   [closable]="true"
   [showFooter]="false"
   (showChange)="showPermissionsModal = $event"
-  (closed)="closePermissionsModal()">
+  (closed)="closePermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
-  <div class="permissions-transfer-container">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
     <!-- Left Panel: Unselected Claims -->
     <div class="transfer-panel">
       <div class="transfer-panel-header">
@@ -94,6 +95,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedUnselectedClaims = $event">
@@ -129,6 +131,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedClaims = $event">
@@ -146,9 +149,10 @@
   [closable]="true"
   [showFooter]="false"
   (showChange)="showCompanyPermissionsModal = $event"
-  (closed)="closeCompanyPermissionsModal()">
+  (closed)="closeCompanyPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
-  <div class="permissions-transfer-container">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
     <!-- Left Panel: Unselected Companies -->
     <div class="transfer-panel">
       <div class="transfer-panel-header">
@@ -177,6 +181,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedUnselectedCompanies = $event">
@@ -212,6 +217,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedCompanies = $event">
@@ -229,9 +235,10 @@
   [closable]="true"
   [showFooter]="false"
   (showChange)="showStaffPermissionsModal = $event"
-  (closed)="closeStaffPermissionsModal()">
+  (closed)="closeStaffPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
-  <div class="permissions-transfer-container">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
     <!-- Left Panel: Unselected Staffs -->
     <div class="transfer-panel">
       <div class="transfer-panel-header">
@@ -260,6 +267,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedUnselectedStaffs = $event">
@@ -295,6 +303,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedStaffs = $event">
@@ -312,9 +321,10 @@
   [closable]="true"
   [showFooter]="false"
   (showChange)="showDepartmentPermissionsModal = $event"
-  (closed)="closeDepartmentPermissionsModal()">
+  (closed)="closeDepartmentPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
-  <div class="permissions-transfer-container">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
     <!-- Left Panel: Unselected Departments -->
     <div class="transfer-panel">
       <div class="transfer-panel-header">
@@ -343,6 +353,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedUnselectedDepartments = $event">
@@ -378,6 +389,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedDepartments = $event">
@@ -395,9 +407,10 @@
   [closable]="true"
   [showFooter]="false"
   (showChange)="showCardPermissionsModal = $event"
-  (closed)="closeCardPermissionsModal()">
+  (closed)="closeCardPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
-  <div class="permissions-transfer-container">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
     <!-- Left Panel: Unselected Cards -->
     <div class="transfer-panel">
       <div class="transfer-panel-header">
@@ -426,6 +439,7 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedUnselectedCards = $event">
@@ -461,11 +475,204 @@
           [showRefresh]="true"
           [searchable]="true"
           [advancedFilter]="true"
+          [showFooter]="true"
           [toolbar]="claimsTableToolbarConfig"
           [searchPlaceholder]="'Ara Tüm Alanlar'"
           (rowSelect)="selectedSelectedCards = $event">
         </ui-data-table>
       </div>
     </div>
+  </div>
+</ui-modal>
+
+<!-- Access Group Permissions Selection Modal -->
+<ui-modal
+  [title]="'Geçiş Yetkileri'"
+  [show]="showAccessPermissionsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showAccessPermissionsModal = $event"
+  (closed)="closeAccessPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
+  
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
+    <!-- Left Panel: Unselected Access Groups -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Geçiş Grupları</h4>
+        <button class="transfer-btn" (click)="transferAccessGroupsToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedAccessGroupsTable
+          [id]="'unselected-access-groups-grid'"
+          [columns]="accessGroupsTableColumns"
+          [dataSource]="unselectedAccessGroupsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'AccessGroupID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedAccessGroups = $event">
+        </ui-data-table>
+      </div>
+    </div>
+
+    <!-- Right Panel: Selected Access Groups -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Geçiş Grupları</h4>
+        <button class="transfer-btn" (click)="transferAccessGroupsToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedAccessGroupsTable
+          [id]="'selected-access-groups-grid'"
+          [columns]="accessGroupsTableColumns"
+          [dataSource]="selectedAccessGroupsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'AccessGroupID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedAccessGroups = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>
+
+<!-- Terminal Permissions Selection Modal -->
+<ui-modal
+  [title]="'Terminal Yetkileri'"
+  [show]="showTerminalPermissionsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showTerminalPermissionsModal = $event"
+  (closed)="closeTerminalPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
+  
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
+    <!-- Left Panel: Unselected Terminals -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Terminaller</h4>
+        <button class="transfer-btn" (click)="transferTerminalsToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedTerminalsTable
+          [id]="'unselected-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="unselectedTerminalsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'ReaderID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedTerminals = $event">
+        </ui-data-table>
+      </div>
+    </div>
+
+    <!-- Right Panel: Selected Terminals -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Terminaller</h4>
+        <button class="transfer-btn" (click)="transferTerminalsToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedTerminalsTable
+          [id]="'selected-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="selectedTerminalsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'ReaderID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedTerminals = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>
+
+<!-- Secure Fields Permissions Modal -->
+<ui-modal
+  [title]="'Güvenli Girdi Yetkileri'"
+  [show]="showSecureFieldsPermissionsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showSecureFieldsPermissionsModal = $event"
+  (closed)="closeSecureFieldsPermissionsModal()"
+  (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
+  
+  <div class="secure-fields-permissions-container">
+    //api/SecureFields ten bütün kayıtları getir
+    //gelen responsa göre list oluştur 
+    // Source[label] -  Field[label]  IsSeen[checkbox]  IsEdit[checkbox]
+    //api/SecureFields/GetAllByAuthorizationId/authorizationId
+    // gelen kayıtlara göre checkboxların seçili olup olmadığını kontrol et
   </div>
 </ui-modal>
