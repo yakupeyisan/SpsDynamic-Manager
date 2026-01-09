@@ -1043,15 +1043,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   get allFilteredData(): TableRow[] {
-    let result = [...this.data];
+    // Use internalData if dataSource is used, otherwise use data input (same as filteredData)
+    const sourceData = this.dataSource ? this.internalData : this.data;
+    let result = [...sourceData];
     
-    // Advanced Filter
-    if (this.activeFilter && this.activeFilter.conditions.length > 0) {
+    // Advanced Filter - only apply client-side if NOT using dataSource
+    // If using dataSource, filter is already applied server-side
+    if (!this.dataSource && this.activeFilter && this.activeFilter.conditions.length > 0) {
       result = this.applyAdvancedFilter(result);
     }
     
-    // Simple Search/Filter (without pagination) - same logic as filteredData
-    if (this.searchTerm && this.searchTerm.trim()) {
+    // Simple Search/Filter (without pagination) - only search client-side if NOT using dataSource
+    // If using dataSource, search is already applied server-side
+    if (!this.dataSource && this.searchTerm && this.searchTerm.trim()) {
       const searchValue = this.searchTerm.trim();
       
       // Check if search value is numeric
@@ -1067,11 +1071,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       result = result.filter((row, index) => {
         const fieldsToSearch = this.searchFields.length > 0 
           ? this.searchFields 
-          : this.columns.map(col => col.field);
+          : this.displayColumns.map((col: TableColumn) => col.field);
         
         return fieldsToSearch.some(field => {
           // Find the column to check its type and searchable property
-          const column = this.columns.find(col => col.field === field);
+          const column = this.displayColumns.find(col => col.field === field);
           
           // Check if column is searchable
           // searchable can be: true, false, undefined, or a ColumnType string (e.g., "text", "int", "enum")
@@ -1135,8 +1139,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       });
     }
     
-    // Sorting
-    if (this.sortField) {
+    // Sorting - only apply client-side if NOT using dataSource
+    // If using dataSource, sorting is already applied server-side
+    if (!this.dataSource && this.sortField) {
       result.sort((a, b) => {
         const aVal = a[this.sortField!];
         const bVal = b[this.sortField!];
@@ -1156,7 +1161,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }
     
     // Limit (w2ui compatible) - applied before pagination for selection
-    if (this.currentLimit > 0) {
+    // Only apply limit client-side if NOT using dataSource
+    // If using dataSource, limit is already applied server-side
+    if (!this.dataSource && this.currentLimit > 0) {
       result = result.slice(0, this.currentLimit);
     }
     
@@ -1755,6 +1762,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         this.selectedRows.delete(this.getRowId(row));
       });
     }
+    
+    // Trigger change detection to update checkbox states
+    this.cdr.markForCheck();
     
     this.emitSelection();
   }
