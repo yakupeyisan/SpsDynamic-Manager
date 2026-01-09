@@ -47,15 +47,20 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
   @Input() required: boolean = false;
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   @Input() multiple: boolean = false;
+  @Input() searchable: boolean = true; // Enable search by default
+  @Input() searchPlaceholder: string = PLACEHOLDERS.SEARCH;
+  @Input() minOptionsForSearch: number = 5; // Auto-enable search if options >= this number
   
   @Output() valueChange = new EventEmitter<any>();
   @Output() openChange = new EventEmitter<boolean>();
 
   @ViewChild('selectContainer', { static: false }) selectContainer?: ElementRef;
   @ViewChild('dropdown', { static: false }) dropdown?: ElementRef;
+  @ViewChild('searchInput', { static: false }) searchInput?: ElementRef<HTMLInputElement>;
 
   value: any = this.multiple ? [] : null;
   isOpen: boolean = false;
+  searchTerm: string = '';
   
   constructor(
     private renderer: Renderer2,
@@ -209,6 +214,62 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
     return this.options.filter(opt => this.value.includes(opt.value));
   }
 
+  /**
+   * Get filtered options based on search term
+   */
+  get filteredOptions(): SelectOption[] {
+    if (!this.shouldShowSearch || !this.searchTerm.trim()) {
+      return this.options;
+    }
+    
+    const searchLower = this.searchTerm.toLowerCase().trim();
+    return this.options.filter(option => {
+      const label = String(option.label || '').toLowerCase();
+      const value = String(option.value || '').toLowerCase();
+      return label.includes(searchLower) || value.includes(searchLower);
+    });
+  }
+
+  /**
+   * Check if search should be shown
+   */
+  get shouldShowSearch(): boolean {
+    // If searchable is explicitly false, don't show search
+    if (this.searchable === false) {
+      return false;
+    }
+    // If searchable is true, always show search
+    if (this.searchable === true) {
+      return true;
+    }
+    // If searchable is not set (undefined), auto-enable based on options count
+    return this.options.length >= this.minOptionsForSearch;
+  }
+
+  /**
+   * Handle search input change
+   */
+  onSearchChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm = input.value;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Handle search input keydown (prevent dropdown from closing on Escape)
+   */
+  onSearchKeyDown(event: KeyboardEvent) {
+    // Prevent dropdown from closing when typing in search
+    event.stopPropagation();
+    
+    // Don't close dropdown on Escape if there's search text
+    if (event.key === 'Escape' && this.searchTerm.trim()) {
+      event.preventDefault();
+      this.searchTerm = '';
+      this.cdr.markForCheck();
+    }
+  }
+
   removeSelectedOption(event: Event, optionValue: any) {
     event.stopPropagation();
     if (!this.multiple || !Array.isArray(this.value)) return;
@@ -236,9 +297,17 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
       this.openChange.emit(this.isOpen);
       
       if (this.isOpen) {
-        setTimeout(() => this.positionDropdown(), 0);
+        // Clear search term when opening
+        this.searchTerm = '';
+        setTimeout(() => {
+          this.positionDropdown();
+          // Focus search input if search is enabled
+          if (this.shouldShowSearch && this.searchInput) {
+            this.searchInput.nativeElement.focus();
+          }
+        }, 0);
+      }
     }
-  }
   }
   
   private positionDropdown() {

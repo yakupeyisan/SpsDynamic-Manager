@@ -188,8 +188,44 @@
   box-shadow: var(--ui-shadow-lg);
   z-index: var(--ui-z-dropdown);
   max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ui-select-search {
+  padding: var(--ui-spacing-sm);
+  border-bottom: var(--ui-border-width) solid var(--ui-border-color);
+  flex-shrink: 0;
+}
+
+.ui-select-search-input {
+  width: 100%;
+  padding: var(--ui-spacing-xs) var(--ui-spacing-sm);
+  font-size: var(--ui-font-size-sm);
+  font-family: var(--ui-font-family);
+  color: var(--ui-gray-900);
+  background-color: var(--ui-white);
+  border: var(--ui-border-width) solid var(--ui-border-color);
+  border-radius: var(--ui-border-radius-sm, 4px);
+  outline: none;
+  transition: border-color var(--ui-transition-fast);
+}
+
+.ui-select-search-input:focus {
+  border-color: var(--ui-primary);
+  outline: none;
+}
+
+.ui-select-search-input::placeholder {
+  color: var(--ui-gray-500);
+}
+
+.ui-select-options-list {
   overflow-y: auto;
   overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Higher z-index for dropdowns inside filter overlay */

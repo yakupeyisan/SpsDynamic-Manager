@@ -38,19 +38,40 @@
     </div>
     
     <div *ngIf="isOpen" #dropdown class="ui-select-dropdown">
-      <div
-        *ngFor="let option of options"
-        class="ui-select-option"
-        [class.ui-select-option-selected]="isSelected(option)"
-        [class.ui-select-option-disabled]="option.disabled"
-        (click)="selectOption(option, $event)">
-        <span *ngIf="multiple" class="ui-select-checkbox">
-          <span *ngIf="isSelected(option)" class="ui-select-checkmark">✓</span>
-        </span>
-        {{ option.label }}
+      <!-- Search Input -->
+      <div *ngIf="shouldShowSearch" class="ui-select-search">
+        <input
+          #searchInput
+          type="text"
+          class="ui-select-search-input"
+          [placeholder]="searchPlaceholder"
+          [value]="searchTerm"
+          (input)="onSearchChange($event)"
+          (keydown)="onSearchKeyDown($event)"
+          (click)="$event.stopPropagation()"
+          autocomplete="off"
+          spellcheck="false">
       </div>
-      <div *ngIf="options.length === 0" class="ui-select-empty">
-        No options available
+      
+      <!-- Options List -->
+      <div class="ui-select-options-list">
+        <div
+          *ngFor="let option of filteredOptions"
+          class="ui-select-option"
+          [class.ui-select-option-selected]="isSelected(option)"
+          [class.ui-select-option-disabled]="option.disabled"
+          (click)="selectOption(option, $event)">
+          <span *ngIf="multiple" class="ui-select-checkbox">
+            <span *ngIf="isSelected(option)" class="ui-select-checkmark">✓</span>
+          </span>
+          {{ option.label }}
+        </div>
+        <div *ngIf="filteredOptions.length === 0 && options.length > 0" class="ui-select-empty">
+          No options found
+        </div>
+        <div *ngIf="options.length === 0" class="ui-select-empty">
+          No options available
+        </div>
       </div>
     </div>
   </div>
