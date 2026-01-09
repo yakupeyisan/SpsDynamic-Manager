@@ -536,14 +536,14 @@
   <!-- Full Page Form -->
   <div *ngIf="showFormPage">
     <!-- Backdrop for modal mode -->
-    <div *ngIf="!formFullscreen" 
+    <div *ngIf="!isFormFullscreen" 
          class="ui-form-page-backdrop"
          (click)="closeFormModal()">
     </div>
     
     <div class="ui-form-page-overlay"
-         [class.ui-form-page-fullscreen]="formFullscreen"
-         [class.ui-form-page-modal]="!formFullscreen">
+         [class.ui-form-page-fullscreen]="isFormFullscreen"
+         [class.ui-form-page-modal]="!isFormFullscreen">
       <div class="ui-form-page-container">
       <div class="ui-form-page-header">
         <h2>{{ isEditMode ? translate.instant('form.editRecord') : translate.instant('form.addNewRecord') }}</h2>

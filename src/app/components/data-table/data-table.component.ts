@@ -367,6 +367,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   selectedImageFile: File | null = null;
   imagePreview: string | null = null;
   activeFormTab: number = 0; // Active tab index for form
+  isFormFullscreen: boolean = false; // Form fullscreen state
   
   // Column resizing state
   private isResizing: boolean = false;
@@ -2204,6 +2205,65 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.closeFilterPanel();
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeyDown(event: Event) {
+    const keyboardEvent = event as KeyboardEvent;
+    
+    // Only handle keyboard shortcuts when form page is open
+    if (!this.showFormPage) {
+      return;
+    }
+
+    // ESC: Close form page
+    if (keyboardEvent.key === 'Escape') {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      this.closeFormModal();
+      return;
+    }
+
+    // Ctrl+Shift+F: Toggle fullscreen
+    if (keyboardEvent.ctrlKey && keyboardEvent.shiftKey && keyboardEvent.key === 'F') {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      this.toggleFormFullscreen();
+      return;
+    }
+
+    // Ctrl+M: Exit fullscreen (only when in fullscreen)
+    if (keyboardEvent.ctrlKey && !keyboardEvent.shiftKey && !keyboardEvent.altKey && keyboardEvent.key === 'm') {
+      if (this.isFormFullscreen) {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        this.toggleFormFullscreen();
+      }
+      return;
+    }
+
+    // Enter: Save (only if not typing in input/textarea/select/button)
+    if (keyboardEvent.key === 'Enter' && !keyboardEvent.ctrlKey && !keyboardEvent.shiftKey && !keyboardEvent.altKey) {
+      const target = keyboardEvent.target as HTMLElement;
+      const isEditableElement = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.tagName === 'SELECT' ||
+        target.tagName === 'BUTTON' ||
+        target.isContentEditable ||
+        target.closest('button') !== null ||
+        target.closest('input') !== null ||
+        target.closest('textarea') !== null ||
+        target.closest('select') !== null;
+      
+      // Only trigger save if not in an editable element
+      if (!isEditableElement && this.onSave) {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        // Trigger form submit by calling onFormSubmit with current formData
+        this.onFormSubmit(this.formData);
+      }
+    }
+  }
+
   onRefresh() {
     this.reload();
   }
@@ -2575,6 +2635,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.showFormPage = true; // Show full page form instead of modal
+    this.isFormFullscreen = this.formFullscreen ?? true; // Initialize fullscreen state
     
     // Load options for all columns with load configuration
     setTimeout(() => {
@@ -2592,6 +2653,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.isEditMode = true;
     this.editingRecordId = record[this.recid || 'recid'];
     this.showFormPage = true; // Show full page form instead of modal
+    this.isFormFullscreen = this.formFullscreen ?? true; // Initialize fullscreen state
     this.isLoading = true;
     this.cdr.markForCheck();
     
@@ -2759,9 +2821,20 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.activeFormTab = 0; // Reset to first tab
+    this.isFormFullscreen = false; // Reset fullscreen state
     
     // Mark for change detection
     this.cdr.markForCheck();
+  }
+
+  /**
+   * Toggle form fullscreen mode
+   */
+  toggleFormFullscreen() {
+    if (this.showFormPage) {
+      this.isFormFullscreen = !this.isFormFullscreen;
+      this.cdr.markForCheck();
+    }
   }
   
   // Track last active tab to prevent unnecessary reloads

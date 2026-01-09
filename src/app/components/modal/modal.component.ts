@@ -23,16 +23,70 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Output() closed = new EventEmitter<void>();
   @Output() opened = new EventEmitter<void>();
   @Output() onResize = new EventEmitter<{width: number, height: number}>();
+  @Output() onSave = new EventEmitter<void>(); // Emit when Enter is pressed
   
   @ViewChild('modalBody', { static: false }) modalBodyRef!: ElementRef<HTMLDivElement>;
   
   isFullscreen: boolean = false;
   private resizeObserver?: ResizeObserver;
 
-  @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(event: Event) {
-    if (this.show && this.closable) {
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboard(event: Event) {
+    const keyboardEvent = event as KeyboardEvent;
+    
+    // Only handle keyboard shortcuts when modal is open
+    if (!this.show) {
+      return;
+    }
+
+    // ESC: Close modal
+    if (keyboardEvent.key === 'Escape' && this.closable) {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
       this.close();
+      return;
+    }
+
+    // Ctrl+Shift+F: Toggle fullscreen
+    if (keyboardEvent.ctrlKey && keyboardEvent.shiftKey && keyboardEvent.key === 'F') {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      if (this.allowFullscreen) {
+        this.toggleFullscreen();
+      }
+      return;
+    }
+
+    // Ctrl+M: Exit fullscreen (only when in fullscreen)
+    if (keyboardEvent.ctrlKey && !keyboardEvent.shiftKey && !keyboardEvent.altKey && keyboardEvent.key === 'm') {
+      if (this.isFullscreen && this.allowFullscreen) {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        this.toggleFullscreen();
+      }
+      return;
+    }
+
+    // Enter: Save (only if not typing in input/textarea/select/button)
+    if (keyboardEvent.key === 'Enter' && !keyboardEvent.ctrlKey && !keyboardEvent.shiftKey && !keyboardEvent.altKey) {
+      const target = keyboardEvent.target as HTMLElement;
+      const isEditableElement = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.tagName === 'SELECT' ||
+        target.tagName === 'BUTTON' ||
+        target.isContentEditable ||
+        target.closest('button') !== null ||
+        target.closest('input') !== null ||
+        target.closest('textarea') !== null ||
+        target.closest('select') !== null;
+      
+      // Only trigger save if not in an editable element
+      if (!isEditableElement) {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        this.onSave.emit();
+      }
     }
   }
 
