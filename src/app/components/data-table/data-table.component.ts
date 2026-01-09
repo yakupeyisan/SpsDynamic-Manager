@@ -322,7 +322,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Output() blur = new EventEmitter<void>(); // Grid blur event (w2ui compatible)
   @Output() copy = new EventEmitter<{ text: string; event: ClipboardEvent }>(); // Copy event (w2ui compatible)
   @Output() paste = new EventEmitter<{ text: string; event: ClipboardEvent }>(); // Paste event (w2ui compatible)
-  
+
+  @Output() cellCheckboxChange = new EventEmitter<{ row: TableRow; column: TableColumn; rowIndex: number; columnIndex: number; newValue: boolean; oldValue: boolean }>();
   @Input() showRefresh: boolean = true;
   @Input() toolbar?: ToolbarConfig; // Custom toolbar configuration (w2ui style)
   
@@ -443,6 +444,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }
   }
 
+  onCellCheckboxChange($event: Event,_t231: TableRow,_t240: TableColumn,_t232: number,_t241: number) {
+    this.cellCheckboxChange.emit({ row: _t231, column: _t240, rowIndex: _t232, columnIndex: _t241, newValue:($event.target as HTMLInputElement).checked, oldValue:($event.target as HTMLInputElement).checked} as any);
+  }
   onGridFocus(event: FocusEvent) {
     this.focus.emit();
   }

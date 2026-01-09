@@ -346,7 +346,7 @@
             </ng-container>
             <ng-template #defaultCell>
               <ng-container *ngIf="column.type === 'checkbox'; else textCell">
-                <input type="checkbox" [checked]="getCellValue(row, column, i)" disabled />
+                <input [disabled]="column.editable !== true" type="checkbox" [checked]="getCellValue(row, column, i)" (change)="onCellCheckboxChange($event, row, column, i, colIndex)" />
               </ng-container>
               <ng-template #textCell>
                 <span *ngIf="isHtmlValue(column, row, i); else textValue" [innerHTML]="sanitizeHtml(getCellValue(row, column, i))"></span>

@@ -57,6 +57,13 @@ export const formFields: TableColumn[] = [
         }));
       }
     }
+  },
+  { 
+    field: 'Description', 
+    label: 'Açıklama', 
+    text: 'Açıklama', 
+    type: 'text' as ColumnType,
+    fullWidth: true
   }
 ];
 
@@ -64,7 +71,7 @@ export const formFields: TableColumn[] = [
 export const formTabs: FormTab[] = [
   { 
     label: 'Güvenli Girdi Bilgileri', 
-    fields: ['Source', 'Field'] 
+    fields: ['Source', 'Field', 'Description'] 
   }
 ];
 

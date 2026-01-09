@@ -1,31 +1,29 @@
 // Authorizations Component
-import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './authorizations-config';
 import { tableColumns } from './authorizations-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './authorizations-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, ColumnType } from 'src/app/components/data-table/data-table.component';
+import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { InputComponent } from 'src/app/components/input/input.component';
-import { ButtonComponent } from 'src/app/components/button/button.component';
 
 @Component({
   selector: 'app-authorizations',
   standalone: true,
-  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, ReactiveFormsModule, FormsModule, InputComponent, ButtonComponent],
+  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, ReactiveFormsModule, FormsModule],
   templateUrl: './authorizations.component.html',
   styleUrls: ['./authorizations.component.scss']
 })
-export class AuthorizationsComponent implements OnInit {
+export class AuthorizationsComponent implements OnInit, AfterViewInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
   @ViewChild('selectedClaimsTable') selectedClaimsTable?: DataTableComponent;
   @ViewChild('unselectedClaimsTable') unselectedClaimsTable?: DataTableComponent;
@@ -265,6 +263,17 @@ export class AuthorizationsComponent implements OnInit {
           this.unselectedTerminalsTable.reload();
         }
       }, 100);
+    } else if (settingsType === 'secure-fields-permissions') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showSecureFieldsPermissionsModal = true;
+      // Reload table after a short delay to ensure modal is rendered
+      setTimeout(() => {
+        if (this.secureFieldsTable) {
+          this.secureFieldsTable.reload();
+        }
+        // Re-attach checkbox listeners after reload
+        setTimeout(() => this.attachSecureFieldsCheckboxListeners(), 200);
+      }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
@@ -319,7 +328,6 @@ export class AuthorizationsComponent implements OnInit {
     this.selectedUnselectedTerminals = [];
     this.selectedSelectedTerminals = [];
   }
-
   // SecureFields form
   secureFieldForm: FormGroup;
 
@@ -357,33 +365,244 @@ export class AuthorizationsComponent implements OnInit {
       size: '200px',
       searchable: 'text',
       resizable: true
+    },
+    { 
+      field: 'Description', 
+      label: 'Açıklama', 
+      text: 'Açıklama',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '250px', 
+      size: '250px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'IsSeen', 
+      label: 'Görüntüleme', 
+      text: 'Görüntüleme',
+      type: 'checkbox' as ColumnType, 
+      sortable: true, 
+      width: '120px', 
+      size: '120px',
+      searchable: false,
+      resizable: true,
+      editable:true
+    },
+    { 
+      field: 'IsEdit', 
+      label: 'Düzenleme', 
+      text: 'Düzenleme',
+      type: 'checkbox' as ColumnType, 
+      sortable: true, 
+      width: '120px', 
+      size: '120px',
+      searchable: false,
+      resizable: true,
+      editable:true
     }
   ];
+
+  onCellCheckboxChange($event: { row: TableRow; column: TableColumn; rowIndex: number; columnIndex: number; newValue: boolean; oldValue: boolean; }) {
+    if (!this.authorizationIdForPermissions) {
+      this.toastr.warning('Geçersiz yetki seçimi', 'Uyarı');
+      return;
+    }
+
+    const secureFieldId = $event.row['Id'] || $event.row['recid'];
+    if (!secureFieldId) {
+      this.toastr.warning('Geçersiz güvenli girdi ID', 'Uyarı');
+      return;
+    }
+
+    // Get current values from row (these reflect the current state)
+    const currentIsSeen = $event.row['IsSeen'] === true || $event.row['IsSeen'] === 1 || $event.row['IsSeen'] === 'true' || $event.row['IsSeen'] === '1';
+    const currentIsEdit = $event.row['IsEdit'] === true || $event.row['IsEdit'] === 1 || $event.row['IsEdit'] === 'true' || $event.row['IsEdit'] === '1';
+
+    // First, check if a record exists in AuthorizationSecureFields
+    // Get the existing permission record ID if it exists
+    this.http.post<any>(`${environment.apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
+      limit: -1,
+      offset: 0,
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        const permissions = Array.isArray(response) ? response : (response.records || response.data || []);
+        
+        // Find existing record with matching AuthorizationId and SecureFieldId
+        const existingRecord = permissions.find((perm: any) => {
+          const fieldId = perm.SecureFieldId || perm.Id || perm.SecureField?.Id || perm.recid;
+          return Number(fieldId) === Number(secureFieldId);
+        });
+
+        // Build request payload
+        const request: any = {
+          AuthorizationId: this.authorizationIdForPermissions,
+          SecureFieldId: secureFieldId
+        };
+
+        // If record exists, include the Id for update
+        if (existingRecord) {
+          const recordId = existingRecord.Id || existingRecord.recid || existingRecord.AuthorizationSecureFieldId;
+          if (recordId) {
+            request.Id = recordId;
+          }
+        }
+
+        // Set the changed field to new value
+        if ($event.column.field === 'IsSeen') {
+          request.IsSeen = $event.newValue;
+          // Keep existing IsEdit value from existing record, or set to false if new
+          if (existingRecord) {
+            const existingIsEdit = existingRecord.IsEdit === true || existingRecord.IsEdit === 1 || existingRecord.IsEdit === 'true' || existingRecord.IsEdit === '1';
+            request.IsEdit = existingIsEdit;
+          } else {
+            request.IsEdit = currentIsEdit !== undefined ? currentIsEdit : false;
+          }
+        } else if ($event.column.field === 'IsEdit') {
+          request.IsEdit = $event.newValue;
+          // Keep existing IsSeen value from existing record, or set to false if new
+          if (existingRecord) {
+            const existingIsSeen = existingRecord.IsSeen === true || existingRecord.IsSeen === 1 || existingRecord.IsSeen === 'true' || existingRecord.IsSeen === '1';
+            request.IsSeen = existingIsSeen;
+          } else {
+            request.IsSeen = currentIsSeen !== undefined ? currentIsSeen : false;
+          }
+        }
+
+        // Send update/create request
+        this.http.post(`${environment.apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, request).subscribe({
+          next: (updateResponse: any) => {
+            if (updateResponse.error === false || updateResponse.status === 'success') {
+              // Update the row data immediately to reflect the change
+              $event.row[$event.column.field] = $event.newValue;
+              
+              // Reload table to ensure consistency
+              if (this.secureFieldsTable) {
+                this.secureFieldsTable.reload();
+              }
+            } else {
+              // Revert the change on error
+              $event.row[$event.column.field] = $event.oldValue;
+              this.toastr.error(updateResponse.message || 'Güncelleme başarısız', 'Hata');
+            }
+          },
+          error: (error: any) => {
+            console.error('Error updating secure field:', error);
+            // Revert the change on error
+            $event.row[$event.column.field] = $event.oldValue;
+            const errorMessage = error.error?.message || error.message || 'Güncelleme başarısız';
+            this.toastr.error(errorMessage, 'Hata');
+          }
+        });
+      },
+      error: (error: any) => {
+        console.error('Error checking existing permission:', error);
+        this.toastr.error('Mevcut kayıt kontrol edilemedi', 'Hata');
+      }
+    });
+  }
 
   // Data source for secure fields
   secureFieldsDataSource = (params: any) => {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/SecureFields`, {
-      page: params.page || 1,
-      limit: params.limit || 100,
-      offset: ((params.page || 1) - 1) * (params.limit || 100),
-      search: params.search || undefined,
-      searchLogic: params.searchLogic || 'AND',
-      sort: params.sort,
-      join: params.join,
-      showDeleted: params.showDeleted,
-      columns: this.secureFieldsTableColumns,
+    
+    // First, get all SecureFields
+    const allSecureFieldsRequest = this.http.post<any>(`${environment.apiUrl}/api/SecureFields`, {
+      page: 1,
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: any) => {
+        // Handle GridResponse format: { status, total, records }
+        if (response && response.records && Array.isArray(response.records)) {
+          return response.records;
+        }
+        // Handle direct array
+        if (Array.isArray(response)) {
+          return response;
+        }
+        // Handle other formats
+        return response.data || [];
+      }),
+      catchError(error => {
+        console.error('Error loading all secure fields:', error);
+        return of([]);
+      })
+    );
+    
+    // Then, get authorization-specific permissions
+    const authorizationPermissionsRequest = this.http.post<any>(`${environment.apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
+      limit: -1,
+      offset: 0,
       AuthorizationId: this.authorizationIdForPermissions
     }).pipe(
-      map((response: GridResponse) => ({
-        status: 'success' as const,
-        total: response.total || (response.records ? response.records.length : 0),
-        records: response.records || []
-      })),
+      map((response: any) => {
+        // Handle GridResponse format: { status, total, records }
+        if (response && response.records && Array.isArray(response.records)) {
+          return response.records;
+        }
+        // Handle direct array
+        if (Array.isArray(response)) {
+          return response;
+        }
+        // Handle other formats
+        return response.data || [];
+      }),
       catchError(error => {
-        console.error('Error loading secure fields:', error);
+        console.error('Error loading authorization permissions:', error);
+        return of([]);
+      })
+    );
+    
+    // Combine both requests
+    return forkJoin({
+      allFields: allSecureFieldsRequest,
+      permissions: authorizationPermissionsRequest
+    }).pipe(
+      map(({ allFields, permissions }) => {
+        // Create a map of permissions by SecureFieldId for quick lookup
+        const permissionsMap = new Map();
+        
+        // Process permissions array
+        if (Array.isArray(permissions) && permissions.length > 0) {
+          permissions.forEach((perm: any) => {
+            // Try different possible field names for SecureField ID
+            const fieldId = perm.SecureFieldId || perm.Id || perm.SecureField?.Id || perm.recid;
+            if (fieldId !== null && fieldId !== undefined) {
+              // Handle boolean values (true/false, 1/0, "true"/"false")
+              const isSeen = perm.IsSeen === true || perm.IsSeen === 1 || perm.IsSeen === 'true' || perm.IsSeen === '1';
+              const isEdit = perm.IsEdit === true || perm.IsEdit === 1 || perm.IsEdit === 'true' || perm.IsEdit === '1';
+              
+              permissionsMap.set(Number(fieldId), {
+                IsSeen: isSeen,
+                IsEdit: isEdit
+              });
+            }
+          });
+        }
+        
+        // Merge all fields with their permission status (default to false)
+        const mergedRecords = (allFields || []).map((field: any) => {
+          const fieldId = Number(field.Id || field.recid);
+          const permission = permissionsMap.get(fieldId); 
+          // Default to false if no permission found
+          return {
+            ...field,
+            IsSeen: permission ? permission.IsSeen : false,
+            IsEdit: permission ? permission.IsEdit : false
+          };
+        });
+        return {
+          status: 'success' as const,
+          total: mergedRecords.length,
+          records: mergedRecords
+        } as GridResponse;
+      }),
+      catchError(error => {
+        console.error('Error combining secure fields data:', error);
         return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
       })
     );
@@ -470,6 +689,36 @@ export class AuthorizationsComponent implements OnInit {
       error: (error) => {
         console.error('Delete error:', error);
         const errorMessage = error.error?.message || error.message || 'Güvenli girdi silinirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+
+  // Update secure field checkbox
+  updateSecureFieldCheckbox(secureFieldId: number, field: 'IsSeen' | 'IsEdit', checked: boolean): void {
+    if (!this.authorizationIdForPermissions) {
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, {
+      SecureFieldId: secureFieldId,
+      AuthorizationId: this.authorizationIdForPermissions,
+      Field: field,
+      Value: checked
+    }).subscribe({
+      next: (response: any) => {
+        if (response.error === false || response.status === 'success') {
+          // Reload table to reflect changes
+          if (this.secureFieldsTable) {
+            this.secureFieldsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Güncelleme başarısız', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error updating secure field checkbox:', error);
+        const errorMessage = error.error?.message || error.message || 'Güncelleme başarısız';
         this.toastr.error(errorMessage, 'Hata');
       }
     });
@@ -1860,7 +2109,8 @@ export class AuthorizationsComponent implements OnInit {
     private toastr: ToastrService, 
     public translate: TranslateService, 
     private cdr: ChangeDetectorRef,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    public elementRef: ElementRef
   ) {
     // Initialize secure field form
     this.secureFieldForm = this.fb.group({
@@ -1869,6 +2119,47 @@ export class AuthorizationsComponent implements OnInit {
     });
   }
   ngOnInit(): void {}
+  
+  ngAfterViewInit(): void {
+    // Setup checkbox event listeners for secure fields
+    this.setupSecureFieldsCheckboxListeners();
+  }
+  
+  setupSecureFieldsCheckboxListeners(): void {
+    // Use MutationObserver to watch for DOM changes when table reloads
+    const observer = new MutationObserver(() => {
+      this.attachSecureFieldsCheckboxListeners();
+    });
+    
+    // Observe the secure fields table container
+    const container = this.elementRef.nativeElement.querySelector('.secure-fields-permissions-container');
+    if (container) {
+      observer.observe(container, { childList: true, subtree: true });
+      // Initial attachment
+      setTimeout(() => this.attachSecureFieldsCheckboxListeners(), 100);
+    }
+  }
+  
+  attachSecureFieldsCheckboxListeners(): void {
+    const checkboxes = this.elementRef.nativeElement.querySelectorAll('.secure-field-checkbox');
+    checkboxes.forEach((checkbox: HTMLInputElement) => {
+      // Remove existing listeners to prevent duplicates
+      const newCheckbox = checkbox.cloneNode(true) as HTMLInputElement;
+      checkbox.parentNode?.replaceChild(newCheckbox, checkbox);
+      
+      // Add click event listener
+      newCheckbox.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement;
+        const secureFieldId = parseInt(target.getAttribute('data-id') || '0', 10);
+        const field = target.getAttribute('data-field') as 'IsSeen' | 'IsEdit';
+        const checked = target.checked;
+        
+        if (secureFieldId && field) {
+          this.updateSecureFieldCheckbox(secureFieldId, field, checked);
+        }
+      });
+    });
+  }
   onTableRowClick(event: any): void {}
   onTableRowDblClick(event: any): void {}
   onTableRowSelect(event: any): void {

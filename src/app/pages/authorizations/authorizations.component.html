@@ -669,10 +669,23 @@
   (onResize)="gridHeight = ($event.height-50<600?600:($event.height-50))+'px'">
   
   <div class="secure-fields-permissions-container">
-    //api/SecureFields ten bütün kayıtları getir
-    //gelen responsa göre list oluştur 
-    // Source[label] -  Field[label]  IsSeen[checkbox]  IsEdit[checkbox]
-    //api/SecureFields/GetAllByAuthorizationId/authorizationId
-    // gelen kayıtlara göre checkboxların seçili olup olmadığını kontrol et
+    <ui-data-table
+      #secureFieldsTable
+      [id]="'secure-fields-grid'"
+      [columns]="secureFieldsTableColumns"
+      [dataSource]="secureFieldsDataSource"
+      (cellCheckboxChange)="onCellCheckboxChange($event)"
+      [selectable]="false"
+      [pagination]="true"
+      [pageSize]="100"
+      [height]="gridHeight"
+      [recid]="'Id'"
+      [showRefresh]="true"
+      [searchable]="true"
+      [advancedFilter]="true"
+      [showFooter]="true"
+      [toolbar]="secureFieldsTableToolbarConfig"
+      [searchPlaceholder]="'Ara Tüm Alanlar'">
+    </ui-data-table>
   </div>
 </ui-modal>

@@ -34,5 +34,16 @@ export const tableColumns: TableColumn[] = [
     size: '300px',
     searchable: 'text',
     resizable: true
+  },
+  { 
+    field: 'Description', 
+    label: 'Açıklama', 
+    text: 'Açıklama',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '300px', 
+    size: '300px',
+    searchable: 'text',
+    resizable: true
   }
 ];
