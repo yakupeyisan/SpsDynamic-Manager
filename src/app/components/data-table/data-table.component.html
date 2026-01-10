@@ -492,6 +492,22 @@
               </ui-input>
             </ng-container>
             
+            <!-- Radio Button Group -->
+            <mat-radio-group
+              *ngIf="column.type === 'radio'"
+              [(ngModel)]="formData[column.field]"
+              (ngModelChange)="onFormFieldChange(column.field, $event)"
+              [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+              class="ui-form-radio-group">
+              <mat-radio-button
+                *ngFor="let option of (column.options || getColumnOptions(column))"
+                [value]="option.value"
+                [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                class="ui-form-radio-button">
+                {{ option.label }}
+              </mat-radio-button>
+            </mat-radio-group>
+            
             <!-- Select/Enum/List -->
             <ui-select
               *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
@@ -642,6 +658,22 @@
                           </ui-input>
                         </ng-container>
                         
+                        <!-- Radio Button Group -->
+                        <mat-radio-group
+                          *ngIf="column.type === 'radio'"
+                          [(ngModel)]="formData[column.field]"
+                          (ngModelChange)="onFormFieldChange(column.field, $event)"
+                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                          class="ui-form-radio-group">
+                          <mat-radio-button
+                            *ngFor="let option of (column.options || getColumnOptions(column))"
+                            [value]="option.value"
+                            [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                            class="ui-form-radio-button">
+                            {{ option.label }}
+                          </mat-radio-button>
+                        </mat-radio-group>
+                        
                         <!-- Select/Enum/List -->
                         <ui-select
                           *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
@@ -776,6 +808,22 @@
                       [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
                     </ui-input>
                   </ng-container>
+                  
+                  <!-- Radio Button Group -->
+                  <mat-radio-group
+                    *ngIf="column.type === 'radio'"
+                    [(ngModel)]="formData[column.field]"
+                    (ngModelChange)="onFormFieldChange(column.field, $event)"
+                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                    class="ui-form-radio-group">
+                    <mat-radio-button
+                      *ngFor="let option of (column.options || getColumnOptions(column))"
+                      [value]="option.value"
+                      [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                      class="ui-form-radio-button">
+                      {{ option.label }}
+                    </mat-radio-button>
+                  </mat-radio-group>
                   
                   <!-- Select/Enum/List -->
                   <ui-select

@@ -1426,6 +1426,25 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
   font-family: monospace;
 }
 
+/* Radio Button Group Styles */
+.ui-form-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ui-form-radio-button {
+  margin-bottom: 0.25rem;
+}
+
+.ui-form-radio-button ::ng-deep .mdc-form-field {
+  padding: 0.25rem 0;
+}
+
+.ui-form-radio-button ::ng-deep .mdc-radio {
+  margin-right: 0.5rem;
+}
+
 @media (max-width: 768px) {
   .ui-form-fields-grid {
     grid-template-columns: 1fr;

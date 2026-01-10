@@ -11,13 +11,14 @@ import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './terminals-config';
 import { tableColumns } from './terminals-table-columns';
-import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './terminals-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab } from 'src/app/components/data-table/data-table.component';
+import { formFields, formLoadUrl, formLoadRequest, formDataMapper } from './terminals-form-config';
+import { DataTableComponent, TableColumn, ToolbarConfig, ToolbarItem, GridResponse, JoinOption, FormTab, TableRow, ColumnType } from 'src/app/components/data-table/data-table.component';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
 
 @Component({
   selector: 'app-terminals',
   standalone: true,
-  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent],
+  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent],
   templateUrl: './terminals.component.html',
   styleUrls: ['./terminals.component.scss']
 })
@@ -27,10 +28,19 @@ export class TerminalsComponent implements OnInit {
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
-  formTabs: FormTab[] = formTabs;
+  formTabs: FormTab[] = []; // Will be initialized in ngOnInit from API
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
+  
+  // Access Permission View Modal
+  showAccessPermissionModal = false;
+  accessPermissionReaderId: number | null = null;
+  accessPermissionColumns: TableColumn[] = [];
+  accessPermissionDataSource?: (params: any) => Observable<GridResponse>;
+  
+  // Track selected records
+  selectedRecords: TableRow[] = [];
   
   tableDataSource = (params: any) => {
     return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
@@ -57,7 +67,19 @@ export class TerminalsComponent implements OnInit {
   };
 
   get tableToolbarConfig(): ToolbarConfig {
-    return { items: [], show: { reload: true, columns: true, search: true, add: true, edit: true, delete: true, save: false } };
+    return { 
+      items: [
+        {
+          id: 'getTerminalEmployee',
+          type: 'button' as const,
+          text: 'Yetkili Kişiler Ve Kartları Göster',
+          icon: 'fa fa-eye',
+          tooltip: 'Yetkili Kişiler Ve Kartları Göster',
+          onClick: (event: MouseEvent, item: ToolbarItem) => this.onShowAuthorizedPersons(event, item)
+        }
+      ], 
+      show: { reload: true, columns: true, search: true, add: true, edit: true, delete: true, save: false } 
+    };
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
@@ -83,12 +105,535 @@ export class TerminalsComponent implements OnInit {
     );
   };
 
-  onFormChange = (formData: any) => {};
+  onFormChange = (formData: any) => {
+    if (formData && formData.hasOwnProperty('ReaderTypeSelect')) {
+      const readerType = formData['ReaderTypeSelect'];
+      
+      // Reset all three checkbox fields
+      formData['isAccess'] = false;
+      formData['isCafeteria'] = false;
+      formData['isLocal'] = false;
+      
+      // Set the selected one to true
+      if (readerType === 'isAccess') {
+        formData['isAccess'] = true;
+      } else if (readerType === 'isCafeteria') {
+        formData['isCafeteria'] = true;
+      } else if (readerType === 'isLocal') {
+        formData['isLocal'] = true;
+      }
+      
+      // Trigger change detection if dataTableComponent is available
+      if (this.dataTableComponent) {
+        this.cdr.markForCheck();
+      }
+    }
+  };
   constructor(private http: HttpClient, private toastr: ToastrService, public translate: TranslateService, private cdr: ChangeDetectorRef) {}
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Load CafeteriaApplications to get tab names dynamically
+    this.loadCafeteriaApplications();
+    
+    // Initialize Access Permission View columns
+    this.accessPermissionColumns = [
+      { 
+        field: 'CardID', 
+        label: 'Kart ID', 
+        text: 'Kart ID',
+        type: 'int' as ColumnType, 
+        sortable: true, 
+        width: '80px', 
+        size: '80px',
+        min: 20,
+        searchable: 'int',
+        resizable: true
+      },
+      { 
+        field: 'EmployeeName', 
+        label: 'Ad', 
+        text: 'Ad',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.Employee?.Name || ''
+      },
+      { 
+        field: 'EmployeeSurName', 
+        label: 'Soyad', 
+        text: 'Soyad',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.Employee?.SurName || ''
+      },
+      { 
+        field: 'IdentificationNumber', 
+        label: 'TC Kimlik No', 
+        text: 'TC Kimlik No',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.Employee?.IdentificationNumber || ''
+      },
+      { 
+        field: 'DepartmentName', 
+        label: 'Departman', 
+        text: 'Departman',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '200px', 
+        size: '200px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => {
+          if (record.Employee?.EmployeeDepartments && record.Employee.EmployeeDepartments.length > 0) {
+            return record.Employee.EmployeeDepartments.map((ed: any) => ed.Department?.DepartmentName).filter(Boolean).join(', ') || '';
+          }
+          return '';
+        }
+      },
+      { 
+        field: 'TagCode', 
+        label: 'Tag Kodu', 
+        text: 'Tag Kodu',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '100px', 
+        size: '100px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CardCode', 
+        label: 'Kart Kodu', 
+        text: 'Kart Kodu',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '100px', 
+        size: '100px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CardUID', 
+        label: 'Kart UID', 
+        text: 'Kart UID',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CardCodeType', 
+        label: 'Kart Yapısı', 
+        text: 'Kart Yapısı',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CardType', 
+        label: 'Kart Tipi', 
+        text: 'Kart Tipi',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.CardType?.CardType || ''
+      },
+      { 
+        field: 'CardStatus', 
+        label: 'Kart Statüsü', 
+        text: 'Kart Statüsü',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.CardStatus?.Name || ''
+      },
+      { 
+        field: 'CafeteriaGroupName', 
+        label: 'Kafeterya Grup', 
+        text: 'Kafeterya Grup',
+        type: 'text' as ColumnType, 
+        sortable: false, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: false,
+        resizable: true,
+        render: (record: any) => record.CafeteriaGroup?.CafeteriaGroupName || ''
+      },
+      { 
+        field: 'FacilityCode', 
+        label: 'Tesis Kodu', 
+        text: 'Tesis Kodu',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '100px', 
+        size: '100px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'Plate', 
+        label: 'Plaka', 
+        text: 'Plaka',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '100px', 
+        size: '100px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CardDesc', 
+        label: 'Kart Açıklaması', 
+        text: 'Kart Açıklaması',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'Status', 
+        label: 'Durum', 
+        text: 'Durum',
+        type: 'checkbox' as ColumnType, 
+        sortable: true, 
+        width: '60px', 
+        size: '60px',
+        min: 20,
+        searchable: 'checkbox',
+        resizable: true
+      },
+      { 
+        field: 'isDefined', 
+        label: 'Tanımlı', 
+        text: 'Tanımlı',
+        type: 'checkbox' as ColumnType, 
+        sortable: true, 
+        width: '60px', 
+        size: '60px',
+        min: 20,
+        searchable: 'checkbox',
+        resizable: true
+      },
+      { 
+        field: 'isVisitor', 
+        label: 'Ziyaretçi', 
+        text: 'Ziyaretçi',
+        type: 'checkbox' as ColumnType, 
+        sortable: true, 
+        width: '60px', 
+        size: '60px',
+        min: 20,
+        searchable: 'checkbox',
+        resizable: true
+      },
+      { 
+        field: 'isFingerPrint', 
+        label: 'Parmak İzi', 
+        text: 'Parmak İzi',
+        type: 'checkbox' as ColumnType, 
+        sortable: true, 
+        width: '60px', 
+        size: '60px',
+        min: 20,
+        searchable: 'checkbox',
+        resizable: true
+      },
+      { 
+        field: 'DefinedTime', 
+        label: 'Tanımlama Zamanı', 
+        text: 'Tanımlama Zamanı',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      },
+      { 
+        field: 'FingerPrintUpdateTime', 
+        label: 'Parmak İzi Güncelleme', 
+        text: 'Parmak İzi Güncelleme',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      },
+      { 
+        field: 'TemporaryDate', 
+        label: 'Geçici Tarih', 
+        text: 'Geçici Tarih',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      },
+      { 
+        field: 'TransferTagCode', 
+        label: 'Transfer Tag Kodu', 
+        text: 'Transfer Tag Kodu',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'BackupCardUID', 
+        label: 'Yedek Kart UID', 
+        text: 'Yedek Kart UID',
+        type: 'text' as ColumnType, 
+        sortable: true, 
+        width: '120px', 
+        size: '120px',
+        min: 20,
+        searchable: 'text',
+        resizable: true
+      },
+      { 
+        field: 'CreatedAt', 
+        label: 'Oluşturulma', 
+        text: 'Oluşturulma',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      },
+      { 
+        field: 'UpdatedAt', 
+        label: 'Güncellenme', 
+        text: 'Güncellenme',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      },
+      { 
+        field: 'DeletedAt', 
+        label: 'Silinme', 
+        text: 'Silinme',
+        type: 'datetime' as ColumnType, 
+        sortable: true, 
+        width: '150px', 
+        size: '150px',
+        min: 20,
+        searchable: 'datetime',
+        resizable: true
+      }
+    ];
+
+    // Initialize Access Permission View data source
+    this.accessPermissionDataSource = (params: any) => {
+      if (!this.accessPermissionReaderId) {
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      }
+      return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetHasAccessByReaderId`, {
+        page: params.page || 1,
+        limit: params.limit || 100,
+        offset: ((params.page || 1) - 1) * (params.limit || 100),
+        search: params.search || undefined,
+        searchLogic: params.searchLogic || 'AND',
+        sort: params.sort,
+        ReaderID: this.accessPermissionReaderId,
+        columns: this.accessPermissionColumns
+      }).pipe(
+        map((response: GridResponse) => ({
+          status: 'success' as const,
+          total: response.total || (response.records ? response.records.length : 0),
+          records: response.records || []
+        })),
+        catchError(error => {
+          console.error('Error loading access permission data:', error);
+          return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+        })
+      );
+    };
+  }
+
+  private loadCafeteriaApplications(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaApplications`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: GridResponse) => {
+        const records = response.records || [];
+        
+        // Create a map of application IDs to names
+        const applicationMap: { [key: number]: string } = {};
+        records.forEach((app: any) => {
+          const id = app.CafeteriaApplicationID;
+          const name = app.ApplicationName;
+          if (id && name) {
+            applicationMap[id] = name;
+          }
+        });
+
+        // Update form tabs with application names
+        this.formTabs = [
+          { 
+            label: 'Genel', 
+            fields: [
+              'ReaderName',          // Okuyucu Adı
+              'ReaderType',          // Terminal Tipi
+              'inOUT',               // Okuyucu Yönü
+              'SerialNumber',        // Seri No
+              'Password',            // Şifre
+              'CardTypeID',          // CardTypeID
+              'WiegandType',         // Wiegand Tipi
+              'ReaderTypeSelect',    // Okuyucu Tipi
+              'Status',              // Durum
+              'isLive',              // Canlı İzlenebilir mi?
+              'isPdks',              // Puantaj Kapısı mı?
+              'isCafeteriaDailyLimit', // Kafeterya Günlük Limit
+              'isAntiPassBack',      // AntiPassBack
+              'isPoll',              // Yoklama Kapısı mı?
+              'CafeteriaAccountId',   // Kafeterya Hesabı
+            ]
+          },
+          { 
+            label: 'Bağlantı Ayarları', 
+            fields: [
+              'IpAddress',           // Ip Adresi
+              'DevicePort',          // Port
+              'ServerIPAddress',     // Server IP Address
+              'ServerPort',          // Server Port
+              'ConnectionType'       // Bağlantı Tipi
+            ]
+          },
+          { 
+            label: 'Diğer', 
+            fields: [
+              'ReaderPort',          // Okuyucu Portu
+              'NodeId',              // Node No
+              'RelayIdGranted',      // Onaylandığında Tetikle
+              'RelayIdDenied',       // Onaylanmadığında Tetikle
+              'RelayHoldTime',       // Role Süresi
+              'LocationType',        // Kapı Tipi
+              'SntpServer',          // Sntp Server
+              'ServerIPAddressFirmwareUpdate' // Firmware Server
+            ]
+          },
+          { 
+            label: applicationMap[1] || 'OGLEN YEMEK', 
+            fields: ['App1Start', 'App1End', 'App1UseCredit', 'App1UseBalance']
+          },
+          { 
+            label: applicationMap[2] || 'KAHVALTI', 
+            fields: ['App2Start', 'App2End', 'App2UseCredit', 'App2UseBalance']
+          },
+          { 
+            label: applicationMap[3] || 'BOŞ 2', 
+            fields: ['App3Start', 'App3End', 'App3UseCredit', 'App3UseBalance']
+          },
+          { 
+            label: applicationMap[4] || 'BOŞ 3', 
+            fields: ['App4Start', 'App4End', 'App4UseCredit', 'App4UseBalance']
+          }
+        ];
+
+        this.cdr.markForCheck();
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error loading cafeteria applications:', error);
+        // Keep default form tabs on error
+        this.formTabs = [
+          { 
+            label: 'Genel', 
+            fields: [
+              'ReaderName', 'ReaderType', 'inOUT', 'SerialNumber', 'Password', 'CardTypeID', 
+              'WiegandType', 'ReaderTypeSelect', 'Status', 'isLive', 'isPdks', 
+              'isCafeteriaDailyLimit', 'isAntiPassBack', 'isPoll', 'CafeteriaAccountId'
+            ]
+          },
+          { 
+            label: 'Bağlantı Ayarları', 
+            fields: ['IpAddress', 'DevicePort', 'ServerIPAddress', 'ServerPort', 'ConnectionType']
+          },
+          { 
+            label: 'Diğer', 
+            fields: ['ReaderPort', 'NodeId', 'RelayIdGranted', 'RelayIdDenied', 'RelayHoldTime', 'LocationType', 'SntpServer', 'ServerIPAddressFirmwareUpdate']
+          },
+          { 
+            label: 'OGLEN YEMEK', 
+            fields: ['App1Start', 'App1End', 'App1UseCredit', 'App1UseBalance']
+          },
+          { 
+            label: 'KAHVALTI', 
+            fields: ['App2Start', 'App2End', 'App2UseCredit', 'App2UseBalance']
+          },
+          { 
+            label: 'BOŞ 2', 
+            fields: ['App3Start', 'App3End', 'App3UseCredit', 'App3UseBalance']
+          },
+          { 
+            label: 'BOŞ 3', 
+            fields: ['App4Start', 'App4End', 'App4UseCredit', 'App4UseBalance']
+          }
+        ];
+        this.cdr.markForCheck();
+        return of(null);
+      })
+    ).subscribe();
+  }
+
   onTableRowClick(event: any): void {}
   onTableRowDblClick(event: any): void {}
-  onTableRowSelect(event: any): void {}
+  onTableRowSelect(event: TableRow[]): void {
+    this.selectedRecords = event || [];
+  }
   onTableRefresh(): void {
     if (!this.isReloading && this.dataTableComponent) {
       this.isReloading = true;
@@ -139,4 +684,24 @@ export class TerminalsComponent implements OnInit {
   onTableAdd(): void { if (this.dataTableComponent) { this.dataTableComponent.openAddForm(); } }
   onTableEdit(event: any): void { if (event && event.selectedRecord) { if (this.dataTableComponent) { this.dataTableComponent.openEditForm(event.selectedRecord); } } }
   onAdvancedFilterChange(event: any): void {}
+
+  onShowAuthorizedPersons(event: MouseEvent, item: ToolbarItem): void {
+    if (this.selectedRecords.length !== 1) {
+      this.toastr.warning('Lütfen 1 adet kayıt seçiniz.', 'Uyarı');
+      return;
+    }
+    const selectedRecord = this.selectedRecords[0];
+    const readerId = selectedRecord['ReaderID'] || selectedRecord['recid'] || selectedRecord['id'];
+    if (!readerId) {
+      this.toastr.error('Terminal ID bulunamadı.', 'Hata');
+      return;
+    }
+    this.accessPermissionReaderId = Number(readerId);
+    this.showAccessPermissionModal = true;
+  }
+
+  onAccessPermissionModalClose(): void {
+    this.showAccessPermissionModal = false;
+    this.accessPermissionReaderId = null;
+  }
 }

@@ -6,6 +6,7 @@ import { Observable, of, Subscription } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { DataService } from '../../services/data.service';
+import { MaterialModule } from '../../material.module';
 import { InputComponent } from '../input/input.component';
 import { FilterPanelComponent } from './filter-panel.component';
 import { ModalComponent } from '../modal/modal.component';
@@ -221,7 +222,7 @@ export interface ToolbarConfig {
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent,ButtonComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -1971,7 +1972,29 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Get cell value for a column, supporting render functions and nested fields
    */
   getCellValue(row: TableRow, column: TableColumn, index: number): any {
-    // If render function is provided, use it
+    // For checkbox type, don't use render function - return boolean value directly
+    if (column.type === 'checkbox' || column.type === 'toggle') {
+      let value: any;
+      // Support nested field access
+      if (this.nestedFields && column.field.includes('.')) {
+        const fields = column.field.split('.');
+        value = row;
+        for (const field of fields) {
+          if (value && typeof value === 'object') {
+            value = value[field];
+          } else {
+            value = false;
+            break;
+          }
+        }
+      } else {
+        value = row[column.field];
+      }
+      // Convert to boolean: true, 1, '1', 'true' -> true, everything else -> false
+      return value === true || value === 1 || value === '1' || value === 'true';
+    }
+    
+    // If render function is provided, use it (but not for checkbox/toggle)
     if (column.render && typeof column.render === 'function') {
       return column.render(row, index, column);
     }

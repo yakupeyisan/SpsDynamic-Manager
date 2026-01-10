@@ -20,14 +20,15 @@
           [onFormChange]="onFormChange"
           [selectable]="true"
           [pagination]="true"
-          [pageSize]="10"
-          [height]="'800px'"
-          [recordHeight]="40"
+          [pageSize]="100"
+          [limit]="100"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="32"
           [showEmptyRows]="true"
           [fixedBody]="true"
           [advancedFilter]="true"
           [showRefresh]="true"
-          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
           [recid]="'ReaderID'"
           [selectType]="'row'"
           [multiSelect]="true"
@@ -53,4 +54,47 @@
       </div>
     </div>
   </div>
+
+  <!-- Access Permission View Modal -->
+  <ui-modal
+    [title]="'Yetkili Kişi ve Kart Listesi'"
+    [show]="showAccessPermissionModal"
+    [size]="'full'"
+    [closable]="true"
+    [backdrop]="true"
+    [backdropClose]="true"
+    [showFooter]="false"
+    [allowFullscreen]="true"
+    (showChange)="showAccessPermissionModal = $event"
+    (closed)="onAccessPermissionModalClose()">
+    <div class="access-permission-view" style="height: calc(100vh - 80px);">
+      <ui-data-table
+        [id]="'access-permission-grid'"
+        [showFooter]="true"
+        [page]="1"
+        [columns]="accessPermissionColumns"
+        [dataSource]="accessPermissionDataSource"
+        [selectable]="false"
+        [pagination]="true"
+        [pageSize]="100"
+        [limit]="100"
+        [height]="'calc(100vh - 120px)'"
+        [recordHeight]="32"
+        [showEmptyRows]="true"
+        [fixedBody]="true"
+        [advancedFilter]="true"
+        [showRefresh]="true"
+        [searchPlaceholder]="'Ara...'"
+        [recid]="'Id'"
+        [selectType]="'row'"
+        [multiSelect]="false"
+        [multiSort]="true"
+        [keyboard]="true"
+        [liveSearch]="true"
+        [nestedFields]="true"
+        [columnTooltip]="'top'"
+        [toolbar]="{ items: [], show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false } }">
+      </ui-data-table>
+    </div>
+  </ui-modal>
 </div>
