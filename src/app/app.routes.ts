@@ -62,6 +62,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AccessEvents',
+        loadComponent: () =>
+          import('./pages/access-events/access-events.component').then(
+            (m) => m.AccessEventsComponent
+          ),
+        data: {
+          title: 'Geçiş Kayıtları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(

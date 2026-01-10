@@ -45,9 +45,22 @@
               </ui-input>
             </div>
 
+            <!-- Checkbox type (radio options for single selection) -->
+            <div *ngIf="condition.operator !== 'between' && isCheckboxType(condition.field)" class="ui-filter-checkbox-group">
+              <label *ngFor="let option of getListOptions(condition.field)" class="ui-filter-checkbox-option">
+                <input
+                  type="radio"
+                  [name]="'filter-checkbox-' + i"
+                  [checked]="isCheckboxValueChecked(condition.value, option.value)"
+                  (change)="onCheckboxChange(i, option.value, $event)"
+                  class="ui-filter-checkbox">
+                <span>{{ option.label }}</span>
+              </label>
+            </div>
+
             <!-- List type (single select) -->
             <ui-select
-              *ngIf="condition.operator !== 'between' && isListType(condition.field)"
+              *ngIf="condition.operator !== 'between' && !isCheckboxType(condition.field) && isListType(condition.field)"
               [options]="getListOptions(condition.field)"
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
@@ -56,7 +69,7 @@
 
             <!-- Enum type (multi select) -->
             <ui-select
-              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && isEnumType(condition.field)"
+              *ngIf="condition.operator !== 'between' && !isCheckboxType(condition.field) && !isListType(condition.field) && isEnumType(condition.field)"
               [options]="getEnumOptions(condition.field)"
               [ngModel]="condition.value || []"
               (valueChange)="onEnumValueChange(i, $event)"
@@ -66,7 +79,7 @@
 
             <!-- Date type (date picker) -->
             <input
-              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && !isEnumType(condition.field) && isDateType(condition.field)"
+              *ngIf="condition.operator !== 'between' && !isCheckboxType(condition.field) && !isListType(condition.field) && !isEnumType(condition.field) && isDateType(condition.field)"
               [type]="getDateInputType(condition.field)"
               class="ui-filter-date-input"
               [ngModel]="condition.value"
@@ -75,7 +88,7 @@
 
             <!-- Regular input for other types -->
             <ui-input
-              *ngIf="condition.operator !== 'between' && !isListType(condition.field) && !isEnumType(condition.field) && !isDateType(condition.field)"
+              *ngIf="condition.operator !== 'between' && !isCheckboxType(condition.field) && !isListType(condition.field) && !isEnumType(condition.field) && !isDateType(condition.field)"
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
               [type]="getFieldType(condition.field)"

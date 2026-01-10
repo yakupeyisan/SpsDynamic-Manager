@@ -356,6 +356,37 @@ export class FilterPanelComponent implements OnInit {
     this.currentFilter.conditions[index].value = value;
   }
 
+  isCheckboxValueChecked(value: any, optionValue: any): boolean {
+    if (value == null) return false;
+    // Handle boolean comparisons
+    if (value === optionValue) return true;
+    // Handle string/number conversions
+    if (String(value) === String(optionValue)) return true;
+    // Handle boolean to number conversions (true = 1, false = 0)
+    if (value === true && optionValue === 1) return true;
+    if (value === false && optionValue === 0) return true;
+    if (value === 1 && optionValue === true) return true;
+    if (value === 0 && optionValue === false) return true;
+    return false;
+  }
+
+  onCheckboxChange(index: number, optionValue: any, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    // For checkbox type, store the boolean/number value (0 or 1, false or true)
+    // If unchecked, set to null to clear the filter
+    this.currentFilter.conditions[index].value = checked ? optionValue : null;
+    
+    // Create new array reference for OnPush change detection
+    this.currentFilter = {
+      ...this.currentFilter,
+      conditions: this.currentFilter.conditions.map((cond, i) => 
+        i === index ? { ...cond, value: checked ? optionValue : null } : cond
+      )
+    };
+    
+    this.cdr.markForCheck();
+  }
+
   getBetweenMin(value: any): string {
     if (typeof value === 'string' && value.includes(',')) {
       return value.split(',')[0].trim();
@@ -388,9 +419,14 @@ export class FilterPanelComponent implements OnInit {
     this.currentFilter.conditions[index].value = `${minValue},${maxValueStr}`;
   }
 
+  isCheckboxType(field: string): boolean {
+    const columnType = this.getColumnType(field);
+    return columnType === 'checkbox' || columnType === 'toggle';
+  }
+
   isListType(field: string): boolean {
     const columnType = this.getColumnType(field);
-    return columnType === 'list' || columnType === 'select' || columnType === 'radio' || columnType === 'checkbox' || columnType === 'toggle';
+    return columnType === 'list' || columnType === 'select' || columnType === 'radio';
   }
 
   isEnumType(field: string): boolean {
