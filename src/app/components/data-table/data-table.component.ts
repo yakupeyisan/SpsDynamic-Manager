@@ -976,12 +976,13 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           
           let value: any;
           
-          if (column && column.render && typeof column.render === 'function') {
-            // Use render function to get the value
-            value = column.render(row, index, column);
-          } else if (this.nestedFields && field.includes('.')) {
-            // Support nested field access
-            const fields = field.split('.');
+          // For search, prioritize nested field access over render function to get raw value
+          // Use searchField if available, otherwise use field
+          const searchFieldName = column?.searchField || field;
+          
+          if (this.nestedFields && searchFieldName.includes('.')) {
+            // Support nested field access for search (get raw value, not rendered)
+            const fields = searchFieldName.split('.');
             value = row;
             for (const f of fields) {
               if (value && typeof value === 'object') {
@@ -991,9 +992,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
                 break;
               }
             }
+          } else if (column && column.render && typeof column.render === 'function') {
+            // Use render function to get the value (fallback if not nested)
+            value = column.render(row, index, column);
+            // Strip HTML tags if value is HTML string
+            if (typeof value === 'string' && value.includes('<')) {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = value;
+              value = tempDiv.textContent || tempDiv.innerText || value;
+            }
           } else {
             // Direct field access
-            value = row[field];
+            value = row[searchFieldName];
           }
           
           if (value == null) return false;

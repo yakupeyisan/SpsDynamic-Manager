@@ -195,7 +195,7 @@ export const navItems: NavItem[] = [
         children: [
           {
             displayName: 'Geçiş Kayıtları',
-            route: '/AccessEventSalesReports',
+            route: '/AccessEvents',
           },
           {
             displayName: 'İlk Giriş/Son Çıkış',

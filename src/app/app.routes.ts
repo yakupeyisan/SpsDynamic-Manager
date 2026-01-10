@@ -40,6 +40,28 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'EmployeeWithLocation',
+        loadComponent: () =>
+          import('./pages/employee-with-location/employee-with-location.component').then(
+            (m) => m.EmployeeWithLocationComponent
+          ),
+        data: {
+          title: 'Kişi Konum Bilgileri',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'EmployeeTransferList',
+        loadComponent: () =>
+          import('./pages/employee-transfer-list/employee-transfer-list.component').then(
+            (m) => m.EmployeeTransferListComponent
+          ),
+        data: {
+          title: 'Aktarım Raporları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(
@@ -371,6 +393,28 @@ export const routes: Routes = [
           ),
         data: {
           title: 'Mail Ayarları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'SmsTransactions',
+        loadComponent: () =>
+          import('./pages/sms-transactions/sms-transactions.component').then(
+            (m) => m.SmsTransactionsComponent
+          ),
+        data: {
+          title: 'SMS Raporları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'MailTransactions',
+        loadComponent: () =>
+          import('./pages/mail-transactions/mail-transactions.component').then(
+            (m) => m.MailTransactionsComponent
+          ),
+        data: {
+          title: 'E-Mail Raporları',
           breadcrumb: false,
         },
       },
