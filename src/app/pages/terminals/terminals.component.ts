@@ -24,6 +24,7 @@ import { ModalComponent } from 'src/app/components/modal/modal.component';
 })
 export class TerminalsComponent implements OnInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  @ViewChild('accessPermissionGrid') accessPermissionGridComponent?: DataTableComponent;
   private isReloading: boolean = false;
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
@@ -698,6 +699,31 @@ export class TerminalsComponent implements OnInit {
     }
     this.accessPermissionReaderId = Number(readerId);
     this.showAccessPermissionModal = true;
+  }
+
+  onAccessPermissionModalShowChange(show: boolean): void {
+    this.showAccessPermissionModal = show;
+    // Reload grid when modal is opened and ReaderID is set
+    if (show && this.accessPermissionReaderId) {
+      // Use setTimeout to ensure modal is fully rendered before reload
+      setTimeout(() => {
+        if (this.accessPermissionGridComponent) {
+          this.accessPermissionGridComponent.reload();
+        }
+      }, 200);
+    }
+  }
+
+  onAccessPermissionModalOpened(): void {
+    // Reload grid after modal is opened and ReaderID is set
+    if (this.accessPermissionReaderId && this.accessPermissionGridComponent) {
+      // Use setTimeout to ensure modal is fully rendered before reload
+      setTimeout(() => {
+        if (this.accessPermissionGridComponent) {
+          this.accessPermissionGridComponent.reload();
+        }
+      }, 200);
+    }
   }
 
   onAccessPermissionModalClose(): void {

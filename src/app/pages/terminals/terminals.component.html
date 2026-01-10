@@ -65,10 +65,12 @@
     [backdropClose]="true"
     [showFooter]="false"
     [allowFullscreen]="true"
-    (showChange)="showAccessPermissionModal = $event"
+    (showChange)="onAccessPermissionModalShowChange($event)"
+    (opened)="onAccessPermissionModalOpened()"
     (closed)="onAccessPermissionModalClose()">
     <div class="access-permission-view" style="height: calc(100vh - 80px);">
       <ui-data-table
+        #accessPermissionGrid
         [id]="'access-permission-grid'"
         [showFooter]="true"
         [page]="1"
