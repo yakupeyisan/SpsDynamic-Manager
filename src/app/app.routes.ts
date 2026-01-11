@@ -73,6 +73,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'InputOutputReports',
+        loadComponent: () =>
+          import('./pages/input-output-reports/input-output-reports.component').then(
+            (m) => m.InputOutputReportsComponent
+          ),
+        data: {
+          title: 'İlk Giriş/Son Çıkış',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(

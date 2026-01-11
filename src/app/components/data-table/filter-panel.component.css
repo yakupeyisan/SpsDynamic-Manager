@@ -256,3 +256,21 @@
   }
 }
 
+.ui-filter-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-spacing-sm);
+}
+
+.ui-filter-checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ui-filter-checkbox-option .ui-filter-checkbox {
+  cursor: pointer;
+  margin: 0;
+}
