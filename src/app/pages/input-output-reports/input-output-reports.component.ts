@@ -33,44 +33,86 @@ export class InputOutputReportsComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
+    // Process search conditions to add type parameter for date fields
+    let processedSearch = params.search;
+    if (processedSearch && processedSearch.conditions && Array.isArray(processedSearch.conditions)) {
+      processedSearch = {
+        ...processedSearch,
+        conditions: processedSearch.conditions.map((condition: any) => {
+          // Find column to determine type
+          const column = this.tableColumns.find(col => col.field === condition.field);
+          if (column && (column.type === 'date' || column.type === 'datetime' || column.type === 'time')) {
+            // Add type parameter for date fields
+            return {
+              ...condition,
+              type: 'date'
+            };
+          }
+          return condition;
+        })
+      };
+    }
+    
     return this.http.post<any>(`${environment.apiUrl}/api/AccessEvents/InputOutputReports`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
-      search: params.search || undefined,
+      search: processedSearch || undefined,
       searchLogic: params.searchLogic || 'AND',
       sort: params.sort,
       join: params.join,
       showDeleted: params.showDeleted,
       columns: this.tableColumns
-    }).pipe(
+    }).pipe(      
       map((response: any) => {
-        // Handle response - API returns flattened records (each record has EventID and nested Employee)
-        let records: any[] = [];
-        let total = 0;
-
-        if (response.records) {
-          // GridResponse format: { records: [...], total: ... }
-          records = response.records.map((record: any) => ({
-            ...record,
-            recid: record.EventID || record.recid || `${record.EmployeeID || ''}_${record.Date || ''}_${record.inOUT || ''}`
-          }));
-          total = response.total || records.length;
-        } else if (Array.isArray(response)) {
-          // Direct array format: [...]
-          records = response.map((record: any) => ({
-            ...record,
-            recid: record.EventID || record.recid || `${record.EmployeeID || ''}_${record.Date || ''}_${record.inOUT || ''}`
-          }));
-          total = records.length;
+        if(response.status === 'success') {
+          var employees = response.employees || [];
+          var events = response.events || [];
+          var records: TableRow[] = [];
+          
+          response.records.forEach((record: any) => {
+            // Filter events for this employee and date
+            const employeeEvents = events.filter((event: any) => 
+              event.EmployeeID === record.EmployeeID && event.Date === record.Date
+            );
+            
+            // Get inOUT value (check both inOUT and inOut for case sensitivity)
+            const getInOut = (event: any) => {
+              return event.inOUT !== undefined ? event.inOUT : (event.inOut !== undefined ? event.inOut : null);
+            };
+            
+            // Filter InEvent (Giriş - inOUT === 0 or "0")
+            const inEvents = employeeEvents.filter((event: any) => {
+              const inOut = getInOut(event);
+              return inOut === 0 || inOut === '0' || inOut === false || inOut === 'Giriş' || String(inOut).toLowerCase() === 'giriş';
+            });
+            
+            // Filter OutEvent (Çıkış - inOUT === 1 or "1")
+            const outEvents = employeeEvents.filter((event: any) => {
+              const inOut = getInOut(event);
+              return inOut === 1 || inOut === '1' || inOut === true || inOut === 'Çıkış' || String(inOut).toLowerCase() === 'çıkış';
+            });
+            
+            var rec = {
+              ...record,
+              Employee: employees.find((employee: any) => employee.EmployeeID === record.EmployeeID),
+              InEvent: inEvents,
+              OutEvent: outEvents,
+            } as TableRow;
+            records.push(rec);
+          });
+          
+          console.log('Records:', records);
+          return {
+            status: 'success' as const,
+            total: response.total,
+            records: records
+          } as GridResponse;
+        } else {
+          return { status: 'error' as const, total: 0, records: [] } as GridResponse;
         }
-
-        return {
-          status: 'success' as const,
-          total: total,
-          records: records
-        } as GridResponse;
       }),
+        
       catchError(error => {
         console.error('Error loading input/output reports:', error);
         return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);

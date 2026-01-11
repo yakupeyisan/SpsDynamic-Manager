@@ -1,30 +1,41 @@
 // InputOutputReports table columns configuration
-import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+import { TableColumn, ColumnType, TableRow, TableColumnGroup } from 'src/app/components/data-table/data-table.component';
 
-// Helper function to render inOUT field (Giriş/Çıkış)
-function renderInOut(record: TableRow): string {
-  const value = record['inOUT'];
-  if (value === 0 || value === '0' || value === false || value === 'Giriş') {
-    return '<span style="color: #238749; font-weight: 500;">Giriş</span>';
-  } else if (value === 1 || value === '1' || value === true || value === 'Çıkış') {
-    return '<span style="color: #c91818; font-weight: 500;">Çıkış</span>';
+const apiUrl = environment.apiUrl;
+
+// Helper function to get first entry event from InEvent array
+function getFirstEntry(record: TableRow): any {
+  const inEvents = record['InEvent'];
+  if (Array.isArray(inEvents) && inEvents.length > 0) {
+    // Sort by Date and Time to get the earliest entry
+    const sorted = [...inEvents].sort((a: any, b: any) => {
+      const dateA = new Date(`${a.Date || ''} ${a.Time || ''}`).getTime();
+      const dateB = new Date(`${b.Date || ''} ${b.Time || ''}`).getTime();
+      return dateA - dateB;
+    });
+    return sorted[0];
   }
-  return '';
+  return null;
+}
+
+// Helper function to get last exit event from OutEvent array
+function getLastExit(record: TableRow): any {
+  const outEvents = record['OutEvent'];
+  if (Array.isArray(outEvents) && outEvents.length > 0) {
+    // Sort by Date and Time to get the latest exit
+    const sorted = [...outEvents].sort((a: any, b: any) => {
+      const dateA = new Date(`${a.Date || ''} ${a.Time || ''}`).getTime();
+      const dateB = new Date(`${b.Date || ''} ${b.Time || ''}`).getTime();
+      return dateB - dateA;
+    });
+    return sorted[0];
+  }
+  return null;
 }
 
 export const tableColumns: TableColumn[] = [
-  { 
-    field: 'EventID', 
-    label: 'Olay ID', 
-    text: 'Olay ID',
-    type: 'int' as ColumnType, 
-    sortable: true, 
-    width: '100px', 
-    size: '100px',
-    min: 20,
-    searchable: 'int' as ColumnType,
-    resizable: true
-  },
+  // Kişi Bilgileri Group (8 columns)
   { 
     field: 'EmployeeID', 
     label: 'Personel ID', 
@@ -38,42 +49,73 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'Employee.PictureID', 
+    label: 'Resim', 
+    text: 'Resim',
+    type: 'picture' as ColumnType, 
+    sortable: false, 
+    width: '80px', 
+    size: '80px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    align: 'center',
+    prependUrl: `${apiUrl}/images/{0}`,
+    render: (record: TableRow) => {
+      const employee = record['Employee'];
+      return employee?.PictureID || '';
+    }
+  },
+  { 
+    field: 'Employee.IdentificationNumber', 
+    label: 'TC Kimlik', 
+    text: 'TC Kimlik',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const employee = record['Employee'];
+      return employee?.IdentificationNumber || '';
+    }
+  },
+  { 
     field: 'Employee.Name', 
-    label: 'Personel Adı', 
-    text: 'Personel Adı',
+    label: 'Ad', 
+    text: 'Ad',
     type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '150px', 
-    size: '150px',
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
     min: 20,
     searchable: 'text' as ColumnType,
     resizable: true,
     render: (record: TableRow) => {
       const employee = record['Employee'];
-      if (employee) {
-        return `${employee['Name'] || ''} ${employee['SurName'] || ''}`.trim();
-      }
-      return '';
+      return employee?.Name || '';
     }
   },
   { 
-    field: 'Employee.Company', 
-    label: 'Firma', 
-    text: 'Firma',
+    field: 'Employee.SurName', 
+    label: 'Soyad', 
+    text: 'Soyad',
     type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '150px', 
-    size: '150px',
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
     min: 20,
     searchable: 'text' as ColumnType,
     resizable: true,
     render: (record: TableRow) => {
       const employee = record['Employee'];
-      return employee?.Company?.PdksCompanyName || '';
+      return employee?.SurName || '';
     }
   },
   { 
-    field: 'Employee.Department', 
+    field: 'Employee.EmployeeDepartments', 
     label: 'Departman', 
     text: 'Departman',
     type: 'text' as ColumnType, 
@@ -92,23 +134,7 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'Employee.Kadro', 
-    label: 'Kadro', 
-    text: 'Kadro',
-    type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '150px', 
-    size: '150px',
-    min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true,
-    render: (record: TableRow) => {
-      const employee = record['Employee'];
-      return employee?.Kadro?.Name || '';
-    }
-  },
-  { 
-    field: 'Employee.AccessGroup', 
+    field: 'Employee.EmployeeAccessGroups', 
     label: 'Geçiş Yetkisi', 
     text: 'Geçiş Yetkisi',
     type: 'text' as ColumnType, 
@@ -128,8 +154,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Date', 
-    label: 'Tarih', 
-    text: 'Tarih',
+    label: 'Rapor Tarihi', 
+    text: 'Rapor Tarihi',
     type: 'date' as ColumnType, 
     sortable: true, 
     width: '120px', 
@@ -153,77 +179,172 @@ export const tableColumns: TableColumn[] = [
       return String(date || '');
     }
   },
+  // Giriş Kayıtları Group (5 columns)
   { 
-    field: 'Time', 
-    label: 'Saat', 
-    text: 'Saat',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '100px', 
-    size: '100px',
-    min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
-  },
-  { 
-    field: 'inOUT', 
-    label: 'Yön', 
-    text: 'Yön',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '100px', 
-    size: '100px',
-    min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true,
-    render: renderInOut
-  },
-  { 
-    field: 'Location', 
+    field: 'InEvent.Location', 
     label: 'Konum', 
     text: 'Konum',
     type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '200px', 
-    size: '200px',
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const firstEntry = getFirstEntry(record);
+      return firstEntry?.Location || '';
+    }
   },
   { 
-    field: 'TagCode', 
+    field: 'InEvent.Time', 
+    label: 'Saat', 
+    text: 'Saat',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '100px', 
+    size: '100px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const firstEntry = getFirstEntry(record);
+      return firstEntry?.Time || '';
+    }
+  },
+  { 
+    field: 'InEvent.TagCode', 
     label: 'Tag Kodu', 
     text: 'Tag Kodu',
     type: 'text' as ColumnType, 
-    sortable: true, 
+    sortable: false, 
     width: '120px', 
     size: '120px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const firstEntry = getFirstEntry(record);
+      return firstEntry?.TagCode || '';
+    }
   },
   { 
-    field: 'CardCode', 
-    label: 'Kart Kodu', 
-    text: 'Kart Kodu',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '120px', 
-    size: '120px',
-    min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
-  },
-  { 
-    field: 'FacilityCode', 
+    field: 'InEvent.FacilityCode', 
     label: 'Tesis Kodu', 
     text: 'Tesis Kodu',
     type: 'text' as ColumnType, 
-    sortable: true, 
+    sortable: false, 
     width: '120px', 
     size: '120px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const firstEntry = getFirstEntry(record);
+      return firstEntry?.FacilityCode || '';
+    }
+  },
+  { 
+    field: 'InEvent.CardCode', 
+    label: 'Kart Kodu', 
+    text: 'Kart Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const firstEntry = getFirstEntry(record);
+      return firstEntry?.CardCode || '';
+    }
+  },
+  // Çıkış Kayıtları Group (5 columns)
+  { 
+    field: 'OutEvent.Location', 
+    label: 'Konum', 
+    text: 'Konum',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const lastExit = getLastExit(record);
+      return lastExit?.Location || '';
+    }
+  },
+  { 
+    field: 'OutEvent.Time', 
+    label: 'Saat', 
+    text: 'Saat',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '100px', 
+    size: '100px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const lastExit = getLastExit(record);
+      return lastExit?.Time || '';
+    }
+  },
+  { 
+    field: 'OutEvent.TagCode', 
+    label: 'Tag Kodu', 
+    text: 'Tag Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const lastExit = getLastExit(record);
+      return lastExit?.TagCode || '';
+    }
+  },
+  { 
+    field: 'OutEvent.FacilityCode', 
+    label: 'Tesis Kodu', 
+    text: 'Tesis Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const lastExit = getLastExit(record);
+      return lastExit?.FacilityCode || '';
+    }
+  },
+  { 
+    field: 'OutEvent.CardCode', 
+    label: 'Kart Kodu', 
+    text: 'Kart Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const lastExit = getLastExit(record);
+      return lastExit?.CardCode || '';
+    }
   }
+];
+
+export const columnGroups: TableColumnGroup[] = [
+  { span: 8, text: 'Kişi Bilgileri' },
+  { span: 5, text: 'Giriş Kayıtları' },
+  { span: 5, text: 'Çıkış Kayıtları' }
 ];
