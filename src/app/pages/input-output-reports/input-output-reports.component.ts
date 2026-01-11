@@ -10,9 +10,9 @@ import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './input-output-reports-config';
-import { tableColumns } from './input-output-reports-table-columns';
+import { tableColumns, columnGroups } from './input-output-reports-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './input-output-reports-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, TableRow } from 'src/app/components/data-table/data-table.component';
+import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, TableRow, TableColumnGroup } from 'src/app/components/data-table/data-table.component';
 
 @Component({
   selector: 'app-input-output-reports',
@@ -25,6 +25,7 @@ export class InputOutputReportsComponent implements OnInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
   private isReloading: boolean = false;
   tableColumns: TableColumn[] = tableColumns;
+  columnGroups: TableColumnGroup[] = columnGroups;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
   formTabs: FormTab[] = formTabs;
