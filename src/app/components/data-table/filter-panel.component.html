@@ -30,14 +30,34 @@
           <div class="ui-filter-value" *ngIf="requiresValue(condition.operator)">
             <!-- Between operator -->
             <div *ngIf="condition.operator === 'between'" class="ui-filter-between">
+              <!-- Date type for between -->
+              <input
+                *ngIf="isDateType(condition.field)"
+                [type]="getDateInputType(condition.field)"
+                class="ui-filter-date-input"
+                [ngModel]="getBetweenMin(condition.value)"
+                (ngModelChange)="onBetweenMinChange(i, $event)"
+                [placeholder]="PLACEHOLDERS.FILTER_MIN">
+              <!-- Non-date type for between -->
               <ui-input
+                *ngIf="!isDateType(condition.field)"
                 [ngModel]="getBetweenMin(condition.value)"
                 (valueChange)="onBetweenMinChange(i, $event)"
                 [type]="getFieldType(condition.field)"
                 [placeholder]="PLACEHOLDERS.FILTER_MIN">
               </ui-input>
               <span class="ui-filter-between-separator">-</span>
+              <!-- Date type for between -->
+              <input
+                *ngIf="isDateType(condition.field)"
+                [type]="getDateInputType(condition.field)"
+                class="ui-filter-date-input"
+                [ngModel]="getBetweenMax(condition.value)"
+                (ngModelChange)="onBetweenMaxChange(i, $event)"
+                [placeholder]="PLACEHOLDERS.FILTER_MAX">
+              <!-- Non-date type for between -->
               <ui-input
+                *ngIf="!isDateType(condition.field)"
                 [ngModel]="getBetweenMax(condition.value)"
                 (valueChange)="onBetweenMaxChange(i, $event)"
                 [type]="getFieldType(condition.field)"
