@@ -1,0 +1,51 @@
+<div class="pay-station-logs-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'pay-station-logs-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="false"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [selectable]="false"
+          [pagination]="true"
+          [pageSize]="100"
+          [limit]="100"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="32"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="'Ara...'"
+          [recid]="'Id'"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>

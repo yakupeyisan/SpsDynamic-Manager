@@ -419,6 +419,50 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'Logs',
+        loadComponent: () =>
+          import('./pages/logs/logs.component').then(
+            (m) => m.LogsComponent
+          ),
+        data: {
+          title: 'Sistem Logları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'TerminalLogs',
+        loadComponent: () =>
+          import('./pages/terminal-logs/terminal-logs.component').then(
+            (m) => m.TerminalLogsComponent
+          ),
+        data: {
+          title: 'Terminal Logları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'ErrorLogs',
+        loadComponent: () =>
+          import('./pages/error-logs/error-logs.component').then(
+            (m) => m.ErrorLogsComponent
+          ),
+        data: {
+          title: 'Hata Logları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PayStationLogs',
+        loadComponent: () =>
+          import('./pages/pay-station-logs/pay-station-logs.component').then(
+            (m) => m.PayStationLogsComponent
+          ),
+        data: {
+          title: 'Otomat Kayıtları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'LocationBasedFirstUseReports',
         loadComponent: () =>
           import('./pages/location-based-first-use-reports/location-based-first-use-reports.component').then(
