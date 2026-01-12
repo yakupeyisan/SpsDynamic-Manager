@@ -375,6 +375,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'PaymentsOfVirtualPos',
+        loadComponent: () =>
+          import('./pages/payments-of-virtual-pos/payments-of-virtual-pos.component').then(
+            (m) => m.PaymentsOfVirtualPosComponent
+          ),
+        data: {
+          title: 'Sanal Pos Yükleme Raporları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'VisitorEvents',
         loadComponent: () =>
           import('./pages/visitor-events/visitor-events.component').then(

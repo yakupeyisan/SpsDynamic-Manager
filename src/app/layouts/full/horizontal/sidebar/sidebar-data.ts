@@ -226,10 +226,12 @@ export const navItems: NavItem[] = [
           {
             displayName: 'Genel Kasa Raporu',
             route: '/AllCollectionReports',
+            disabled: true,
           },
           {
             displayName: 'Sanal Pos Ürün Satışları',
             route: '/PaymentOfVirtualPosForProductSales',
+            disabled: true,
           },
         ],
       },
@@ -238,7 +240,7 @@ export const navItems: NavItem[] = [
         children: [
           {
             displayName: 'Kafeterya Geçiş Kayıtları',
-            route: '/CafeteriaEventSalesReports',
+            route: '/CafeteriaEvents',
           },
           {
             displayName: 'Lokasyon Bazlı Günlük Geçiş Sayıları',

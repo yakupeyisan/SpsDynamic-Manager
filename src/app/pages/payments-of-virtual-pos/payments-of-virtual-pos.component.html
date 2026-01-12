@@ -1,0 +1,98 @@
+<div class="payments-of-virtual-pos-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'payments-of-virtual-pos-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="true"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [limit]="100"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="32"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="'Ara...'"
+          [recid]="'PaymentId'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()"
+          (delete)="onTableDelete($event)"
+          (add)="onTableAdd()"
+          (edit)="onTableEdit($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Logs Modal -->
+<ui-modal
+  [show]="showPaymentLogsModal"
+  [title]="'Ödeme Logları'"
+  [size]="'full'"
+  [closable]="true"
+  (showChange)="onPaymentLogsModalChange($event)">
+  <div class="payment-logs-container" style="height: calc(100vh - 150px); padding: 10px;">
+    <ui-data-table
+      *ngIf="showPaymentLogsModal && selectedPaymentId"
+      [id]="'payment-logs-grid'"
+      [showFooter]="true"
+      [page]="1"
+      [columns]="paymentLogsColumns"
+      [dataSource]="paymentLogsDataSource"
+      [selectable]="false"
+      [pagination]="true"
+      [pageSize]="100"
+      [limit]="100"
+      [height]="'calc(100vh - 200px)'"
+      [recordHeight]="32"
+      [showEmptyRows]="false"
+      [fixedBody]="true"
+      [advancedFilter]="false"
+      [showRefresh]="true"
+      [searchPlaceholder]="'Ara...'"
+      [recid]="'Id'"
+      [multiSort]="true"
+      [keyboard]="true"
+      [liveSearch]="true"
+      [reorderColumns]="false"
+      [reorderRows]="false"
+      [lineNumbers]="false"
+      [expandColumn]="false"
+      [nestedFields]="false"
+      [columnTooltip]="'top'"
+      [toolbar]="{ items: [], show: { reload: true, columns: false, search: true, add: false, edit: false, delete: false, save: false } }">
+    </ui-data-table>
+  </div>
+</ui-modal>
