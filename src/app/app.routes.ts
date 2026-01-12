@@ -627,6 +627,17 @@ export const routes: Routes = [
           breadcrumb: false,
         },
       },
+      {
+        path: '404',
+        loadComponent: () =>
+          import('./pages/not-found/not-found.component').then(
+            (m) => m.NotFoundComponent
+          ),
+        data: {
+          title: 'Sayfa Bulunamadı',
+          breadcrumb: false,
+        },
+      },
     ],
   },
   {
@@ -649,6 +660,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: environment.landingPage === 'login' ? '/authentication/login' : `/${environment.landingPage}`,
+    redirectTo: '/404',
+    pathMatch: 'full',
   },
 ];

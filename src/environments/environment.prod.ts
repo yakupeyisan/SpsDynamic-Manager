@@ -2,8 +2,8 @@ export const environment = {
   production: true,
   // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
   // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
-  apiUrl: 'https://pgs.odu.edu.tr', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
-  
+  apiUrl: '', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
+  wsUrl: '',
   // Açılış sayfası ayarı: 'home' veya 'other'
   // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir
   // '$1' : açılışha hangi sayfaya yönlendirilmesini istiyorson onun route değerini yaz

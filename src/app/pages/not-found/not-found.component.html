@@ -1,0 +1,19 @@
+<div class="not-found-container">
+  <div class="not-found-content">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Sayfa Bulunamadı</h1>
+    <p class="error-description">
+      Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+    </p>
+    <div class="error-actions">
+      <button mat-raised-button color="primary" (click)="goHome()">
+        <i-tabler name="home" class="icon-16"></i-tabler>
+        Ana Sayfaya Dön
+      </button>
+      <button mat-stroked-button (click)="goBack()">
+        <i-tabler name="arrow-left" class="icon-16"></i-tabler>
+        Geri Dön
+      </button>
+    </div>
+  </div>
+</div>

@@ -81,6 +81,7 @@
   },
   "table": {
     "searchPlaceholder": "Tüm alanlarda ara...",
+    "search": "Ara...",
     "advancedFilter": "Gelişmiş Filtre",
     "noDataAvailable": "Veri bulunamadı",
     "showing": "Gösteriliyor",
@@ -88,7 +89,8 @@
     "records": "kayıt",
     "selected": "seçili",
     "page": "Sayfa",
-    "total": "Toplam"
+    "total": "Toplam",
+    "recordId": "Kayıt ID"
   },
   "form": {
     "save": "Kaydet",
@@ -109,12 +111,43 @@
     "clear": "Temizle",
     "apply": "Uygula",
     "cancel": "İptal",
+    "close": "Kapat",
+    "search": "Ara",
+    "recordLimit": "Kayıt Limiti:",
     "field": "Alan",
     "operator": "Operatör",
     "value": "Değer",
     "logic": "Mantık",
     "and": "VE",
-    "or": "VEYA"
+    "or": "VEYA",
+    "selectOption": "Seçenek seçin...",
+    "selectField": "Alan seçin",
+    "selectValue": "Değer seçin",
+    "selectValues": "Değerler seçin",
+    "selectDate": "Tarih seçin",
+    "min": "Min",
+    "max": "Max",
+    "all": "Tümü",
+    "any": "Herhangi biri",
+    "operators": {
+      "equals": "Eşittir",
+      "notEquals": "Eşit Değildir",
+      "contains": "İçerir",
+      "notContains": "İçermez",
+      "startsWith": "Başlar",
+      "endsWith": "Biter",
+      "greaterThan": "Büyüktür",
+      "greaterThanOrEqual": "Büyük Eşittir",
+      "lessThan": "Küçüktür",
+      "lessThanOrEqual": "Küçük Eşittir",
+      "between": "Arasında",
+      "in": "İçinde",
+      "notIn": "İçinde Değil",
+      "isEmpty": "Boş",
+      "isNotEmpty": "Boş Değil",
+      "before": "Önce",
+      "since": "Sonra"
+    }
   },
   "joinOptions": {
     "title": "Join Seçenekleri",

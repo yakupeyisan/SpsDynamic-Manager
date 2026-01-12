@@ -1,6 +1,6 @@
 <div class="ui-filter-panel">
   <div class="ui-filter-header">
-    <h3 class="ui-filter-title">Advanced Search</h3>
+    <h3 class="ui-filter-title">{{ translate.instant('filter.title') }}</h3>
     <div class="ui-filter-header-right">
       <ui-select
         [options]="logicOptions"
@@ -23,7 +23,7 @@
               [options]="getOperatorsForField(condition.field)"
               [ngModel]="condition.operator"
               (valueChange)="onOperatorChange(i, $event)"
-              [placeholder]="PLACEHOLDERS.FILTER_OPERATOR">
+              [placeholder]="getTranslatedPlaceholder('FILTER_OPERATOR')">
             </ui-select>
           </div>
 
@@ -37,14 +37,14 @@
                 class="ui-filter-date-input"
                 [ngModel]="getBetweenMin(condition.value)"
                 (ngModelChange)="onBetweenMinChange(i, $event)"
-                [placeholder]="PLACEHOLDERS.FILTER_MIN">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MIN')">
               <!-- Non-date type for between -->
               <ui-input
                 *ngIf="!isDateType(condition.field)"
                 [ngModel]="getBetweenMin(condition.value)"
                 (valueChange)="onBetweenMinChange(i, $event)"
                 [type]="getFieldType(condition.field)"
-                [placeholder]="PLACEHOLDERS.FILTER_MIN">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MIN')">
               </ui-input>
               <span class="ui-filter-between-separator">-</span>
               <!-- Date type for between -->
@@ -54,14 +54,14 @@
                 class="ui-filter-date-input"
                 [ngModel]="getBetweenMax(condition.value)"
                 (ngModelChange)="onBetweenMaxChange(i, $event)"
-                [placeholder]="PLACEHOLDERS.FILTER_MAX">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MAX')">
               <!-- Non-date type for between -->
               <ui-input
                 *ngIf="!isDateType(condition.field)"
                 [ngModel]="getBetweenMax(condition.value)"
                 (valueChange)="onBetweenMaxChange(i, $event)"
                 [type]="getFieldType(condition.field)"
-                [placeholder]="PLACEHOLDERS.FILTER_MAX">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MAX')">
               </ui-input>
             </div>
 
@@ -84,7 +84,7 @@
               [options]="getListOptions(condition.field)"
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
-              [placeholder]="PLACEHOLDERS.FILTER_SELECT_VALUE">
+              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUE')">
             </ui-select>
 
             <!-- Enum type (multi select) -->
@@ -94,7 +94,7 @@
               [ngModel]="condition.value || []"
               (valueChange)="onEnumValueChange(i, $event)"
               [multiple]="true"
-              [placeholder]="PLACEHOLDERS.FILTER_SELECT_VALUES">
+              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUES')">
             </ui-select>
 
             <!-- Date type (date picker) -->
@@ -104,7 +104,7 @@
               class="ui-filter-date-input"
               [ngModel]="condition.value"
               (ngModelChange)="onValueChange(i, $event)"
-              [placeholder]="PLACEHOLDERS.FILTER_SELECT_DATE">
+              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_DATE')">
 
             <!-- Regular input for other types -->
             <ui-input
@@ -112,7 +112,7 @@
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
               [type]="getFieldType(condition.field)"
-              [placeholder]="PLACEHOLDERS.FILTER_VALUE">
+              [placeholder]="getTranslatedPlaceholder('FILTER_VALUE')">
             </ui-input>
           </div>
 
@@ -135,18 +135,18 @@
         [options]="fieldOptions"
         [ngModel]="selectedFieldForAdd"
         (valueChange)="onSelectedFieldForAddChange($event)"
-        [placeholder]="PLACEHOLDERS.FILTER_SELECT_FIELD"
+        [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_FIELD')"
         class="ui-filter-add-field-select">
       </ui-select>
       <ui-button variant="secondary" size="sm" (clicked)="addCondition()">
-        Add Condition
+        {{ translate.instant('filter.addCondition') }}
       </ui-button>
     </div>
   </div>
 
   <div class="ui-filter-footer">
     <div class="ui-filter-footer-left">
-      <label class="ui-filter-limit-label">Record Limit:</label>
+      <label class="ui-filter-limit-label">{{ translate.instant('filter.recordLimit') }}</label>
       <ui-select
         [options]="getLimitOptions()"
         [ngModel]="currentLimit"
@@ -155,9 +155,9 @@
       </ui-select>
     </div>
     <div class="ui-filter-footer-right">
-      <ui-button variant="secondary" size="sm" (clicked)="onClose()">Close</ui-button>
-      <ui-button variant="secondary" size="sm" (clicked)="clearFilter()">Reset</ui-button>
-      <ui-button variant="primary" size="sm" (clicked)="applyFilter()">Search</ui-button>
+      <ui-button variant="secondary" size="sm" (clicked)="onClose()">{{ translate.instant('filter.close') }}</ui-button>
+      <ui-button variant="secondary" size="sm" (clicked)="clearFilter()">{{ translate.instant('filter.clear') }}</ui-button>
+      <ui-button variant="primary" size="sm" (clicked)="applyFilter()">{{ translate.instant('filter.search') }}</ui-button>
     </div>
   </div>
 </div>

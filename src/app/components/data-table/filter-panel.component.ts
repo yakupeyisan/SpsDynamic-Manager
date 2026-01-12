@@ -11,17 +11,18 @@ import { AdvancedFilter, FilterCondition, FilterLogic, FilterOperator, FILTER_OP
 import { TableColumn } from '../data-table/data-table.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 // PLACEHOLDERS constant (replacement for @customizer/ui)
+// Note: These are now translated via TranslateService in the component
 const PLACEHOLDERS = {
-  SEARCH: 'Search...',
-  SELECT_OPTION: 'Select an option...',
-  FILTER_OPERATOR: 'Operator',
-  FILTER_MIN: 'Min',
-  FILTER_MAX: 'Max',
-  FILTER_SELECT_VALUE: 'Select value',
-  FILTER_SELECT_VALUES: 'Select values',
-  FILTER_SELECT_DATE: 'Select date',
-  FILTER_VALUE: 'Value',
-  FILTER_SELECT_FIELD: 'Select field'
+  SEARCH: 'table.search',
+  SELECT_OPTION: 'filter.selectOption',
+  FILTER_OPERATOR: 'filter.operator',
+  FILTER_MIN: 'filter.min',
+  FILTER_MAX: 'filter.max',
+  FILTER_SELECT_VALUE: 'filter.selectValue',
+  FILTER_SELECT_VALUES: 'filter.selectValues',
+  FILTER_SELECT_DATE: 'filter.selectDate',
+  FILTER_VALUE: 'filter.value',
+  FILTER_SELECT_FIELD: 'filter.selectField'
 };
 
 @Component({
@@ -53,10 +54,7 @@ export class FilterPanelComponent implements OnInit {
   currentLimit: number = 100;
   selectedFieldForAdd: string = '';
   
-  logicOptions: SelectOption[] = [
-    { label: 'All', value: 'AND' },
-    { label: 'Any', value: 'OR' }
-  ];
+  logicOptions: SelectOption[] = [];
 
   // Cache for enum values to prevent creating new array references
   private readonly EMPTY_ARRAY: any[] = [];
@@ -69,6 +67,10 @@ export class FilterPanelComponent implements OnInit {
   private operatorsCache: Map<string, SelectOption[]> = new Map();
 
   PLACEHOLDERS = PLACEHOLDERS;
+  
+  getTranslatedPlaceholder(key: keyof typeof PLACEHOLDERS): string {
+    return this.translate.instant(PLACEHOLDERS[key]);
+  }
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -78,6 +80,12 @@ export class FilterPanelComponent implements OnInit {
 
   ngOnInit() {
     this.currentLimit = this.limit ?? 100;
+    
+    // Initialize logic options with translations
+    this.logicOptions = [
+      { label: this.translate.instant('filter.all'), value: 'AND' },
+      { label: this.translate.instant('filter.any'), value: 'OR' }
+    ];
     
     this.fieldOptions = this.columns
       .filter(col => col.searchable !== false) // Only show searchable columns
@@ -218,8 +226,19 @@ export class FilterPanelComponent implements OnInit {
     const options = FILTER_OPERATORS
       .filter(op => op.operatorTypes.includes(operatorType) && operators.includes(op.value))
       .map(op => {
-        // Use custom label if available
-        const label = getOperatorLabel(op.value, operatorType);
+        // Use translate for operator labels
+        let label = this.translate.instant(`filter.operators.${op.value}`);
+        // If translation doesn't exist (returns the key), use custom label from W2UI_OPERATORS or default label
+        if (label === `filter.operators.${op.value}`) {
+          label = getOperatorLabel(op.value, operatorType);
+          // Try to translate custom labels (before, since)
+          if (label === 'before' || label === 'since') {
+            const translatedCustom = this.translate.instant(`filter.operators.${label}`);
+            if (translatedCustom !== `filter.operators.${label}`) {
+              label = translatedCustom;
+            }
+          }
+        }
         return {
           label: label,
           value: op.value

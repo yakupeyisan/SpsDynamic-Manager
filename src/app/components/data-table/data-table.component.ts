@@ -21,17 +21,18 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ButtonComponent } from '../button/button.component';
 
 // PLACEHOLDERS constant (replacement for @customizer/ui)
+// Note: These are now translated via TranslateService in the component
 const PLACEHOLDERS = {
-  SEARCH: 'Search...',
-  SELECT_OPTION: 'Select an option...',
-  FILTER_OPERATOR: 'Operator',
-  FILTER_MIN: 'Min',
-  FILTER_MAX: 'Max',
-  FILTER_SELECT_VALUE: 'Select value',
-  FILTER_SELECT_VALUES: 'Select values',
-  FILTER_SELECT_DATE: 'Select date',
-  FILTER_VALUE: 'Value',
-  FILTER_SELECT_FIELD: 'Select field'
+  SEARCH: 'table.search',
+  SELECT_OPTION: 'filter.selectOption',
+  FILTER_OPERATOR: 'filter.operator',
+  FILTER_MIN: 'filter.min',
+  FILTER_MAX: 'filter.max',
+  FILTER_SELECT_VALUE: 'filter.selectValue',
+  FILTER_SELECT_VALUES: 'filter.selectValues',
+  FILTER_SELECT_DATE: 'filter.selectDate',
+  FILTER_VALUE: 'filter.value',
+  FILTER_SELECT_FIELD: 'filter.selectField'
 };
 
 export type ColumnType = 
@@ -247,7 +248,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() pageSize: number = 10;
   @Input() emptyMessage?: string; // Will use translation if not provided
   @Input() searchable: boolean = true;
-  @Input() searchPlaceholder: string = PLACEHOLDERS.SEARCH;
+  @Input() searchPlaceholder: string = '';
+  
+  get translatedSearchPlaceholder(): string {
+    if (this.searchPlaceholder) {
+      // If searchPlaceholder is provided, try to translate it
+      const translated = this.translate.instant(this.searchPlaceholder);
+      // If translation exists, return it; otherwise return the original string
+      return translated !== this.searchPlaceholder ? translated : this.searchPlaceholder;
+    }
+    // Default: translate the default key
+    return this.translate.instant(PLACEHOLDERS.SEARCH);
+  }
   @Input() searchFields: string[] = []; // Empty means search all columns
   @Input() searchField?: string; // If specified, only search this field (uses searchField property from column if available)
   @Input() advancedFilter: boolean = true;
