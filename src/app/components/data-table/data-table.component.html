@@ -384,7 +384,7 @@
     </div>
     <div class="ui-footer-right">
       <!-- Pagination in Footer -->
-      <div *ngIf="pagination && totalPages > 1" class="ui-table-pagination">
+      <div *ngIf="pagination && totalPages > 1 && currentLimit > 0" class="ui-table-pagination">
         <button
           class="ui-pagination-btn"
           [disabled]="currentPage === 1"

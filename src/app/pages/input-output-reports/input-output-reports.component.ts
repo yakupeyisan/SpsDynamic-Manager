@@ -106,7 +106,7 @@ export class InputOutputReportsComponent implements OnInit {
           console.log('Records:', records);
           return {
             status: 'success' as const,
-            total: response.total,
+            total: records.length,
             records: records
           } as GridResponse;
         } else {

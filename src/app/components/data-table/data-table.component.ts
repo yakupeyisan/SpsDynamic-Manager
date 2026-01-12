@@ -672,6 +672,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (!this.pagination) {
       return 1;
     }
+    // If limit is <= 0, pagination is disabled (limit "all")
+    if (this.currentLimit <= 0) {
+      return 1;
+    }
     // Use internalTotal if dataSource is used, otherwise use total input or filtered data length
     let totalRecords: number;
     if (this.dataSource) {
@@ -3512,6 +3516,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     } else {
       const allFiltered = this.allFilteredData;
       totalRecords = this.total > 0 ? this.total : allFiltered.length;
+    }
+    
+    // If limit is <= 0, pagination is disabled (limit "all") - show only total count
+    if (this.currentLimit <= 0) {
+      return `${totalRecords} ${this.translate.instant('table.records')}`;
     }
     
     if (this.pagination && totalRecords > 0) {
