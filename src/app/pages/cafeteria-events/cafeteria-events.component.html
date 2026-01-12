@@ -18,7 +18,8 @@
           [formDataMapper]="formDataMapper"
           [onSave]="onSave"
           [onFormChange]="onFormChange"
-          [selectable]="false"
+          [selectable]="true"
+          [multiSelect]="true"
           [pagination]="true"
           [pageSize]="100"
           [limit]="100"
@@ -39,11 +40,11 @@
           [expandColumn]="false"
           [nestedFields]="true"
           [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
           (rowClick)="onTableRowClick($event)"
           (rowDblClick)="onTableRowDblClick($event)"
           (advancedFilterChange)="onAdvancedFilterChange($event)"
           (refresh)="onTableRefresh()"
-          (delete)="onTableDelete($event)"
           (add)="onTableAdd()"
           (edit)="onTableEdit($event)">
         </ui-data-table>
@@ -51,3 +52,94 @@
     </div>
   </div>
 </div>
+
+<!-- Cancel Confirmation Modal -->
+<ui-modal
+  [show]="showCancelModal"
+  [title]="'İşlem İptali'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCancelModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili işlemler iptal edilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Kayıtlar</span>
+        <span class="cancel-section-badge">{{ selectedEventsForCancel.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let event of selectedEventsForCancel; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Cafeteria Event ID:</span>
+              <span class="selected-event-value">{{ event['CafeteriaEventID'] }}</span>
+            </div>
+            <div *ngIf="event['Employee']" class="selected-event-row">
+              <span class="selected-event-label">Çalışan:</span>
+              <span class="selected-event-value">{{ event['Employee']['Name'] }} {{ event['Employee']['SurName'] }}</span>
+            </div>
+            <div *ngIf="event['EventTime']" class="selected-event-row">
+              <span class="selected-event-label">Tarih:</span>
+              <span class="selected-event-value">{{ event['EventTime'] | date:'dd.MM.yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Description Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-file-text me-2"></i>
+        <span class="cancel-section-title">Açıklama</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <textarea 
+        class="cancel-description-textarea" 
+        rows="5"
+        [(ngModel)]="cancelDescription"
+        placeholder="İptal nedeni açıklaması giriniz..."
+        [disabled]="isCanceling"
+        required></textarea>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>İptal nedeni açıklaması zorunludur. Bu açıklama iptal işlemi için kaydedilecektir.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeCancelModal()"
+      [disabled]="isCanceling">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-danger" 
+      (click)="onConfirmCancel()"
+      [disabled]="isCanceling || !cancelDescription || cancelDescription.trim() === ''">
+      <span *ngIf="isCanceling" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isCanceling" class="ti ti-check me-1"></i>
+      Onayla ve İptal Et
+    </button>
+  </div>
+</ui-modal>

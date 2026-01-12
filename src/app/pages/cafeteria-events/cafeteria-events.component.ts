@@ -12,12 +12,14 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './cafeteria-events-config';
 import { tableColumns } from './cafeteria-events-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './cafeteria-events-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, TableRow } from 'src/app/components/data-table/data-table.component';
+import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, TableRow, ToolbarItem } from 'src/app/components/data-table/data-table.component';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-cafeteria-events',
   standalone: true,
-  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent],
+  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, FormsModule],
   templateUrl: './cafeteria-events.component.html',
   styleUrls: ['./cafeteria-events.component.scss']
 })
@@ -148,24 +150,153 @@ export class CafeteriaEventsComponent implements OnInit {
     }
   }
 
-  onTableDelete(event: any): void {
-    // Handle delete if needed (probably not for reports)
+  // Cancel confirmation modal
+  showCancelModal: boolean = false;
+  selectedEventsForCancel: any[] = [];
+  cancelDescription: string = '';
+  isCanceling: boolean = false;
+
+  onCancel(): void {
+    if (!this.dataTableComponent) return;
+    
+    const selected = Array.from(this.dataTableComponent.selectedRows);
+    if (selected.length === 0) {
+      this.toastr.warning('Lütfen iptal etmek için en az 1 kayıt seçiniz', 'Uyarı');
+      return;
+    }
+
+    // Get selected records
+    const selectedRecords = this.dataTableComponent.internalData.filter(r => 
+      selected.includes(r[this.dataTableComponent!.recid || 'CafeteriaEventID'])
+    );
+
+    // Check if any record has TransactionType !== '4'
+    const hasNonType4 = selectedRecords.some((record: any) => {
+      const transactionType = String(record['TransactionType'] || '');
+      return transactionType !== '4';
+    });
+
+    if (hasNonType4) {
+      this.toastr.warning('Sadece Sonraki geçişler iptal edilebilir.', 'Uyarı');
+      return;
+    }
+
+    // All records have TransactionType = 4, show confirmation modal
+    this.selectedEventsForCancel = selectedRecords;
+    this.cancelDescription = '';
+    this.showCancelModal = true;
+    this.cdr.markForCheck();
+  }
+
+  onConfirmCancel(): void {
+    if (this.selectedEventsForCancel.length === 0) return;
+
+    if (!this.cancelDescription || this.cancelDescription.trim() === '') {
+      this.toastr.warning('Açıklama zorunludur', 'Uyarı');
+      return;
+    }
+
+    this.isCanceling = true;
+    
+    // Prepare Selecteds array with all CafeteriaEventIDs
+    const selecteds = this.selectedEventsForCancel.map(event => event['CafeteriaEventID']);
+    
+    // Send single request with Selecteds array and Description
+    this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/Cancel`, {
+      Selecteds: selecteds,
+      Description: this.cancelDescription.trim()
+    }).pipe(
+      map((response: any) => {
+        if (response.status === 'success' || response.success) {
+          this.toastr.success(`${selecteds.length} işlem iptal edildi`, 'Başarılı');
+          this.closeCancelModal();
+          if (this.dataTableComponent) {
+            this.dataTableComponent.onRefresh();
+          }
+        } else {
+          this.toastr.error(response.message || 'İşlemler iptal edilemedi', 'Hata');
+        }
+        this.isCanceling = false;
+        this.cdr.markForCheck();
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error canceling cafeteria events:', error);
+        this.toastr.error('İşlemler iptal edilirken bir hata oluştu', 'Hata');
+        this.isCanceling = false;
+        this.cdr.markForCheck();
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  onCancelModalChange(show: boolean): void {
+    this.showCancelModal = show;
+    if (!show) {
+      this.closeCancelModal();
+    }
+  }
+
+  closeCancelModal(): void {
+    this.showCancelModal = false;
+    this.selectedEventsForCancel = [];
+    this.cancelDescription = '';
+    this.isCanceling = false;
+    this.cdr.markForCheck();
   }
 
   onTableAdd(): void {
-    // Handle add if needed (probably not for reports)
+    // Add disabled
   }
 
   onTableEdit(event: any): void {
-    // Handle edit if needed (probably not for reports)
+    // Edit disabled
   }
 
   onSave(data: any, isEdit: boolean): Observable<any> {
-    // Handle save if needed (probably not for reports)
+    // Save disabled
     return of({ status: 'success' });
   }
 
   onFormChange(data: any): void {
     // Handle form change if needed
+  }
+
+  get tableToolbarConfig(): ToolbarConfig {
+    const items: ToolbarItem[] = [
+      {
+        type: 'break',
+        id: 'break1'
+      },
+      {
+        type: 'button',
+        id: 'cancel',
+        text: 'İptal',
+        icon: 'x',
+        disabled: !this.hasSelection(),
+        onClick: (event: MouseEvent) => {
+          this.onCancel();
+        }
+      }
+    ];
+    
+    return {
+      items: items,
+      show: {
+        reload: true,
+        columns: true,
+        search: true,
+        add: false,
+        edit: false,
+        delete: false,
+        save: false
+      }
+    };
+  }
+
+  hasSelection(): boolean {
+    if (!this.dataTableComponent) return false;
+    const selected = Array.from(this.dataTableComponent.selectedRows);
+    return selected.length > 0;
   }
 }

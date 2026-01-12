@@ -105,13 +105,20 @@ export const tableColumns: TableColumn[] = [
     field: 'TransactionType', 
     label: 'İşlem Tipi', 
     text: 'İşlem Tipi',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
+    options: [
+      { label: 'YUKLEME/HARCAMA', value: '1' },
+      { label: 'ABONE GECIS', value: '2' },
+      { label: 'ILK GECIS', value: '3' },
+      { label: 'SONRAKI GECIS', value: '4' },
+      { label: 'İADE', value: '5' }
+    ],
     render: (record: TableRow) => {
       return getTransactionTypeText(record['TransactionType']);
     }

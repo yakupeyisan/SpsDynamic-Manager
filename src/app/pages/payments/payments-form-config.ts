@@ -169,9 +169,15 @@ export const formFields: TableColumn[] = [
     field: 'PaymentType', 
     label: 'Ödeme Tipi', 
     text: 'Ödeme Tipi', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     fullWidth: true,
     disabled: true,
+    options: [
+      { label: 'DEVIR', value: 0 },
+      { label: 'NAKİT', value: 1 },
+      { label: 'KREDİKARTI', value: 2 },
+      { label: 'EFT/HAVALE', value: 3 }
+    ],
     render: (record: any) => {
       // First try to get from PaymentType.Name (if joined)
       const paymentType = record['PaymentType'];
@@ -186,9 +192,14 @@ export const formFields: TableColumn[] = [
     field: 'MeansOfPayment', 
     label: 'Ödeme Yöntemi', 
     text: 'Ödeme Yöntemi', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     fullWidth: true,
     disabled: true,
+    options: [
+      { label: 'OPERATOR', value: 1 },
+      { label: 'SANALPOS', value: 2 },
+      { label: 'OTOMAT', value: 3 }
+    ],
     render: (record: any) => {
       return getMeansOfPaymentText(record['MeansOfPayment']);
     }
@@ -197,9 +208,14 @@ export const formFields: TableColumn[] = [
     field: 'ResultStatus', 
     label: 'Durum', 
     text: 'Durum', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     fullWidth: true,
     disabled: true,
+    options: [
+      { label: 'YUKLEME TAMAMLA', value: -1 },
+      { label: 'BASARISIZ', value: 0 },
+      { label: 'BASARILI', value: 1 }
+    ],
     render: (record: any) => {
       return getPaymentResultText(record['ResultStatus']);
     }

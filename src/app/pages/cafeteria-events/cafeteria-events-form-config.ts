@@ -91,9 +91,16 @@ export const formFields: TableColumn[] = [
     field: 'TransactionType', 
     label: 'İşlem Tipi', 
     text: 'İşlem Tipi', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     fullWidth: true,
     disabled: true,
+    options: [
+      { label: 'YUKLEME/HARCAMA', value: '1' },
+      { label: 'ABONE GECIS', value: '2' },
+      { label: 'ILK GECIS', value: '3' },
+      { label: 'SONRAKI GECIS', value: '4' },
+      { label: 'İADE', value: '5' }
+    ],
     render: (record: any) => {
       return getTransactionTypeText(record['TransactionType']);
     }
