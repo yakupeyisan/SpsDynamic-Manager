@@ -1,0 +1,57 @@
+<div class="inside-outside-reports-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'inside-outside-reports-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="true"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [limit]="100"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="32"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="'Ara...'"
+          [recid]="'EmployeeID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()"
+          (delete)="onTableDelete($event)"
+          (add)="onTableAdd()"
+          (edit)="onTableEdit($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>

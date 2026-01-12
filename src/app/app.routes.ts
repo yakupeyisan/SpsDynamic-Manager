@@ -84,6 +84,28 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AccessDetails',
+        loadComponent: () =>
+          import('./pages/access-details/access-details.component').then(
+            (m) => m.AccessDetailsComponent
+          ),
+        data: {
+          title: 'Geçiş Yetki Raporu',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'InsideOutsideReports',
+        loadComponent: () =>
+          import('./pages/inside-outside-reports/inside-outside-reports.component').then(
+            (m) => m.InsideOutsideReportsComponent
+          ),
+        data: {
+          title: 'İçeridekiler/Dışarıdakiler',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(
@@ -338,6 +360,17 @@ export const routes: Routes = [
           ),
         data: {
           title: 'Ödeme Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'Payments',
+        loadComponent: () =>
+          import('./pages/payments/payments.component').then(
+            (m) => m.PaymentsComponent
+          ),
+        data: {
+          title: 'Tahsilatlar',
           breadcrumb: false,
         },
       },

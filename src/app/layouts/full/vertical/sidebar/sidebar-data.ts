@@ -207,11 +207,11 @@ export const navItems: NavItem[] = [
           },
           {
             displayName: 'Geçis Yetki Raporu',
-            route: '/AccessReportWithDetails',
+            route: '/AccessDetails',
           },
           {
             displayName: 'İçeridekiler/Dışarıdakiler',
-            route: '/AccessEventsForInOutReports',
+            route: '/InsideOutsideReports',
           },
         ],
       },
