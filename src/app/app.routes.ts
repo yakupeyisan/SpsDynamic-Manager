@@ -386,6 +386,61 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'CafeteriaEvents',
+        loadComponent: () =>
+          import('./pages/cafeteria-events/cafeteria-events.component').then(
+            (m) => m.CafeteriaEventsComponent
+          ),
+        data: {
+          title: 'Kafeterya Geçiş Kayıtları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'CafeteriaSummary',
+        loadComponent: () =>
+          import('./pages/cafeteria-summary/cafeteria-summary.component').then(
+            (m) => m.CafeteriaSummaryComponent
+          ),
+        data: {
+          title: 'Kafeterya Geçiş Özeti',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'LocationBasedDailyReports',
+        loadComponent: () =>
+          import('./pages/location-based-daily-reports/location-based-daily-reports.component').then(
+            (m) => m.LocationBasedDailyReportsComponent
+          ),
+        data: {
+          title: 'Lokasyon Bazlı Günlük Geçiş Sayıları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'LocationBasedFirstUseReports',
+        loadComponent: () =>
+          import('./pages/location-based-first-use-reports/location-based-first-use-reports.component').then(
+            (m) => m.LocationBasedFirstUseReportsComponent
+          ),
+        data: {
+          title: 'Lokasyon Bazlı İlk Kullanım Raporu',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'DepartmentBasedPaymentReports',
+        loadComponent: () =>
+          import('./pages/department-based-payment-reports/department-based-payment-reports.component').then(
+            (m) => m.DepartmentBasedPaymentReportsComponent
+          ),
+        data: {
+          title: 'Departman Bazlı Yükleme Raporu',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'VisitorEvents',
         loadComponent: () =>
           import('./pages/visitor-events/visitor-events.component').then(

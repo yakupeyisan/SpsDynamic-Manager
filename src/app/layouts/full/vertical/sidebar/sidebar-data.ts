@@ -243,15 +243,23 @@ export const navItems: NavItem[] = [
         children: [
           {
             displayName: 'Kafeterya Geçiş Kayıtları',
-            route: '/CafeteriaEventSalesReports',
+            route: '/CafeteriaEvents',
+          },
+          {
+            displayName: 'Kafeterya Geçiş Özeti',
+            route: '/CafeteriaSummary',
           },
           {
             displayName: 'Lokasyon Bazlı Günlük Geçiş Sayıları',
-            route: '/CafeteriaEventBasedDailyReports',
+            route: '/LocationBasedDailyReports',
           },
           {
-            displayName: 'Yükleme/Harcama Kayıtları',
-            route: '/CafeteriaEventPaymentAndSpendRecords',
+            displayName: 'Lokasyon Bazlı İlk Kullanım Raporu',
+            route: '/LocationBasedFirstUseReports',
+          },
+          {
+            displayName: 'Departman Bazlı Yükleme Raporu',
+            route: '/DepartmentBasedPaymentReports',
           },
         ],
       },

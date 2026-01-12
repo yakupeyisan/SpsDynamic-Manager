@@ -557,14 +557,15 @@ export const subscriptionEventsGridColumns: TableColumn[] = [
   },
   { 
     field: 'Qty', 
-    label: 'Kullanım Durumu', 
-    text: 'Kullanım Durumu',
-    type: 'checkbox' as ColumnType, 
+    label: 'Miktar', 
+    text: 'Miktar',
+    type: 'int' as ColumnType, 
     sortable: true, 
     width: '120px', 
     size: '120px',
-    searchable: 'checkbox',
-    resizable: true
+    searchable: 'int' as ColumnType,
+    resizable: true,
+    align: 'center'
   },
   { 
     field: 'EventTime', 
