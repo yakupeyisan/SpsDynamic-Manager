@@ -3939,13 +3939,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       if (col.field === field) {
         found = true;
         // Merge updates with existing column properties
-        const updated = { ...col, ...updates };
-        console.log(`[setColumn] Updated internal column ${field}:`, { 
-          before: { text: col.text, label: col.label, type: col.type, hidden: col.hidden },
-          after: { text: updated.text, label: updated.label, type: updated.type, hidden: updated.hidden },
-          updates 
-        });
-        return updated;
+        return { ...col, ...updates };
       }
       return col;
     });
@@ -3954,20 +3948,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.columns = this.columns.map(col => {
       if (col.field === field) {
         // Merge updates with existing column properties
-        const updated = { ...col, ...updates };
-        console.log(`[setColumn] Updated input column ${field}:`, { 
-          before: { text: col.text, label: col.label, type: col.type, hidden: col.hidden },
-          after: { text: updated.text, label: updated.label, type: updated.type, hidden: updated.hidden }
-        });
-        return updated;
+        return { ...col, ...updates };
       }
       return col;
     });
-    
-    if (!found) {
-      console.warn(`[setColumn] Column with field "${field}" not found. Available fields:`, 
-        this.internalColumns.map(c => c.field));
-    }
     
     // Update column visibility based on joins if joinTable property changed
     if (updates.joinTable !== undefined) {

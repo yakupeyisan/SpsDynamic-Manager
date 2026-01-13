@@ -1501,7 +1501,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
             // Store original hidden value for join visibility logic
             (updates as any)._customFieldHidden = !setting.IsVisible;
           }
-          console.log('updates',fieldName, updates);
+          
           // Update column using setColumn method
           this.dataTableComponent.setColumn(fieldName, updates);
         }
