@@ -568,12 +568,15 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.isLoading = true;
     this.cdr.markForCheck();
     
+    // Transform filter to use searchField if available
+    const transformedFilter = this.transformFilterForApi(this.activeFilter);
+    
     // Call dataSource function with current parameters (w2ui compatible format)
     const params = {
       page: this.currentPage,
       limit: this.currentLimit,
-      search: this.activeFilter || null, // Use AdvancedFilter instead of simple search string
-      searchLogic: this.activeFilter?.logic || 'AND',
+      search: transformedFilter || null, // Use transformed AdvancedFilter with searchField
+      searchLogic: transformedFilter?.logic || 'AND',
       sort: this.sortField ? {
         field: this.sortField,
         direction: this.sortDirection
@@ -835,6 +838,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const numberTypes: ColumnType[] = ['int', 'float', 'money', 'currency', 'percent'];
     // Text type columns
     const textTypes: ColumnType[] = ['text', 'alphanumeric'];
+    // Enum/List type columns (these use searchField for nested fields)
+    const enumListTypes: ColumnType[] = ['enum', 'list', 'select', 'combo', 'radio'];
     
     
     // If searchField is specified, only search that field
@@ -871,7 +876,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Get searchable columns based on search type (default behavior)
     const searchableColumns = this.displayColumns.filter(col => {
       // Check if column is searchable
-      // searchable can be: true, false, undefined, or a ColumnType string (e.g., "text", "int", "enum")
+      // searchable can: true, false, undefined, or a ColumnType string (e.g., "text", "int", "enum")
       // Only false means not searchable, everything else means searchable
       const isSearchable = col.searchable !== false;
       
@@ -887,11 +892,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         const matches = numberTypes.includes(col.type) || textTypes.includes(col.type);
         return matches;
       } else {
-        // Text search, only include columns with text type
+        // Text search: include text types AND enum/list types (which use searchField)
         if (!col.type) {
           return true; // If no type specified, allow search (backward compatibility)
         }
-        const matches = textTypes.includes(col.type);
+        const matches = textTypes.includes(col.type) || enumListTypes.includes(col.type);
         return matches;
       }
     });
@@ -900,12 +905,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Build filter conditions
     // For text columns: use 'startsWith' (maps to 'begins' in w2ui)
     // For number columns: use 'equals' (maps to '=' in w2ui) - but we'll search in text columns for "contains" behavior
+    // For enum/list columns: use searchField if available (for nested fields like Company.PdksCompanyName)
     const conditions = searchableColumns.map(col => {
       const isNumberType = col.type && numberTypes.includes(col.type);
-      // Use searchField if provided, otherwise use field
-      const filterField = col.searchField || col.field!;
+      const isEnumListType = col.type && enumListTypes.includes(col.type);
+      
+      // For enum/list types, always use searchField if available (for nested fields)
+      // For other types, use searchField if provided, otherwise use field
+      const filterField = (isEnumListType && col.searchField) 
+        ? col.searchField 
+        : (col.searchField || col.field!);
+      
       // For number type columns, use 'equals' (exact match)
-      // For text type columns, use 'startsWith' (begins with)
+      // For text/enum/list type columns, use 'startsWith' (begins with)
       const condition = {
         field: filterField,
         operator: isNumberType ? 'equals' as FilterOperator : 'startsWith' as FilterOperator,
@@ -1003,6 +1015,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const numberTypes: ColumnType[] = ['int', 'float', 'money', 'currency', 'percent'];
       // Text type columns
       const textTypes: ColumnType[] = ['text', 'alphanumeric'];
+      // Enum/List type columns (these use searchField for nested fields)
+      const enumListTypes: ColumnType[] = ['enum', 'list', 'select', 'combo', 'radio'];
       
       result = result.filter((row, index) => {
         const fieldsToSearch = this.searchFields.length > 0 
@@ -1030,11 +1044,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
               return false; // Skip columns that are neither number nor text type
             }
           } else {
-            // Text search, only search in searchable columns with text type
+            // Text search: include text types AND enum/list types (which use searchField)
             if (!column || !column.type) {
               // If no type specified, allow search (backward compatibility)
-            } else if (!textTypes.includes(column.type)) {
-              return false; // Skip non-text columns for text search
+            } else if (!textTypes.includes(column.type) && !enumListTypes.includes(column.type)) {
+              return false; // Skip columns that are neither text nor enum/list type
             }
           }
           
@@ -1143,6 +1157,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const numberTypes: ColumnType[] = ['int', 'float', 'money', 'currency', 'percent'];
       // Text type columns
       const textTypes: ColumnType[] = ['text', 'alphanumeric'];
+      // Enum/List type columns (these use searchField for nested fields)
+      const enumListTypes: ColumnType[] = ['enum', 'list', 'select', 'combo', 'radio'];
       
       result = result.filter((row, index) => {
         const fieldsToSearch = this.searchFields.length > 0 
@@ -1170,22 +1186,25 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
               return false; // Skip columns that are neither number nor text type
             }
           } else {
-            // Text search, only search in searchable columns with text type
+            // Text search: include text types AND enum/list types (which use searchField)
             if (!column || !column.type) {
               // If no type specified, allow search (backward compatibility)
-            } else if (!textTypes.includes(column.type)) {
-              return false; // Skip non-text columns for text search
+            } else if (!textTypes.includes(column.type) && !enumListTypes.includes(column.type)) {
+              return false; // Skip columns that are neither text nor enum/list type
             }
           }
           
           let value: any;
           
+          // Use searchField if available, otherwise use field
+          const searchFieldName = column?.searchField || field;
+          
           if (column && column.render && typeof column.render === 'function') {
             // Use render function to get the value
             value = column.render(row, index, column);
-          } else if (this.nestedFields && field.includes('.')) {
+          } else if (this.nestedFields && searchFieldName.includes('.')) {
             // Support nested field access
-            const fields = field.split('.');
+            const fields = searchFieldName.split('.');
             value = row;
             for (const f of fields) {
               if (value && typeof value === 'object') {
@@ -1197,7 +1216,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             }
           } else {
             // Direct field access
-            value = row[field];
+            value = row[searchFieldName];
           }
           
           if (value == null) return false;
@@ -2174,6 +2193,38 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    */
   sanitizeHtml(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
+  /**
+   * Transform filter to use searchField if available for API requests
+   * This ensures that enum/list columns with nested fields use the correct field name
+   */
+  private transformFilterForApi(filter: AdvancedFilter | null): AdvancedFilter | null {
+    if (!filter || !filter.conditions || filter.conditions.length === 0) {
+      return filter;
+    }
+
+    // Transform each condition to use searchField if available
+    const transformedConditions = filter.conditions.map(condition => {
+      // Find the column that matches the field
+      const column = this.columns.find(col => col.field === condition.field);
+      
+      // If column has searchField, use it instead of field
+      if (column && column.searchField) {
+        return {
+          ...condition,
+          field: column.searchField
+        };
+      }
+      
+      // Return condition as-is if no searchField
+      return condition;
+    });
+
+    return {
+      ...filter,
+      conditions: transformedConditions
+    };
   }
 
   applyAdvancedFilter(data: TableRow[]): TableRow[] {
