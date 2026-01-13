@@ -432,19 +432,34 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }
     
     if (changes['columns'] && changes['columns'].currentValue) {
-      // Merge parent columns with internal columns (preserve resize state)
+      // Merge parent columns with internal columns (preserve resize state and custom updates)
       const newColumns: TableColumn[] = changes['columns'].currentValue;
       if (this.internalColumns.length > 0 && this.internalColumns.length === newColumns.length) {
-        // Preserve width/size from internal columns if field matches
+        // Preserve all custom properties from internal columns if field matches
         this.internalColumns = newColumns.map((newCol: TableColumn, index: number) => {
           const existingCol = this.internalColumns[index];
-          const result: any = existingCol && existingCol.field === newCol.field
-            ? {
-                ...newCol,
-                width: existingCol.width,
-                size: existingCol.size
-              }
-            : { ...newCol };
+          if (existingCol && existingCol.field === newCol.field) {
+            // Merge: use new column as base, but preserve custom properties from existing column
+            const result: any = {
+              ...newCol,
+              // Preserve resize state
+              width: existingCol.width,
+              size: existingCol.size,
+              // Preserve custom field settings (text, label, type, hidden, disabled, etc.)
+              text: existingCol.text !== undefined ? existingCol.text : newCol.text,
+              label: existingCol.label !== undefined ? existingCol.label : newCol.label,
+              type: existingCol.type !== undefined ? existingCol.type : newCol.type,
+              hidden: existingCol.hidden !== undefined ? existingCol.hidden : newCol.hidden,
+              disabled: existingCol.disabled !== undefined ? existingCol.disabled : newCol.disabled,
+              // Preserve _customFieldHidden if it exists
+              _customFieldHidden: (existingCol as any)._customFieldHidden !== undefined 
+                ? (existingCol as any)._customFieldHidden 
+                : (newCol as any)._customFieldHidden
+            };
+            return result;
+          }
+          // Field doesn't match, use new column
+          const result: any = { ...newCol };
           // Preserve _customFieldHidden if it exists in newCol
           if ((newCol as any)._customFieldHidden !== undefined) {
             result._customFieldHidden = (newCol as any)._customFieldHidden;
@@ -453,7 +468,30 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         });
       } else {
         // Create a deep copy of columns for internal use
+        // Try to preserve properties from existing internalColumns by field name
         this.internalColumns = newColumns.map((col: TableColumn) => {
+          const existingCol = this.internalColumns.find(ic => ic.field === col.field);
+          if (existingCol) {
+            // Preserve custom properties from existing column
+            const result: any = {
+              ...col,
+              // Preserve resize state
+              width: existingCol.width,
+              size: existingCol.size,
+              // Preserve custom field settings
+              text: existingCol.text !== undefined ? existingCol.text : col.text,
+              label: existingCol.label !== undefined ? existingCol.label : col.label,
+              type: existingCol.type !== undefined ? existingCol.type : col.type,
+              hidden: existingCol.hidden !== undefined ? existingCol.hidden : col.hidden,
+              disabled: existingCol.disabled !== undefined ? existingCol.disabled : col.disabled,
+              // Preserve _customFieldHidden
+              _customFieldHidden: (existingCol as any)._customFieldHidden !== undefined 
+                ? (existingCol as any)._customFieldHidden 
+                : (col as any)._customFieldHidden
+            };
+            return result;
+          }
+          // No existing column found, use new column as-is
           const result: any = { ...col };
           // Preserve _customFieldHidden if it exists
           if ((col as any)._customFieldHidden !== undefined) {
@@ -3496,6 +3534,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   getColumnLabel(column: TableColumn): string {
     if (!column) return '';
     
+    // If column.text or column.label is explicitly set (e.g., from CustomFieldSettings),
+    // use it directly without checking translation
+    if (column.text || column.label) {
+      return column.text || column.label || column.field;
+    }
+    
     // Try to get translation for column field
     const translationKey = `columns.${column.field}`;
     const translated = this.translate.instant(translationKey);
@@ -3505,8 +3549,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return translated;
     }
     
-    // Fallback to column.label or column.text or column.field
-    return column.label || column.text || column.field;
+    // Fallback to column.field
+    return column.field;
   }
 
   // Footer methods (w2ui style)
@@ -3872,6 +3916,68 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
     this.cdr.markForCheck();
     return updated;
+  }
+
+  /**
+   * Set/update a single column by field name
+   * @param field Column field name to update
+   * @param updates Properties to update (all column properties can be updated)
+   * @returns true if column was found and updated, false otherwise
+   * @example
+   * dataTable.setColumn('fieldName', { text: 'Yeni değer', hidden: false, width: '200px' })
+   */
+  setColumn(field: string, updates: Partial<TableColumn>): boolean {
+    // Initialize internal columns if needed
+    if (this.internalColumns.length === 0) {
+      this.internalColumns = this.columns.map(col => ({ ...col }));
+    }
+    
+    let found = false;
+    
+    // Update internal columns
+    this.internalColumns = this.internalColumns.map(col => {
+      if (col.field === field) {
+        found = true;
+        // Merge updates with existing column properties
+        const updated = { ...col, ...updates };
+        console.log(`[setColumn] Updated internal column ${field}:`, { 
+          before: { text: col.text, label: col.label, type: col.type, hidden: col.hidden },
+          after: { text: updated.text, label: updated.label, type: updated.type, hidden: updated.hidden },
+          updates 
+        });
+        return updated;
+      }
+      return col;
+    });
+    
+    // Update input columns to keep them in sync
+    this.columns = this.columns.map(col => {
+      if (col.field === field) {
+        // Merge updates with existing column properties
+        const updated = { ...col, ...updates };
+        console.log(`[setColumn] Updated input column ${field}:`, { 
+          before: { text: col.text, label: col.label, type: col.type, hidden: col.hidden },
+          after: { text: updated.text, label: updated.label, type: updated.type, hidden: updated.hidden }
+        });
+        return updated;
+      }
+      return col;
+    });
+    
+    if (!found) {
+      console.warn(`[setColumn] Column with field "${field}" not found. Available fields:`, 
+        this.internalColumns.map(c => c.field));
+    }
+    
+    // Update column visibility based on joins if joinTable property changed
+    if (updates.joinTable !== undefined) {
+      this.updateColumnVisibilityForJoins();
+    }
+    
+    // Trigger change detection
+    this.cdr.markForCheck();
+    
+    return found;
   }
 
   /**

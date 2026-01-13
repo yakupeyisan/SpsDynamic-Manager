@@ -1437,6 +1437,106 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Initialize toolbar items for EmployeeCardGrid with translations and handlers
     this.initializeCardGridToolbar();
+    // Load and update custom field settings
+    this.loadCustomFieldSettings();
+  }
+
+  /**
+   * Load custom field settings from API and update columns
+   */
+  private loadCustomFieldSettings(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/CustomFieldSettings`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      catchError(error => {
+        console.error('Error loading custom field settings:', error);
+        return of({
+          status: 'error' as const,
+          total: 0,
+          records: []
+        } as GridResponse);
+      })
+    ).subscribe(response => {
+      if (response.status === 'success' && response.records && response.records.length > 0) {
+        this.updateColumnsFromCustomFieldSettings(response.records);
+      }
+    });
+  }
+
+  /**
+   * Update columns based on CustomFieldSettings data
+   */
+  private updateColumnsFromCustomFieldSettings(settings: any[]): void {
+    // Wait for dataTableComponent to be available (use setTimeout to ensure ViewChild is initialized)
+    setTimeout(() => {
+      if (!this.dataTableComponent) {
+        console.warn('DataTableComponent not available yet, retrying...');
+        setTimeout(() => this.updateColumnsFromCustomFieldSettings(settings), 100);
+        return;
+      }
+
+      // Update table columns
+      settings.forEach(setting => {
+        const fieldName = setting.Field; // e.g., "CustomField01"
+        
+        // Update table column
+        if (this.dataTableComponent) {
+          const updates: Partial<TableColumn> = {};
+          
+          // Update text and label
+          if (setting.Text) {
+            updates.text = setting.Text;
+            updates.label = setting.Text;
+          }
+          
+          // Update type
+          if (setting.Type) {
+            updates.type = setting.Type as ColumnType;
+          }
+          
+          // Update visibility (IsVisible: false means hidden: true)
+          if (setting.IsVisible !== undefined) {
+            updates.hidden = !setting.IsVisible;
+            // Store original hidden value for join visibility logic
+            (updates as any)._customFieldHidden = !setting.IsVisible;
+          }
+          console.log('updates',fieldName, updates);
+          // Update column using setColumn method
+          this.dataTableComponent.setColumn(fieldName, updates);
+        }
+        
+        // Update form field
+        const formFieldIndex = this.formFields.findIndex(f => f.field === fieldName);
+        if (formFieldIndex !== -1) {
+          const formField = this.formFields[formFieldIndex];
+          
+          // Update text and label
+          if (setting.Text) {
+            formField.text = setting.Text;
+            formField.label = setting.Text;
+          }
+          
+          // Update type
+          if (setting.Type) {
+            formField.type = setting.Type as ColumnType;
+          }
+          
+          // Update disabled state (IsDisable: true means disabled: true)
+          if (setting.IsDisable !== undefined) {
+            formField.disabled = setting.IsDisable;
+          }
+          
+          // Update visibility for form (IsVisible: false means hidden: true)
+          if (setting.IsVisible !== undefined) {
+            formField.hidden = !setting.IsVisible;
+          }
+        }
+      });
+      
+      // Trigger change detection
+      this.cdr.markForCheck();
+    }, 100);
   }
 
   /**
