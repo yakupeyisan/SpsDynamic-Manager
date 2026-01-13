@@ -57,3 +57,88 @@
   </div>
 </div>
 
+<!-- Doors (Terminals) Edit Modal -->
+<ui-modal
+  [title]="'Kapıları Düzenle'"
+  [show]="showDoorsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showDoorsModal = $event"
+  (closed)="closeDoorsModal()"
+  (onResize)="onDoorsModalResize($event)">
+  
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
+    <!-- Left Panel: Unselected Terminals -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Kapılar</h4>
+        <button class="transfer-btn" (click)="transferTerminalsToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedTerminalsTable
+          [id]="'unselected-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="unselectedTerminalsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'ReaderID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedTerminals = $event">
+        </ui-data-table>
+      </div>
+    </div>
+
+    <!-- Right Panel: Selected Terminals -->
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Kapılar</h4>
+        <button class="transfer-btn" (click)="transferTerminalsToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedTerminalsTable
+          [id]="'selected-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="selectedTerminalsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'ReaderID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="claimsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedTerminals = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>

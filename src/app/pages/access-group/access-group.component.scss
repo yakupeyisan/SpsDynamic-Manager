@@ -8,3 +8,107 @@
   }
 }
 
+// Permissions Transfer Container Styles (from authorizations component)
+.permissions-transfer-container {
+  display: flex;
+  gap: 20px;
+  
+  .transfer-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ui-border-color, #e0e0e0);
+    border-radius: var(--ui-border-radius, 4px);
+    overflow: hidden;
+    
+    .transfer-panel-header {
+      padding: 12px;
+      background-color: var(--ui-gray-50, #f9fafb);
+      border-bottom: 1px solid var(--ui-border-color, #e0e0e0);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      .transfer-panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ui-gray-900, #111827);
+      }
+      
+      .transfer-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: 1px solid var(--ui-primary, #007bff);
+        background-color: var(--ui-primary, #007bff);
+        color: white;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        
+        &:hover:not(:disabled) {
+          background-color: var(--ui-primary-dark, #0056b3);
+          border-color: var(--ui-primary-dark, #0056b3);
+        }
+        
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+    }
+    
+    .transfer-panel-body {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      
+      ::ng-deep ui-data-table {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        position: relative !important;
+        overflow: visible !important;
+        
+        .ui-data-table {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          position: relative !important;
+          overflow: visible !important;
+          border: none !important;
+        }
+        
+        .ui-table-wrapper {
+          flex: 1 !important;
+          overflow-y: auto !important;
+          overflow-x: auto !important;
+          min-height: 0 !important;
+          position: relative !important;
+          margin-bottom: 32px !important;
+        }
+        
+        .ui-table-footer {
+          position: absolute !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          flex-shrink: 0 !important;
+          z-index: 100 !important;
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          height: 32px !important;
+          background-color: #f8f8f8 !important;
+        }
+      }
+    }
+  }
+}

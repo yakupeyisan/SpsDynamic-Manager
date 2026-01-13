@@ -9,6 +9,7 @@ import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
 
 // Import configurations
 import { joinOptions } from './access-group-config';
@@ -34,7 +35,8 @@ import {
     CommonModule, 
     TablerIconsModule,
     TranslateModule,
-    DataTableComponent
+    DataTableComponent,
+    ModalComponent
   ],
   templateUrl: './access-group.component.html',
   styleUrls: ['./access-group.component.scss']
@@ -356,7 +358,21 @@ export class AccessGroupComponent implements OnInit {
     
     // Get selected access group ID
     const selectedIds = Array.from(selectedRows);
-    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    // Use internalData if available (from dataSource), otherwise use filteredData or data
+    let dataSource: any[] = [];
+    if (this.dataTableComponent.internalData && this.dataTableComponent.internalData.length > 0) {
+      dataSource = this.dataTableComponent.internalData;
+    } else if (this.dataTableComponent.filteredData && this.dataTableComponent.filteredData.length > 0) {
+      dataSource = this.dataTableComponent.filteredData;
+    } else if (this.dataTableComponent.data && this.dataTableComponent.data.length > 0) {
+      dataSource = this.dataTableComponent.data;
+    }
+    
+    if (!dataSource || dataSource.length === 0) {
+      this.toastr.warning('Veri bulunamadı. Lütfen sayfayı yenileyin ve tekrar deneyin.');
+      return;
+    }
+    
     const selectedRow = dataSource.find((row: any) => {
       const rowId = row['recid'] ?? row['AccessGroupID'] ?? row['Id'] ?? row['id'];
       return selectedIds.includes(rowId);
@@ -392,6 +408,11 @@ export class AccessGroupComponent implements OnInit {
     this.accessGroupIdForDoors = null;
     this.selectedUnselectedTerminals = [];
     this.selectedSelectedTerminals = [];
+  }
+  
+  onDoorsModalResize(event: { width: number; height: number }): void {
+    const newHeight = event.height - 50;
+    this.gridHeight = (newHeight < 600 ? 600 : newHeight) + 'px';
   }
   
   // Data source for selected terminals
