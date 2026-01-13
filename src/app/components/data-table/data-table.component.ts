@@ -438,19 +438,29 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         // Preserve width/size from internal columns if field matches
         this.internalColumns = newColumns.map((newCol: TableColumn, index: number) => {
           const existingCol = this.internalColumns[index];
-          if (existingCol && existingCol.field === newCol.field) {
-            // Keep width/size from existing (resized) column
-            return {
-              ...newCol,
-              width: existingCol.width,
-              size: existingCol.size
-            };
+          const result: any = existingCol && existingCol.field === newCol.field
+            ? {
+                ...newCol,
+                width: existingCol.width,
+                size: existingCol.size
+              }
+            : { ...newCol };
+          // Preserve _customFieldHidden if it exists in newCol
+          if ((newCol as any)._customFieldHidden !== undefined) {
+            result._customFieldHidden = (newCol as any)._customFieldHidden;
           }
-          return { ...newCol };
+          return result;
         });
       } else {
         // Create a deep copy of columns for internal use
-        this.internalColumns = newColumns.map((col: TableColumn) => ({ ...col }));
+        this.internalColumns = newColumns.map((col: TableColumn) => {
+          const result: any = { ...col };
+          // Preserve _customFieldHidden if it exists
+          if ((col as any)._customFieldHidden !== undefined) {
+            result._customFieldHidden = (col as any)._customFieldHidden;
+          }
+          return result;
+        });
       }
       
       // Update column visibility based on joins after columns are updated
@@ -4390,8 +4400,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         // Show column if any of its join tables are active
         const shouldShow = joinTables.some(joinTable => isJoinActive(joinTable));
         
-        // Update visibility (hidden should be opposite of shouldShow)
-        col.hidden = !shouldShow;
+        // Preserve hidden value from CustomFieldSettings if it was explicitly set
+        // Check if column has _customFieldHidden property (set by CustomFieldSettings)
+        const customFieldHidden = (col as any)._customFieldHidden;
+        if (customFieldHidden !== undefined) {
+          // Preserve the hidden value from CustomFieldSettings
+          col.hidden = customFieldHidden;
+        } else {
+          // Update visibility based on join (hidden should be opposite of shouldShow)
+          col.hidden = !shouldShow;
+        }
       }
     });
     
@@ -4401,7 +4419,15 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         const joinTables = Array.isArray(col.joinTable) ? col.joinTable : [col.joinTable];
         const shouldShow = joinTables.some(joinTable => isJoinActive(joinTable));
         
-        col.hidden = !shouldShow;
+        // Preserve hidden value from CustomFieldSettings if it was explicitly set
+        const customFieldHidden = (col as any)._customFieldHidden;
+        if (customFieldHidden !== undefined) {
+          // Preserve the hidden value from CustomFieldSettings
+          col.hidden = customFieldHidden;
+        } else {
+          // Update visibility based on join
+          col.hidden = !shouldShow;
+        }
       }
     });
   }

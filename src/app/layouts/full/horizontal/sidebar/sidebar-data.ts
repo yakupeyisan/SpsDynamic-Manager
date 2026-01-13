@@ -349,6 +349,10 @@ export const navItems: NavItem[] = [
             displayName: 'Güvenli Girdi Tanımları',
             route: '/SecureFields',
           },
+          {
+            displayName: 'Özel Alan Tanımları',
+            route: '/CustomFieldSettings',
+          },
         ],
       },
       {

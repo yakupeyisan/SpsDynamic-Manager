@@ -540,6 +540,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'CustomFieldSettings',
+        loadComponent: () =>
+          import('./pages/custom-field-settings/custom-field-settings.component').then(
+            (m) => m.CustomFieldSettingsComponent
+          ),
+        data: {
+          title: 'Özel Alan Tanımları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'SmsSettings',
         loadComponent: () =>
           import('./pages/sms-settings/sms-settings.component').then(
