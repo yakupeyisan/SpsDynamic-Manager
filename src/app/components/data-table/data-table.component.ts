@@ -3005,6 +3005,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // If custom formFields are provided, use them
     if (this.formFields && this.formFields.length > 0) {
       return this.formFields.filter(col => 
+        !col.hidden && // Filter out hidden columns
         col.type !== 'picture' && 
         col.field !== 'recid' &&
         // Include ID field only in edit mode

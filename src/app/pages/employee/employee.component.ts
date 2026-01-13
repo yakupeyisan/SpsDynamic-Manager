@@ -1534,6 +1534,9 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         }
       });
       
+      // Create new array reference to trigger change detection
+      this.formFields = [...this.formFields];
+      
       // Trigger change detection
       this.cdr.markForCheck();
     }, 100);
