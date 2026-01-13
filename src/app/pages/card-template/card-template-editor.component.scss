@@ -338,9 +338,10 @@
         }
 
         &:has(input:disabled) {
-          opacity: 0.5;
+          opacity: 1;
           cursor: not-allowed;
           background: #f8f9fa;
+          color: #495057;
         }
       }
     }

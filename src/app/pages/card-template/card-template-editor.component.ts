@@ -1,5 +1,5 @@
 // Card Template Editor Component
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -145,6 +145,63 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     // Cleanup if needed
   }
 
+  @HostListener('document:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent): void {
+    // Only handle arrow keys if an item is selected and not typing in an input
+    if (!this.selectedItemId) return;
+    
+    const target = event.target as HTMLElement;
+    const isEditableElement = 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.tagName === 'SELECT' ||
+      target.isContentEditable;
+    
+    // Don't handle arrow keys if user is typing in an input field
+    if (isEditableElement) return;
+    
+    const side = this.designDirection;
+    const item = this.templateData[side]?.items?.[this.selectedItemId];
+    if (!item) return;
+    
+    // Movement step in mm (0.5mm per keypress, or 1mm if Shift is held)
+    const step = event.shiftKey ? 1 : 0.5;
+    let moved = false;
+    
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        item.left = Math.max(0, item.left - step);
+        moved = true;
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        item.left += step;
+        moved = true;
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        item.top = Math.max(0, item.top - step);
+        moved = true;
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        item.top += step;
+        moved = true;
+        break;
+    }
+    
+    if (moved) {
+      // Update element position
+      const element = document.getElementById(this.selectedItemId);
+      if (element) {
+        element.style.left = `${item.left}mm`;
+        element.style.top = `${item.top}mm`;
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
   loadFieldOptions(): void {
     // Default field options (Employee fields that can be used in card templates)
     this.fieldOptions = [
@@ -211,19 +268,37 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       }
     }).subscribe({
       next: (response: any) => {
+        // Handle different response formats
+        let record = null;
+        
         if (response.status === 'success' && response.record) {
-          this.templateId = response.record.Id;
-          this.templateName = response.record.TemplateName || '';
+          record = response.record;
+        } else if (response.record) {
+          record = response.record;
+        } else if (response.Id || response.id || response.recid) {
+          // Response is the record itself
+          record = response;
+        } else if (response.error === false && response.record) {
+          record = response.record;
+        }
+        
+        if (record) {
+          // Handle different ID field names
+          this.templateId = record.Id || record.id || record.recid || null;
+          this.templateName = record.TemplateName || '';
           
-          if (response.record.TemplateData) {
+          if (record.TemplateData) {
             try {
-              const data = JSON.parse(response.record.TemplateData);
+              const data = JSON.parse(record.TemplateData);
               this.initializeTemplate(data);
             } catch (e) {
               console.error('Error parsing template data:', e);
               this.toastr.error('Şablon verisi okunamadı.', 'Hata');
             }
           }
+        } else {
+          console.error('Unexpected response format:', response);
+          this.toastr.error('Şablon yüklenirken beklenmeyen yanıt formatı alındı.', 'Hata');
         }
       },
       error: (error) => {
@@ -234,28 +309,30 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   }
 
   initializeTemplate(data: any): void {
-    // Initialize template data
-    if (data.FRONT) {
-      this.templateData.FRONT = data.FRONT;
-    }
-    if (data.BACK) {
-      this.templateData.BACK = data.BACK;
-    } else if (data.SIDE === 'SINGLE') {
-      this.designType = 'SINGLE';
-      delete this.templateData.BACK;
-    }
-    
-    // Set dimensions
+    // Set dimensions first
     if (data.FRONT) {
       const front = data.FRONT;
-      if (front.width === '108mm' && front.height === '171mm') {
+      if (front.width === '171mm' && front.height === '108mm') {
         this.pageType = '0'; // Yatay
-      } else if (front.width === '171mm' && front.height === '108mm') {
+      } else if (front.width === '108mm' && front.height === '171mm') {
         this.pageType = '1'; // Dikey
       } else {
         this.pageType = '2'; // Özel
+        // Parse custom dimensions from template data
+        const widthMm = parseFloat(front.width?.replace('mm', '') || '171');
+        const heightMm = parseFloat(front.height?.replace('mm', '') || '108');
+        this.width = widthMm / 2;
+        this.height = heightMm / 2;
       }
       this.updatePageDimensions();
+      
+      // Initialize template data after dimensions are set
+      this.templateData.FRONT = {
+        width: front.width,
+        height: front.height,
+        background: front.background || 'transparent',
+        items: { ...front.items } // Copy items to avoid reference issues
+      };
       
       // Load background
       if (front.background && front.background !== 'transparent') {
@@ -270,12 +347,22 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     
     if (data.BACK) {
       const back = data.BACK;
+      this.templateData.BACK = {
+        width: back.width || this.templateData.FRONT.width,
+        height: back.height || this.templateData.FRONT.height,
+        background: back.background || 'transparent',
+        items: { ...back.items } // Copy items to avoid reference issues
+      };
+      
       if (back.background && back.background !== 'transparent') {
         this.setBackground('BACK', back.background);
       }
       setTimeout(() => {
         this.loadItems('BACK', back.items || {});
       }, 200);
+    } else if (data.SIDE === 'SINGLE') {
+      this.designType = 'SINGLE';
+      delete this.templateData.BACK;
     }
   }
 
@@ -393,48 +480,44 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
 
   makeDraggable(element: HTMLElement, side: 'FRONT' | 'BACK'): void {
     let isDragging = false;
+    let hasMouseDown = false;
+    let startX = 0;
+    let startY = 0;
     let offsetX = 0;
     let offsetY = 0;
 
-    element.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      
-      // Select item on click
-      if (!isDragging) {
-        this.selectItem(element.id, side);
-      }
-      
-      isDragging = true;
-      this.isDragging = true;
-      
-      const container = side === 'FRONT' ? this.frontContainerRef?.nativeElement : this.backContainerRef?.nativeElement;
-      const containerRect = container?.getBoundingClientRect();
-      const elementRect = element.getBoundingClientRect();
-      
-      if (containerRect && elementRect) {
-        // Calculate offset from mouse to element's top-left corner
-        offsetX = e.clientX - elementRect.left;
-        offsetY = e.clientY - elementRect.top;
-      }
-      
-      e.preventDefault();
-    });
-
     const onMouseMove = (e: MouseEvent) => {
+      // Only process if mousedown was triggered
+      if (!hasMouseDown) return;
+      
+      // Check if mouse has moved enough to start dragging
+      if (!isDragging && !this.isDragging) {
+        const deltaX = Math.abs(e.clientX - startX);
+        const deltaY = Math.abs(e.clientY - startY);
+        if (deltaX > 3 || deltaY > 3) {
+          isDragging = true;
+          this.isDragging = true;
+        }
+      }
+      
       if (!isDragging || !this.isDragging) return;
       
       const container = side === 'FRONT' ? this.frontContainerRef?.nativeElement : this.backContainerRef?.nativeElement;
       const containerRect = container?.getBoundingClientRect();
       
       if (containerRect) {
-        // Calculate new position in pixels
-        const newX = e.clientX - containerRect.left - offsetX;
-        const newY = e.clientY - containerRect.top - offsetY;
+        // Calculate new position: mouse position minus offset (both in container coordinates)
+        const mouseXInContainer = e.clientX - containerRect.left;
+        const mouseYInContainer = e.clientY - containerRect.top;
+        const newXInContainer = mouseXInContainer - offsetX;
+        const newYInContainer = mouseYInContainer - offsetY;
         
         // Convert px to mm
         const mmPerPx = this.getMmPerPx();
-        const newLeftMm = Math.max(0, this.pxToMm(newX));
-        const newTopMm = Math.max(0, this.pxToMm(newY));
+        const newLeftMm = Math.max(0, this.pxToMm(newXInContainer));
+        const newTopMm = Math.max(0, this.pxToMm(newYInContainer));
+        
+        console.log('mousemove - clientX:', e.clientX, 'clientY:', e.clientY, 'offsetX:', offsetX, 'offsetY:', offsetY, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'newXInContainer:', newXInContainer, 'newYInContainer:', newYInContainer, 'newLeftMm:', newLeftMm, 'newTopMm:', newTopMm, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top);
         
         // Update element position
         element.style.left = `${newLeftMm}mm`;
@@ -449,12 +532,53 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       }
     };
 
-    const onMouseUp = () => {
-      if (isDragging) {
-        isDragging = false;
-        this.isDragging = false;
+    const onMouseUp = (e: MouseEvent) => {
+      if (hasMouseDown) {
+        if (isDragging) {
+          isDragging = false;
+          this.isDragging = false;
+        }
+        hasMouseDown = false;
       }
     };
+
+    element.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      
+      hasMouseDown = true;
+      isDragging = false;
+      this.isDragging = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      const container = side === 'FRONT' ? this.frontContainerRef?.nativeElement : this.backContainerRef?.nativeElement;
+      const containerRect = container?.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      
+      if (containerRect && elementRect) {
+        // Get element's current position from templateData (in mm)
+        const itemId = element.id;
+        const item = this.templateData[side]?.items?.[itemId];
+        let elementLeftPx = elementRect.left - containerRect.left;
+        let elementTopPx = elementRect.top - containerRect.top;
+        
+        // If we have item data, use it for more accurate position
+        if (item && item.left !== undefined && item.top !== undefined) {
+          elementLeftPx = this.mmToPx(item.left);
+          elementTopPx = this.mmToPx(item.top);
+        }
+        
+        // Calculate offset from mouse click point to element's top-left corner
+        // Both mouse and element positions relative to container
+        const mouseXInContainer = e.clientX - containerRect.left;
+        const mouseYInContainer = e.clientY - containerRect.top;
+        offsetX = mouseXInContainer - elementLeftPx;
+        offsetY = mouseYInContainer - elementTopPx;
+        console.log('mousedown - offsetX:', offsetX, 'offsetY:', offsetY, 'clientX:', e.clientX, 'clientY:', e.clientY, 'elementRect.left:', elementRect.left, 'elementRect.top:', elementRect.top, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'elementLeftPx:', elementLeftPx, 'elementTopPx:', elementTopPx, 'item.left:', item?.left, 'item.top:', item?.top);
+      }
+      
+      e.preventDefault();
+    });
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
@@ -485,11 +609,15 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     this.selectedItemId = itemId;
     this.clearSelection();
     
+    const item = this.templateData[side]?.items[itemId];
     const element = document.getElementById(itemId);
     if (element) {
       if (element.tagName === 'LABEL') {
         element.style.borderColor = 'red';
         this.loadItemProperties(itemId, side);
+      } else if (item?.type === 'barcode') {
+        element.style.border = '2px solid red';
+        this.loadBarcodeProperties(itemId, side);
       } else {
         element.style.border = '2px solid red';
         this.loadImageProperties(itemId, side);
@@ -533,8 +661,10 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     this.textTransform = item.textTransform || 'none';
     this.fontWeight = item.fontWeight || '500';
     this.textColor = item.color || '#000000';
-    this.fontSize = item.fontsize || 5;
-    this.textWidth = item.lwidth || 20;
+    // fontsize is stored as 2x, so divide by 2 when loading
+    this.fontSize = (item.fontsize || 10) / 2;
+    // lwidth is stored as 2x, so divide by 2 when loading
+    this.textWidth = (item.lwidth || 40) / 2;
     this.textAlign = item.textAlign || 'left';
   }
 
@@ -552,6 +682,16 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     this.imageHeight = parseFloat(item.height?.replace('mm', '') || '20') / 2;
     this.objectFit = item.objectFit || 'fill';
     this.borderRadius = item.borderRadius || '0mm';
+  }
+
+  loadBarcodeProperties(itemId: string, side: 'FRONT' | 'BACK'): void {
+    const item = this.templateData[side]?.items[itemId];
+    if (!item) return;
+    
+    this.contentType = '2';
+    this.field = item.field || '';
+    this.imageWidth = parseFloat(item.width?.replace('mm', '') || '20') / 2;
+    this.imageHeight = parseFloat(item.height?.replace('mm', '') || '20') / 2;
   }
 
   deleteItem(itemId: string, side: 'FRONT' | 'BACK'): void {
@@ -582,8 +722,13 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       this.height = 85.5;
       this.templateData.FRONT.width = '108mm';
       this.templateData.FRONT.height = '171mm';
+    } else if (this.pageType === '2') {
+      // Özel - Use current width and height values
+      this.templateData.FRONT.width = `${this.width * 2}mm`;
+      this.templateData.FRONT.height = `${this.height * 2}mm`;
     }
     
+    // Sync BACK dimensions with FRONT
     if (this.templateData.BACK) {
       this.templateData.BACK.width = this.templateData.FRONT.width;
       this.templateData.BACK.height = this.templateData.FRONT.height;
@@ -627,6 +772,8 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         items: {}
       };
     }
+    this.updateContainerSize();
+    this.cdr.markForCheck();
   }
 
   onDesignDirectionChange(): void {
@@ -833,6 +980,16 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
           item.src = src;
           if (element) element.src = src;
         });
+      }
+    } else if (item.type === 'barcode') {
+      item.width = `${this.imageWidth * 2}mm`;
+      item.height = `${this.imageHeight * 2}mm`;
+      item.field = this.field;
+      
+      const element = document.getElementById(this.selectedItemId) as HTMLDivElement;
+      if (element) {
+        element.style.width = item.width;
+        element.style.height = item.height;
       }
     }
     

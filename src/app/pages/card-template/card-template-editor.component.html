@@ -71,14 +71,14 @@
             </select>
           </div>
 
-          <div class="input-group" *ngIf="contentType === '0'">
+          <div class="input-group" *ngIf="contentType === '0' || contentType === '2'">
             <label>Alan</label>
             <select [(ngModel)]="field" (change)="onFieldChange()">
               <option *ngFor="let option of fieldOptions" [value]="option.Field">{{ option.Name }}</option>
             </select>
           </div>
 
-          <div class="input-group" *ngIf="contentType === '0' && field === 'Fix'">
+          <div class="input-group" *ngIf="(contentType === '0' || contentType === '2') && field === 'Fix'">
             <label>Fix Yazı</label>
             <input type="text" [(ngModel)]="fixText">
           </div>
