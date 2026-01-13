@@ -86,13 +86,16 @@ export const formFields: TableColumn[] = [
     field: 'CafeteriaGroupID', 
     label: 'Kafeterya Grup', 
     text: 'Kafeterya Grup', 
-    type: 'list', 
+    type: 'list' as ColumnType, 
     load: {
       url: `${apiUrl}/api/CafeteriaGroups`,
       injectAuth: true,
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
         return data.records.map((item: any) => ({
           id: item.CafeteriaGroupID,
           text: item.CafeteriaGroupName || item.Name

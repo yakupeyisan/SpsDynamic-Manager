@@ -1,5 +1,8 @@
 // Card table columns configuration
 import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.apiUrl;
 
 export const tableColumns: TableColumn[] = [
   { 
@@ -30,15 +33,70 @@ export const tableColumns: TableColumn[] = [
     field: 'CafeteriaGroupName', 
     label: 'Kafeterya Grup', 
     text: 'Kafeterya Grup',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: false, 
     width: '180px', 
     size: '180px',
-    searchable: false,
+    searchable: 'enum',
+    searchField: 'CafeteriaGroupID',
     resizable: true,
     render: (record: any) => record.CafeteriaGroup?.CafeteriaGroupName || record.CafeteriaGroup?.Name || '',
-    joinTable: 'CafeteriaGroup'
+    joinTable: 'CafeteriaGroup',
+    load: {
+      url: `${apiUrl}/api/CafeteriaGroups`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
+        return data.records.map((item: any) => ({
+          id: item.CafeteriaGroupID,
+          text: item.CafeteriaGroupName || item.Name
+        }));
+      }
+    }
   },
+  { 
+    field: 'Department', 
+    searchField: 'Employee.EmployeeDepartments.Department.DepartmentID',
+    label: 'Departman', 
+    text: 'Departman',
+    type: 'enum' as ColumnType, 
+    sortable: false, 
+    width: '180px', 
+    size: '180px',
+    searchable: 'enum',
+    resizable: true,
+    tooltip: 'Department',
+    joinTable: 'Employee',
+    hidden: true,
+    load: {
+      url: `${apiUrl}/api/Departments`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: {
+        limit: -1,
+        offset: 0
+      },
+      map: (data: any) => {
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
+        return data.records.map((item: any) => ({
+          id: item.DepartmentID,
+          text: item.DepartmentName
+        }));
+      }
+    },
+    render: (record: any) => {
+      if (record.Employee && record.Employee.EmployeeDepartments && record.Employee.EmployeeDepartments.length > 0) {
+        return record.Employee.EmployeeDepartments.map((ed: any) => ed.Department?.DepartmentName).filter(Boolean).join(', ') || '';
+      }
+      return '';
+    }
+  },  
   { 
     field: 'EmployeeName', 
     label: 'Kişi Adı', 
@@ -56,7 +114,7 @@ export const tableColumns: TableColumn[] = [
       return '';
     },
     joinTable: 'Employee'
-  },  
+  },
   { 
     field: 'CardCodeType', 
     label: 'Kart Yapısı', 
