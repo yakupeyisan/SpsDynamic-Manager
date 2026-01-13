@@ -125,6 +125,19 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   selectedEmployeesForPasswordReset: any[] = [];
   isResettingPassword: boolean = false;
   
+  // Bulk SMS modal state
+  showBulkSmsModal = false;
+  selectedEmployeesForSms: any[] = [];
+  smsMessage: string = '';
+  isSendingSms: boolean = false;
+  
+  // Bulk Mail modal state
+  showBulkMailModal = false;
+  selectedEmployeesForMail: any[] = [];
+  mailMessage: string = '';
+  mailSubject: string = '';
+  isSendingMail: boolean = false;
+  
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
   // Reader messages tracking
@@ -959,11 +972,214 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onBulkSms(event: MouseEvent, item: any) {
-    //console.log('Bulk SMS:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForSms = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.smsMessage = '';
+    
+    // Open modal
+    this.showBulkSmsModal = true;
   }
 
   onBulkMail(event: MouseEvent, item: any) {
-    //console.log('Bulk mail:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForMail = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.mailSubject = '';
+    this.mailMessage = '';
+    
+    // Open modal
+    this.showBulkMailModal = true;
+  }
+
+  // Bulk SMS Modal Methods
+  onBulkSmsModalChange(show: boolean) {
+    this.showBulkSmsModal = show;
+    if (!show) {
+      this.closeBulkSmsModal();
+    }
+  }
+  
+  closeBulkSmsModal() {
+    this.showBulkSmsModal = false;
+    this.selectedEmployeesForSms = [];
+    this.smsMessage = '';
+  }
+  
+  onConfirmBulkSms() {
+    if (!this.smsMessage || this.smsMessage.trim() === '') {
+      this.toastr.warning('Lütfen mesaj giriniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForSms.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    // Check if any employee has phone number
+    const employeesWithPhone = this.selectedEmployeesForSms.filter(emp => {
+      const phone = emp['MobilePhone1'] || emp['MobilePhone2'] || emp['HomePhone'] || emp['CompanyPhone'];
+      return phone && phone.trim() !== '';
+    });
+    
+    if (employeesWithPhone.length === 0) {
+      this.toastr.warning('Seçili çalışanlardan hiçbirinde telefon numarası tanımlı değil.');
+      return;
+    }
+    
+    this.isSendingSms = true;
+    
+    // Get employee IDs
+    const employeeIds = employeesWithPhone.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to send SMS
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkSendSms`, {
+      EmployeeIDs: employeeIds,
+      Message: this.smsMessage.trim()
+    }).pipe(
+      catchError(error => {
+        this.isSendingSms = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'SMS gönderimi sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error sending SMS:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isSendingSms = false;
+        this.cdr.markForCheck();
+        this.toastr.success(`${employeesWithPhone.length} çalışana SMS başarıyla gönderildi.`);
+        this.closeBulkSmsModal();
+      }
+    });
+  }
+  
+  // Bulk Mail Modal Methods
+  onBulkMailModalChange(show: boolean) {
+    this.showBulkMailModal = show;
+    if (!show) {
+      this.closeBulkMailModal();
+    }
+  }
+  
+  closeBulkMailModal() {
+    this.showBulkMailModal = false;
+    this.selectedEmployeesForMail = [];
+    this.mailSubject = '';
+    this.mailMessage = '';
+  }
+  
+  onConfirmBulkMail() {
+    if (!this.mailSubject || this.mailSubject.trim() === '') {
+      this.toastr.warning('Lütfen mail konusu giriniz.');
+      return;
+    }
+    
+    if (!this.mailMessage || this.mailMessage.trim() === '') {
+      this.toastr.warning('Lütfen mail mesajı giriniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForMail.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    // Check if any employee has email
+    const employeesWithEmail = this.selectedEmployeesForMail.filter(emp => {
+      const email = emp['Mail'];
+      return email && email.trim() !== '' && email.includes('@');
+    });
+    
+    if (employeesWithEmail.length === 0) {
+      this.toastr.warning('Seçili çalışanlardan hiçbirinde e-posta adresi tanımlı değil.');
+      return;
+    }
+    
+    this.isSendingMail = true;
+    
+    // Get employee IDs
+    const employeeIds = employeesWithEmail.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to send mail
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkSendMail`, {
+      EmployeeIDs: employeeIds,
+      Subject: this.mailSubject.trim(),
+      Message: this.mailMessage.trim()
+    }).pipe(
+      catchError(error => {
+        this.isSendingMail = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Mail gönderimi sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error sending mail:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isSendingMail = false;
+        this.cdr.markForCheck();
+        this.toastr.success(`${employeesWithEmail.length} çalışana mail başarıyla gönderildi.`);
+        this.closeBulkMailModal();
+      }
+    });
+  }
+  
+  // Helper methods to check if employees have phone/email
+  getEmployeesWithPhoneCount(): number {
+    return this.selectedEmployeesForSms.filter(emp => {
+      const phone = emp['MobilePhone1'] || emp['MobilePhone2'] || emp['HomePhone'] || emp['CompanyPhone'];
+      return phone && phone.trim() !== '';
+    }).length;
+  }
+  
+  getEmployeesWithEmailCount(): number {
+    return this.selectedEmployeesForMail.filter(emp => {
+      const email = emp['Mail'];
+      return email && email.trim() !== '' && email.includes('@');
+    }).length;
   }
 
   onImportFromExcel(event: MouseEvent, item: any) {

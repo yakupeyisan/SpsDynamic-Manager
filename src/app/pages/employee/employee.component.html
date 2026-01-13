@@ -781,3 +781,220 @@
     </button>
   </div>
 </ui-modal>
+
+<!-- Bulk SMS Modal -->
+<ui-modal
+  [show]="showBulkSmsModal"
+  [title]="'Toplu SMS Gönderimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkSmsModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Bilgi:</strong> Seçili çalışanlara SMS gönderilecektir. Eğer kişinin telefon numarası tanımlı ise gönderim yapılacaktır.
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForSms.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForSms; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['MobilePhone1'] || employee['MobilePhone2']" class="selected-event-row">
+              <span class="selected-event-label">Telefon:</span>
+              <span class="selected-event-value">{{ employee['MobilePhone1'] || employee['MobilePhone2'] || '-' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="getEmployeesWithPhoneCount() > 0" class="cancel-description-hint" style="margin-top: 0.75rem;">
+        <i class="ti ti-info-circle"></i>
+        <span>{{ getEmployeesWithPhoneCount() }} çalışanın telefon numarası tanımlı. SMS gönderilecek.</span>
+      </div>
+      <div *ngIf="getEmployeesWithPhoneCount() === 0" class="cancel-description-hint" style="margin-top: 0.75rem; color: #dc3545;">
+        <i class="ti ti-alert-circle"></i>
+        <span>Seçili çalışanlardan hiçbirinde telefon numarası tanımlı değil.</span>
+      </div>
+    </div>
+    
+    <!-- SMS Message Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-message me-2"></i>
+        <span class="cancel-section-title">SMS Mesajı</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <textarea 
+        class="cancel-description-textarea" 
+        rows="6"
+        [(ngModel)]="smsMessage"
+        placeholder="SMS mesajınızı giriniz..."
+        [disabled]="isSendingSms"
+        required
+        style="width: 100%; min-height: 150px; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;"></textarea>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Mesaj uzunluğu SMS karakter limitine göre kontrol edilecektir.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkSmsModal()"
+      [disabled]="isSendingSms">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkSms()"
+      [disabled]="isSendingSms || !smsMessage || smsMessage.trim() === '' || getEmployeesWithPhoneCount() === 0">
+      <span *ngIf="isSendingSms" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isSendingSms" class="ti ti-send me-1"></i>
+      Gönder
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Mail Modal -->
+<ui-modal
+  [show]="showBulkMailModal"
+  [title]="'Toplu Mail Gönderimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkMailModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Bilgi:</strong> Seçili çalışanlara mail gönderilecektir. Eğer kişinin e-posta adresi tanımlı ise gönderim yapılacaktır.
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForMail.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForMail; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['Mail']" class="selected-event-row">
+              <span class="selected-event-label">E-posta:</span>
+              <span class="selected-event-value">{{ employee['Mail'] || '-' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="getEmployeesWithEmailCount() > 0" class="cancel-description-hint" style="margin-top: 0.75rem;">
+        <i class="ti ti-info-circle"></i>
+        <span>{{ getEmployeesWithEmailCount() }} çalışanın e-posta adresi tanımlı. Mail gönderilecek.</span>
+      </div>
+      <div *ngIf="getEmployeesWithEmailCount() === 0" class="cancel-description-hint" style="margin-top: 0.75rem; color: #dc3545;">
+        <i class="ti ti-alert-circle"></i>
+        <span>Seçili çalışanlardan hiçbirinde e-posta adresi tanımlı değil.</span>
+      </div>
+    </div>
+    
+    <!-- Mail Subject Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-mail me-2"></i>
+        <span class="cancel-section-title">Mail Konusu</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <input 
+        type="text"
+        class="cancel-description-textarea"
+        [(ngModel)]="mailSubject"
+        placeholder="Mail konusunu giriniz..."
+        [disabled]="isSendingMail"
+        required
+        style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 0.95rem;">
+    </div>
+    
+    <!-- Mail Message Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-file-text me-2"></i>
+        <span class="cancel-section-title">Mail Mesajı</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <textarea 
+        class="cancel-description-textarea" 
+        rows="8"
+        [(ngModel)]="mailMessage"
+        placeholder="Mail mesajınızı giriniz..."
+        [disabled]="isSendingMail"
+        required
+        style="width: 100%; min-height: 200px; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;"></textarea>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Mail mesajı HTML formatında gönderilebilir.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkMailModal()"
+      [disabled]="isSendingMail">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkMail()"
+      [disabled]="isSendingMail || !mailSubject || mailSubject.trim() === '' || !mailMessage || mailMessage.trim() === '' || getEmployeesWithEmailCount() === 0">
+      <span *ngIf="isSendingMail" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isSendingMail" class="ti ti-send me-1"></i>
+      Gönder
+    </button>
+  </div>
+</ui-modal>
