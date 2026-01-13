@@ -14,6 +14,7 @@ import { ToastrService } from 'ngx-toastr';
 import { catchError, map, finalize } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { SelectComponent } from 'src/app/components/select/select.component';
 import { WebSocketService } from 'src/app/services/websocket.service';
 import { Subscription } from 'rxjs';
 
@@ -45,7 +46,8 @@ import {
     TablerIconsModule,
     TranslateModule,
     DataTableComponent,
-    ModalComponent
+    ModalComponent,
+    SelectComponent
   ],
   templateUrl: './employee.component.html',
   styleUrls: ['./employee.component.scss']
@@ -86,6 +88,42 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   closeAndCloneCardDesc: string = '';
   closeAndCloneCardDescError: boolean = false;
   selectedCardForCloseAndClone: any = null;
+  
+  // Bulk Department modal state
+  showBulkDepartmentModal = false;
+  selectedEmployeesForDepartment: any[] = [];
+  selectedDepartmentIds: number[] = [];
+  isUpdatingDepartment: boolean = false;
+  
+  // Bulk Access Group modal state
+  showBulkAccessGroupModal = false;
+  selectedEmployeesForAccessGroup: any[] = [];
+  selectedAccessGroupIds: number[] = [];
+  isUpdatingAccessGroup: boolean = false;
+  
+  // Bulk Company modal state
+  showBulkCompanyModal = false;
+  selectedEmployeesForCompany: any[] = [];
+  selectedCompanyId: number | null = null;
+  isUpdatingCompany: boolean = false;
+  
+  // Bulk Position (Kadro) modal state
+  showBulkPositionModal = false;
+  selectedEmployeesForPosition: any[] = [];
+  selectedPositionId: number | null = null;
+  isUpdatingPosition: boolean = false;
+  
+  // Bulk Web Client modal state
+  showBulkWebClientModal = false;
+  selectedEmployeesForWebClient: any[] = [];
+  webClientEnabled: boolean = false;
+  selectedWebClientAuthorizationId: number | null = null;
+  isUpdatingWebClient: boolean = false;
+  
+  // Bulk Password Reset modal state
+  showBulkPasswordResetModal = false;
+  selectedEmployeesForPasswordReset: any[] = [];
+  isResettingPassword: boolean = false;
   
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
@@ -454,19 +492,470 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
   // Bulk operation handlers
   onBulkAccessPermission(event: MouseEvent, item: any) {
-    //console.log('Bulk access permission:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForAccessGroup = dataSource.filter((row: any) => {
+      const rowId = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(rowId);
+    });
+    
+    // Reset form
+    this.selectedAccessGroupIds = [];
+    
+    // Load access group options if not loaded
+    this.loadAccessGroupOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkAccessGroupModal = true;
   }
 
   onBulkCompany(event: MouseEvent, item: any) {
-    //console.log('Bulk company:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForCompany = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.selectedCompanyId = null;
+    
+    // Load company options if not loaded
+    this.loadCompanyOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkCompanyModal = true;
   }
 
   onBulkPosition(event: MouseEvent, item: any) {
-    //console.log('Bulk position:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForPosition = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.selectedPositionId = null;
+    
+    // Load position options if not loaded
+    this.loadPositionOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkPositionModal = true;
   }
 
   onBulkDepartment(event: MouseEvent, item: any) {
-    //console.log('Bulk department:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForDepartment = dataSource.filter((row: any) => {
+      const rowId = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(rowId);
+    });
+    
+    // Reset form
+    this.selectedDepartmentIds = [];
+    
+    // Load department options if not loaded
+    this.loadDepartmentOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkDepartmentModal = true;
+  }
+  
+  // Bulk Department Modal Methods
+  onBulkDepartmentModalChange(show: boolean) {
+    this.showBulkDepartmentModal = show;
+    if (!show) {
+      this.closeBulkDepartmentModal();
+    }
+  }
+  
+  closeBulkDepartmentModal() {
+    this.showBulkDepartmentModal = false;
+    this.selectedEmployeesForDepartment = [];
+    this.selectedDepartmentIds = [];
+  }
+  
+  onConfirmBulkDepartment() {
+    if (!this.selectedDepartmentIds || this.selectedDepartmentIds.length === 0) {
+      this.toastr.warning('Lütfen en az bir departman seçiniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForDepartment.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingDepartment = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForDepartment.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to update departments
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateDepartment`, {
+      EmployeeIDs: employeeIds,
+      DepartmentIDs: this.selectedDepartmentIds
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingDepartment = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Departman güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating departments:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingDepartment = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Departmanlar başarıyla güncellendi.');
+        this.closeBulkDepartmentModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk Access Group Modal Methods
+  onBulkAccessGroupModalChange(show: boolean) {
+    this.showBulkAccessGroupModal = show;
+    if (!show) {
+      this.closeBulkAccessGroupModal();
+    }
+  }
+  
+  closeBulkAccessGroupModal() {
+    this.showBulkAccessGroupModal = false;
+    this.selectedEmployeesForAccessGroup = [];
+    this.selectedAccessGroupIds = [];
+  }
+  
+  onConfirmBulkAccessGroup() {
+    if (!this.selectedAccessGroupIds || this.selectedAccessGroupIds.length === 0) {
+      this.toastr.warning('Lütfen en az bir yetki grubu seçiniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForAccessGroup.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingAccessGroup = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForAccessGroup.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to update access groups
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateAccessGroup`, {
+      EmployeeIDs: employeeIds,
+      AccessGroupIDs: this.selectedAccessGroupIds
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingAccessGroup = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Yetki grubu güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating access groups:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingAccessGroup = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Yetki grupları başarıyla güncellendi.');
+        this.closeBulkAccessGroupModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk Company Modal Methods
+  onBulkCompanyModalChange(show: boolean) {
+    this.showBulkCompanyModal = show;
+    if (!show) {
+      this.closeBulkCompanyModal();
+    }
+  }
+  
+  closeBulkCompanyModal() {
+    this.showBulkCompanyModal = false;
+    this.selectedEmployeesForCompany = [];
+    this.selectedCompanyId = null;
+  }
+  
+  onConfirmBulkCompany() {
+    if (!this.selectedCompanyId) {
+      this.toastr.warning('Lütfen bir firma seçiniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForCompany.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingCompany = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForCompany.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to update companies
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateCompany`, {
+      EmployeeIDs: employeeIds,
+      CompanyID: this.selectedCompanyId
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingCompany = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Firma güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating companies:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingCompany = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Firmalar başarıyla güncellendi.');
+        this.closeBulkCompanyModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk Position (Kadro) Modal Methods
+  onBulkPositionModalChange(show: boolean) {
+    this.showBulkPositionModal = show;
+    if (!show) {
+      this.closeBulkPositionModal();
+    }
+  }
+  
+  closeBulkPositionModal() {
+    this.showBulkPositionModal = false;
+    this.selectedEmployeesForPosition = [];
+    this.selectedPositionId = null;
+  }
+  
+  onConfirmBulkPosition() {
+    if (!this.selectedPositionId) {
+      this.toastr.warning('Lütfen bir kadro seçiniz.');
+      return;
+    }
+    
+    if (this.selectedEmployeesForPosition.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingPosition = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForPosition.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to update positions
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdatePosition`, {
+      EmployeeIDs: employeeIds,
+      PositionID: this.selectedPositionId
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingPosition = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Kadro güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating positions:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingPosition = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Kadrolar başarıyla güncellendi.');
+        this.closeBulkPositionModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk Web Client Modal Methods
+  onBulkWebClientModalChange(show: boolean) {
+    this.showBulkWebClientModal = show;
+    if (!show) {
+      this.closeBulkWebClientModal();
+    }
+  }
+  
+  closeBulkWebClientModal() {
+    this.showBulkWebClientModal = false;
+    this.selectedEmployeesForWebClient = [];
+    this.webClientEnabled = false;
+    this.selectedWebClientAuthorizationId = null;
+  }
+  
+  onConfirmBulkWebClient() {
+    if (this.selectedEmployeesForWebClient.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    if (this.webClientEnabled && !this.selectedWebClientAuthorizationId) {
+      this.toastr.warning('Web Client erişimi açıkken yetki seçimi zorunludur.');
+      return;
+    }
+    
+    this.isUpdatingWebClient = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForWebClient.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to update web client access
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateWebClient`, {
+      EmployeeIDs: employeeIds,
+      WebClient: this.webClientEnabled,
+      WebClientAuthorizationId: this.webClientEnabled ? this.selectedWebClientAuthorizationId : null
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingWebClient = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Web Client erişim güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating web client access:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingWebClient = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Web Client erişimleri başarıyla güncellendi.');
+        this.closeBulkWebClientModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk Password Reset Modal Methods
+  onBulkPasswordResetModalChange(show: boolean) {
+    this.showBulkPasswordResetModal = show;
+    if (!show) {
+      this.closeBulkPasswordResetModal();
+    }
+  }
+  
+  closeBulkPasswordResetModal() {
+    this.showBulkPasswordResetModal = false;
+    this.selectedEmployeesForPasswordReset = [];
+  }
+  
+  onConfirmBulkPasswordReset() {
+    if (this.selectedEmployeesForPasswordReset.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isResettingPassword = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForPasswordReset.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to reset passwords
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkResetPassword`, {
+      EmployeeIDs: employeeIds
+    }).pipe(
+      catchError(error => {
+        this.isResettingPassword = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Şifre sıfırlama sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error resetting passwords:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isResettingPassword = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Şifreler başarıyla sıfırlandı.');
+        this.closeBulkPasswordResetModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
   }
 
   onBulkSms(event: MouseEvent, item: any) {
@@ -486,11 +975,60 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onBulkWebClient(event: MouseEvent, item: any) {
-    //console.log('Bulk web client:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForWebClient = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.webClientEnabled = false;
+    this.selectedWebClientAuthorizationId = null;
+    
+    // Load authorization options if not loaded
+    this.loadWebClientAuthorizationOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkWebClientModal = true;
   }
 
   onBulkPasswordReset(event: MouseEvent, item: any) {
-    //console.log('Bulk password reset:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForPasswordReset = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Open modal
+    this.showBulkPasswordResetModal = true;
   }
 
   onExportToExcel(event: MouseEvent, item: any) {
@@ -1589,5 +2127,455 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         });
       }
     }
+  }
+  
+  /**
+   * Load department options if not already loaded
+   */
+  private loadDepartmentOptionsIfNeeded(): void {
+    const departmentColumn = this.tableColumns.find(col => col.field === 'Department');
+    if (!departmentColumn || !departmentColumn.load) {
+      return;
+    }
+    
+    // If options already loaded, return
+    if (departmentColumn.options && Array.isArray(departmentColumn.options) && departmentColumn.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = departmentColumn.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    const data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(mapped)) {
+            return mapped.map((item: any) => ({
+              label: item.text || item.label || item.DepartmentName || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.DepartmentID || item.Id
+            }));
+          }
+          return mapped;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        return records.map((item: any) => ({
+          label: item.DepartmentName || item.text || item.label || item.name || String(item.DepartmentID || item.id),
+          value: item.DepartmentID || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading department options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (departmentColumn) {
+        departmentColumn.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Load access group options if not already loaded
+   */
+  private loadAccessGroupOptionsIfNeeded(): void {
+    const accessGroupColumn = this.tableColumns.find(col => col.field === 'AccessGroup');
+    if (!accessGroupColumn || !accessGroupColumn.load) {
+      return;
+    }
+    
+    // If options already loaded, return
+    if (accessGroupColumn.options && Array.isArray(accessGroupColumn.options) && accessGroupColumn.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = accessGroupColumn.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    const data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(mapped)) {
+            return mapped.map((item: any) => ({
+              label: item.text || item.label || item.AccessGroupName || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.AccessGroupID || item.Id
+            }));
+          }
+          return mapped;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        return records.map((item: any) => ({
+          label: item.AccessGroupName || item.Name || item.text || item.label || item.name || String(item.AccessGroupID || item.Id || item.id),
+          value: item.AccessGroupID || item.Id || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading access group options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (accessGroupColumn) {
+        accessGroupColumn.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Get department options for bulk department change modal
+   */
+  getDepartmentOptions(): any[] {
+    const departmentColumn = this.tableColumns.find(col => col.field === 'Department');
+    if (departmentColumn && departmentColumn.options && Array.isArray(departmentColumn.options)) {
+      return departmentColumn.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
+  }
+  
+  /**
+   * Get access group options for bulk access group change modal
+   */
+  getAccessGroupOptions(): any[] {
+    const accessGroupColumn = this.tableColumns.find(col => col.field === 'AccessGroup');
+    if (accessGroupColumn && accessGroupColumn.options && Array.isArray(accessGroupColumn.options)) {
+      return accessGroupColumn.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
+  }
+  
+  /**
+   * Load company options if not already loaded
+   */
+  private loadCompanyOptionsIfNeeded(): void {
+    const companyColumn = this.tableColumns.find(col => col.field === 'Company');
+    if (!companyColumn || !companyColumn.load) {
+      return;
+    }
+    
+    // If options already loaded, return
+    if (companyColumn.options && Array.isArray(companyColumn.options) && companyColumn.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = companyColumn.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    const data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(mapped)) {
+            return mapped.map((item: any) => ({
+              label: item.text || item.label || item.PdksCompanyName || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.PdksCompanyID || item.Id
+            }));
+          }
+          return mapped;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        return records.map((item: any) => ({
+          label: item.PdksCompanyName || item.Name || item.text || item.label || String(item.PdksCompanyID || item.Id || item.id),
+          value: item.PdksCompanyID || item.Id || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading company options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (companyColumn) {
+        companyColumn.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Load position (Kadro) options if not already loaded
+   */
+  private loadPositionOptionsIfNeeded(): void {
+    const positionColumn = this.tableColumns.find(col => col.field === 'Kadro');
+    if (!positionColumn || !positionColumn.load) {
+      return;
+    }
+    
+    // If options already loaded, return
+    if (positionColumn.options && Array.isArray(positionColumn.options) && positionColumn.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = positionColumn.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    const data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(mapped)) {
+            return mapped.map((item: any) => ({
+              label: item.text || item.label || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.ID || item.Id
+            }));
+          }
+          return mapped;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        return records.map((item: any) => ({
+          label: item.Name || item.text || item.label || String(item.ID || item.Id || item.id),
+          value: item.ID || item.Id || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading position options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (positionColumn) {
+        positionColumn.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Get company options for bulk company change modal
+   */
+  getCompanyOptions(): any[] {
+    const companyColumn = this.tableColumns.find(col => col.field === 'Company');
+    if (companyColumn && companyColumn.options && Array.isArray(companyColumn.options)) {
+      return companyColumn.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
+  }
+  
+  /**
+   * Get position (Kadro) options for bulk position change modal
+   */
+  getPositionOptions(): any[] {
+    const positionColumn = this.tableColumns.find(col => col.field === 'Kadro');
+    if (positionColumn && positionColumn.options && Array.isArray(positionColumn.options)) {
+      return positionColumn.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
+  }
+  
+  /**
+   * Load WebClientAuthorization options if not already loaded
+   */
+  private loadWebClientAuthorizationOptionsIfNeeded(): void {
+    const webClientAuthField = this.formFields.find(col => col.field === 'WebClientAuthorizationId');
+    if (!webClientAuthField || !webClientAuthField.load) {
+      return;
+    }
+    
+    // Check if options already loaded in formFields
+    if (webClientAuthField.options && Array.isArray(webClientAuthField.options) && webClientAuthField.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = webClientAuthField.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    let data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    // Add AuthorizationGroup=2 filter to the request
+    if (method === 'POST') {
+      // Add search filter for AuthorizationGroup = 2 in W2UI format
+      data = { ...data };
+      if (!data.search) {
+        data.search = [];
+      }
+      // Add AuthorizationGroup filter in W2UI format
+      data.search.push({
+        field: 'AuthorizationGroup',
+        operator: 'is',
+        type: 'int',
+        value: 2
+      });
+      if (!data.searchLogic) {
+        data.searchLogic = 'AND';
+      }
+    }
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Filter by AuthorizationGroup = 2 if not already filtered in API
+          let filtered = mapped;
+          if (Array.isArray(mapped)) {
+            filtered = mapped.filter((item: any) => {
+              // Check if AuthorizationGroup is 2
+              return item.AuthorizationGroup === 2 || 
+                     item.authorizationGroup === 2 ||
+                     (item.originalData && item.originalData.AuthorizationGroup === 2);
+            });
+          }
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(filtered)) {
+            return filtered.map((item: any) => ({
+              label: item.text || item.label || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.Id
+            }));
+          }
+          return filtered;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        // Filter by AuthorizationGroup = 2
+        records = records.filter((item: any) => {
+          return item.AuthorizationGroup === 2 || 
+                 item.authorizationGroup === 2;
+        });
+        
+        return records.map((item: any) => ({
+          label: item.Name || item.text || item.label || String(item.Id || item.id),
+          value: item.Id || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading web client authorization options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (webClientAuthField) {
+        webClientAuthField.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Get WebClientAuthorization options for bulk web client change modal
+   */
+  getWebClientAuthorizationOptions(): any[] {
+    const webClientAuthField = this.formFields.find(col => col.field === 'WebClientAuthorizationId');
+    if (webClientAuthField && webClientAuthField.options && Array.isArray(webClientAuthField.options)) {
+      return webClientAuthField.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
   }
 }

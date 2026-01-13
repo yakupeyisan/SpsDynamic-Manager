@@ -231,3 +231,553 @@
     </button>
   </div>
 </ui-modal>
+
+<!-- Bulk Department Change Modal -->
+<ui-modal
+  [show]="showBulkDepartmentModal"
+  [title]="'Toplu Departman Değişimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkDepartmentModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların departmanları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForDepartment.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForDepartment; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Department Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-building me-2"></i>
+        <span class="cancel-section-title">Yeni Departman</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedDepartmentIds"
+        [options]="getDepartmentOptions()"
+        [placeholder]="'Departman seçiniz...'"
+        [disabled]="isUpdatingDepartment"
+        [required]="true"
+        [multiple]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili çalışanların tümü seçilen departmanlara atanacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkDepartmentModal()"
+      [disabled]="isUpdatingDepartment">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkDepartment()"
+      [disabled]="isUpdatingDepartment || !selectedDepartmentIds || selectedDepartmentIds.length === 0">
+      <span *ngIf="isUpdatingDepartment" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingDepartment" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Access Group Change Modal -->
+<ui-modal
+  [show]="showBulkAccessGroupModal"
+  [title]="'Toplu Yetki Grubu Değişimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkAccessGroupModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların yetki grupları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForAccessGroup.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForAccessGroup; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Access Group Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-shield me-2"></i>
+        <span class="cancel-section-title">Yeni Yetki Grubu</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedAccessGroupIds"
+        [options]="getAccessGroupOptions()"
+        [placeholder]="'Yetki grubu seçiniz...'"
+        [disabled]="isUpdatingAccessGroup"
+        [required]="true"
+        [multiple]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili çalışanların tümü seçilen yetki gruplarına atanacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkAccessGroupModal()"
+      [disabled]="isUpdatingAccessGroup">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkAccessGroup()"
+      [disabled]="isUpdatingAccessGroup || !selectedAccessGroupIds || selectedAccessGroupIds.length === 0">
+      <span *ngIf="isUpdatingAccessGroup" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingAccessGroup" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Company Change Modal -->
+<ui-modal
+  [show]="showBulkCompanyModal"
+  [title]="'Toplu Firma Değişimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkCompanyModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların firmaları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForCompany.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForCompany; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Company Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-building me-2"></i>
+        <span class="cancel-section-title">Yeni Firma</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedCompanyId"
+        [options]="getCompanyOptions()"
+        [placeholder]="'Firma seçiniz...'"
+        [disabled]="isUpdatingCompany"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili çalışanların tümü bu firmaya atanacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkCompanyModal()"
+      [disabled]="isUpdatingCompany">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkCompany()"
+      [disabled]="isUpdatingCompany || !selectedCompanyId">
+      <span *ngIf="isUpdatingCompany" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingCompany" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Position (Kadro) Change Modal -->
+<ui-modal
+  [show]="showBulkPositionModal"
+  [title]="'Toplu Kadro Değişimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkPositionModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların kadroları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForPosition.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForPosition; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Position Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-briefcase me-2"></i>
+        <span class="cancel-section-title">Yeni Kadro</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedPositionId"
+        [options]="getPositionOptions()"
+        [placeholder]="'Kadro seçiniz...'"
+        [disabled]="isUpdatingPosition"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili çalışanların tümü bu kadroya atanacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkPositionModal()"
+      [disabled]="isUpdatingPosition">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkPosition()"
+      [disabled]="isUpdatingPosition || !selectedPositionId">
+      <span *ngIf="isUpdatingPosition" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingPosition" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Web Client Access Modal -->
+<ui-modal
+  [show]="showBulkWebClientModal"
+  [title]="'Toplu Web Client Erişim Tanımlama'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkWebClientModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların Web Client erişimleri tanımlanacaktır. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForWebClient.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForWebClient; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Web Client Toggle Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-toggle-left me-2"></i>
+        <span class="cancel-section-title">Web Client Erişimi</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none;">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="webClientEnabled"
+            [disabled]="isUpdatingWebClient"
+            style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 500;">Web Client Erişim Yetkisi</span>
+        </label>
+      </div>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Web Client erişimi açık olduğunda yetki seçimi zorunludur.</span>
+      </div>
+    </div>
+    
+    <!-- Web Client Authorization Selection Section -->
+    <div class="cancel-section" *ngIf="webClientEnabled">
+      <div class="cancel-section-header">
+        <i class="ti ti-shield me-2"></i>
+        <span class="cancel-section-title">Web Client Yetki</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedWebClientAuthorizationId"
+        [options]="getWebClientAuthorizationOptions()"
+        [placeholder]="'Yetki seçiniz...'"
+        [disabled]="isUpdatingWebClient"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili çalışanların tümü bu yetkiye sahip olacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkWebClientModal()"
+      [disabled]="isUpdatingWebClient">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkWebClient()"
+      [disabled]="isUpdatingWebClient || (webClientEnabled && !selectedWebClientAuthorizationId)">
+      <span *ngIf="isUpdatingWebClient" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingWebClient" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Password Reset Modal -->
+<ui-modal
+  [show]="showBulkPasswordResetModal"
+  [title]="'Toplu Şifre Sıfırlama'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkPasswordResetModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların şifreleri sıfırlanacaktır. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForPasswordReset.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForPasswordReset; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkPasswordResetModal()"
+      [disabled]="isResettingPassword">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkPasswordReset()"
+      [disabled]="isResettingPassword || selectedEmployeesForPasswordReset.length === 0">
+      <span *ngIf="isResettingPassword" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isResettingPassword" class="ti ti-check me-1"></i>
+      Onayla ve Sıfırla
+    </button>
+  </div>
+</ui-modal>
