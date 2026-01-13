@@ -56,3 +56,98 @@
     </div>
   </div>
 </div>
+
+<!-- Bulk Cafeteria Group Change Modal -->
+<ui-modal
+  [show]="showBulkCafeteriaGroupModal"
+  [title]="'Toplu Kafeterya Grubu Değişimi'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkCafeteriaGroupModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili kartların kafeterya grupları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Kartlar</span>
+        <span class="cancel-section-badge">{{ selectedCardsForCafeteriaGroup.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let card of selectedCardsForCafeteriaGroup; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Kart ID:</span>
+              <span class="selected-event-value">{{ card['CardID'] || card['recid'] || card['id'] }}</span>
+            </div>
+            <div *ngIf="card['TagCode']" class="selected-event-row">
+              <span class="selected-event-label">Tag Kodu:</span>
+              <span class="selected-event-value">{{ card['TagCode'] }}</span>
+            </div>
+            <div *ngIf="card['CardCode']" class="selected-event-row">
+              <span class="selected-event-label">Kart Kodu:</span>
+              <span class="selected-event-value">{{ card['CardCode'] }}</span>
+            </div>
+            <div *ngIf="card['Employee']?.Name || card['Employee']?.SurName" class="selected-event-row">
+              <span class="selected-event-label">Kişi:</span>
+              <span class="selected-event-value">{{ card['Employee']?.Name || '' }} {{ card['Employee']?.SurName || '' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Cafeteria Group Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-building me-2"></i>
+        <span class="cancel-section-title">Yeni Kafeterya Grubu</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedCafeteriaGroupId"
+        [options]="getCafeteriaGroupOptions()"
+        [placeholder]="'Kafeterya grubu seçiniz...'"
+        [disabled]="isUpdatingCafeteriaGroup"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Seçili kartların tümü bu kafeterya grubuna atanacaktır.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkCafeteriaGroupModal()"
+      [disabled]="isUpdatingCafeteriaGroup">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkCafeteriaGroup()"
+      [disabled]="isUpdatingCafeteriaGroup || !selectedCafeteriaGroupId">
+      <span *ngIf="isUpdatingCafeteriaGroup" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingCafeteriaGroup" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>

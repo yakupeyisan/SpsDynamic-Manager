@@ -528,27 +528,28 @@ export class TerminalTariffsComponent implements OnInit {
   onCopySettingsSubmit(): void {
     if (this.copySettingsForm.valid) {
       const formData = this.copySettingsForm.value;
-      // TODO: Implement copy settings API call
-      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/copy`, {
-        request: {
-          action: 'copy',
-          record: formData
-        }
-      }).subscribe({
+      // API call to clone terminal tariff
+      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/Clone`, {
+        SourceReaderID: formData.SourceReaderID,
+        TargetReaderID: formData.TargetReaderID
+      }).pipe(
+        catchError(error => {
+          console.error('Copy settings error:', error);
+          const errorMessage = error?.error?.message || error?.message || 'Ayar kopyalama başarısız';
+          this.toastr.error(errorMessage, 'Hata');
+          return of(null);
+        })
+      ).subscribe({
         next: (response: any) => {
-          if (response.error === false || response.status === 'success') {
+          if (response && (response.error === false || response.status === 'success')) {
             this.toastr.success('Ayar kopyalama başarılı', 'Başarılı');
             this.closeCopySettingsModal();
             if (this.dataTableComponent) {
               this.dataTableComponent.reload();
             }
-          } else {
+          } else if (response) {
             this.toastr.error(response.message || 'Ayar kopyalama başarısız', 'Hata');
           }
-        },
-        error: (error) => {
-          console.error('Copy settings error:', error);
-          this.toastr.error('Ayar kopyalama başarısız', 'Hata');
         }
       });
     } else {

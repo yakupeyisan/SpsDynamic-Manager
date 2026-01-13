@@ -22,7 +22,8 @@ import {
   ToolbarConfig, 
   GridResponse, 
   JoinOption,
-  FormTab
+  FormTab,
+  ColumnType
 } from 'src/app/components/data-table/data-table.component';
 
 @Component({
@@ -40,8 +41,79 @@ import {
 })
 export class AccessGroupComponent implements OnInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  @ViewChild('selectedTerminalsTable') selectedTerminalsTable?: DataTableComponent;
+  @ViewChild('unselectedTerminalsTable') unselectedTerminalsTable?: DataTableComponent;
 
   private isReloading: boolean = false;
+  
+  // Doors (Terminals) Edit Modal state
+  showDoorsModal: boolean = false;
+  accessGroupIdForDoors: number | null = null;
+  gridHeight: string = '500px';
+  selectedUnselectedTerminals: any[] = [];
+  selectedSelectedTerminals: any[] = [];
+  
+  // Terminal table columns
+  terminalsTableColumns: TableColumn[] = [
+    { 
+      field: 'ReaderID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'SerialNumber', 
+      label: 'Seri Numarası', 
+      text: 'Seri Numarası',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'ReaderName', 
+      label: 'Terminal Adı', 
+      text: 'Terminal Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'IpAddress', 
+      label: 'IP Adresi', 
+      text: 'IP Adresi',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
+  
+  // Toolbar config for terminals table
+  claimsTableToolbarConfig: ToolbarConfig = {
+    items: [],
+    show: {
+      reload: true,
+      columns: false,
+      search: true,
+      add: false,
+      edit: false,
+      delete: false,
+      save: false
+    }
+  };
 
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
@@ -86,7 +158,19 @@ export class AccessGroupComponent implements OnInit {
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          type: 'break' as const,
+          id: 'break-edit-doors'
+        },
+        {
+          type: 'button' as const,
+          id: 'editdoors',
+          text: 'Kapıları Düzenle',
+          icon: 'fa fa-bookmark',
+          onClick: (event: MouseEvent) => this.onEditDoors(event)
+        }
+      ],
       show: {
         reload: true,
         columns: true,
@@ -254,6 +338,206 @@ export class AccessGroupComponent implements OnInit {
 
   onAdvancedFilterChange(event: any): void {
     // Handle advanced filter change
+  }
+
+  // Edit Doors (Terminals) handler
+  onEditDoors(event: MouseEvent): void {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen bir yetki grubu seçiniz.');
+      return;
+    }
+    
+    // Get selected access group ID
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    const selectedRow = dataSource.find((row: any) => {
+      const rowId = row['recid'] ?? row['AccessGroupID'] ?? row['Id'] ?? row['id'];
+      return selectedIds.includes(rowId);
+    });
+    
+    if (!selectedRow) {
+      this.toastr.warning('Seçili yetki grubu bulunamadı.');
+      return;
+    }
+    
+    const accessGroupId = selectedRow['AccessGroupID'] ?? selectedRow['Id'] ?? selectedRow['recid'] ?? selectedRow['id'];
+    if (!accessGroupId) {
+      this.toastr.warning('Geçersiz yetki grubu ID.');
+      return;
+    }
+    
+    this.accessGroupIdForDoors = Number(accessGroupId);
+    this.showDoorsModal = true;
+    
+    // Reload tables after a short delay to ensure modal is rendered
+    setTimeout(() => {
+      if (this.selectedTerminalsTable) {
+        this.selectedTerminalsTable.reload();
+      }
+      if (this.unselectedTerminalsTable) {
+        this.unselectedTerminalsTable.reload();
+      }
+    }, 100);
+  }
+  
+  closeDoorsModal(): void {
+    this.showDoorsModal = false;
+    this.accessGroupIdForDoors = null;
+    this.selectedUnselectedTerminals = [];
+    this.selectedSelectedTerminals = [];
+  }
+  
+  // Data source for selected terminals
+  selectedTerminalsDataSource = (params: any) => {
+    if (!this.accessGroupIdForDoors) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetSelectedByAccessGroupID`, {
+      limit: params.limit || 100,
+      offset: params.offset || 0,
+      AccessGroupID: this.accessGroupIdForDoors
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading selected terminals:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+  
+  // Data source for unselected terminals
+  unselectedTerminalsDataSource = (params: any) => {
+    if (!this.accessGroupIdForDoors) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetUnSelectedByAccessGroupID`, {
+      limit: params.limit || 100,
+      offset: params.offset || 0,
+      AccessGroupID: this.accessGroupIdForDoors
+    }).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading unselected terminals:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+  
+  // Transfer selected terminals from unselected to selected
+  transferTerminalsToSelected(): void {
+    if (!this.unselectedTerminalsTable || !this.accessGroupIdForDoors) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedUnselectedTerminals || this.selectedUnselectedTerminals.length === 0) {
+      this.toastr.warning('Lütfen aktarılacak terminal seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedUnselectedTerminals.map((row: any) => {
+      const id = row.ReaderID || row.TerminalID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli terminal seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Terminals/AppendAccessGroupID`, {
+      Selecteds: selectedIds,
+      AccessGroupID: this.accessGroupIdForDoors
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Terminaller başarıyla eklendi', 'Başarılı');
+          // Clear selections
+          this.selectedUnselectedTerminals = [];
+          // Reload both tables
+          if (this.selectedTerminalsTable) {
+            this.selectedTerminalsTable.reload();
+          }
+          if (this.unselectedTerminalsTable) {
+            this.unselectedTerminalsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Terminaller eklenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding terminals:', error);
+        const errorMessage = error.error?.message || error.message || 'Terminaller eklenirken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
+  }
+  
+  // Transfer selected terminals from selected to unselected
+  transferTerminalsToUnselected(): void {
+    if (!this.selectedTerminalsTable || !this.accessGroupIdForDoors) {
+      return;
+    }
+    
+    // Use the stored selected rows from rowSelect event
+    if (!this.selectedSelectedTerminals || this.selectedSelectedTerminals.length === 0) {
+      this.toastr.warning('Lütfen kaldırılacak terminal seçin', 'Uyarı');
+      return;
+    }
+
+    // Extract IDs from selected rows
+    const selectedIds = this.selectedSelectedTerminals.map((row: any) => {
+      const id = row.ReaderID || row.TerminalID || row.Id || row.recid || row.id;
+      return id !== null && id !== undefined ? Number(id) : null;
+    }).filter((id: any) => id !== null && id !== undefined);
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning('Geçerli terminal seçilmedi', 'Uyarı');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Terminals/RemoveListAccessGroupID`, {
+      Selecteds: selectedIds,
+      AccessGroupID: this.accessGroupIdForDoors
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          this.toastr.success('Terminaller başarıyla kaldırıldı', 'Başarılı');
+          // Clear selections
+          this.selectedSelectedTerminals = [];
+          // Reload both tables
+          if (this.selectedTerminalsTable) {
+            this.selectedTerminalsTable.reload();
+          }
+          if (this.unselectedTerminalsTable) {
+            this.unselectedTerminalsTable.reload();
+          }
+        } else {
+          this.toastr.error(response.message || 'Terminaller kaldırılırken hata oluştu', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error removing terminals:', error);
+        const errorMessage = error.error?.message || error.message || 'Terminaller kaldırılırken hata oluştu';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
   }
 }
 

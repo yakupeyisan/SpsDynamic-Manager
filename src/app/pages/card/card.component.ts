@@ -1,5 +1,5 @@
 // Card Component
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
@@ -24,6 +24,9 @@ import {
   JoinOption,
   FormTab
 } from 'src/app/components/data-table/data-table.component';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { SelectComponent } from 'src/app/components/select/select.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-card',
@@ -31,14 +34,19 @@ import {
   imports: [
     MaterialModule, 
     CommonModule, 
+    FormsModule,
     TablerIconsModule,
     TranslateModule,
-    DataTableComponent
+    DataTableComponent,
+    ModalComponent,
+    SelectComponent
   ],
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss']
 })
 export class CardComponent implements OnInit {
+  @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
@@ -49,6 +57,12 @@ export class CardComponent implements OnInit {
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
+  
+  // Bulk Cafeteria Group Change modal state
+  showBulkCafeteriaGroupModal = false;
+  selectedCardsForCafeteriaGroup: any[] = [];
+  selectedCafeteriaGroupId: number | null = null;
+  isUpdatingCafeteriaGroup: boolean = false;
   
   // Data source function for table
   tableDataSource = (params: any) => {
@@ -82,7 +96,81 @@ export class CardComponent implements OnInit {
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          type: 'break' as const,
+          id: 'break-settings-menu'
+        },
+        {
+          id: 'settings',
+          type: 'menu' as const,
+          text: 'İşlemler',
+          icon: 'fa fa-cog',
+          items: [
+            {
+              id: 'changeGroup',
+              text: 'Kafeterya Grubunu Degistir',
+              onClick: (event: MouseEvent, item: any) => this.onChangeGroup(event, item)
+            },
+            {
+              id: 'changeStatus',
+              text: 'Kullanima Kapat',
+              onClick: (event: MouseEvent, item: any) => this.onChangeStatus(event, item)
+            },
+            {
+              id: 'separator-1',
+              text: '--'
+            },
+            {
+              id: 'getAllCards',
+              text: 'Bütün Kartlar',
+              onClick: (event: MouseEvent, item: any) => this.onGetAllCards(event, item)
+            },
+            {
+              id: 'getFreeCard',
+              text: 'Kullanılabilir Kartlar',
+              onClick: (event: MouseEvent, item: any) => this.onGetFreeCard(event, item)
+            },
+            {
+              id: 'separator-2',
+              text: '--'
+            },
+            {
+              id: 'getAvaiableCard',
+              text: 'Geçici Kartlar',
+              onClick: (event: MouseEvent, item: any) => this.onGetAvailableCard(event, item)
+            },
+            {
+              id: 'getUsedAvaiableCard',
+              text: 'Kullanılan Geçici Kartlar',
+              onClick: (event: MouseEvent, item: any) => this.onGetUsedAvailableCard(event, item)
+            },
+            {
+              id: 'separator-3',
+              text: '--'
+            },
+            {
+              id: 'setAvailable',
+              text: 'Kart Atama',
+              onClick: (event: MouseEvent, item: any) => this.onSetAvailable(event, item)
+            },
+            {
+              id: 'freeAvailable',
+              text: 'Geçici Kart İade',
+              onClick: (event: MouseEvent, item: any) => this.onFreeAvailable(event, item)
+            },
+            {
+              id: 'separator-4',
+              text: '--'
+            },
+            {
+              id: 'cardWrite',
+              text: 'Yazdir',
+              onClick: (event: MouseEvent, item: any) => this.onCardWrite(event, item)
+            }
+          ]
+        }
+      ],
       show: {
         reload: true,
         columns: true,
@@ -158,5 +246,218 @@ export class CardComponent implements OnInit {
 
   onAdvancedFilterChange(event: any): void {
     // Handle advanced filter change
+  }
+
+  // Toolbar menu item handlers
+  onChangeGroup(event: MouseEvent, item: any): void {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir kart seçiniz.');
+      return;
+    }
+    
+    // Get selected card records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedCardsForCafeteriaGroup = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['CardID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset form
+    this.selectedCafeteriaGroupId = null;
+    
+    // Load cafeteria group options if not loaded
+    this.loadCafeteriaGroupOptionsIfNeeded();
+    
+    // Open modal
+    this.showBulkCafeteriaGroupModal = true;
+  }
+  
+  // Bulk Cafeteria Group Modal Methods
+  onBulkCafeteriaGroupModalChange(show: boolean) {
+    this.showBulkCafeteriaGroupModal = show;
+    if (!show) {
+      this.closeBulkCafeteriaGroupModal();
+    }
+  }
+  
+  closeBulkCafeteriaGroupModal() {
+    this.showBulkCafeteriaGroupModal = false;
+    this.selectedCardsForCafeteriaGroup = [];
+    this.selectedCafeteriaGroupId = null;
+  }
+  
+  onConfirmBulkCafeteriaGroup() {
+    if (!this.selectedCafeteriaGroupId) {
+      this.toastr.warning('Lütfen bir kafeterya grubu seçiniz.');
+      return;
+    }
+    
+    if (this.selectedCardsForCafeteriaGroup.length === 0) {
+      this.toastr.warning('Seçili kart bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingCafeteriaGroup = true;
+    
+    // Get card IDs
+    const cardIds = this.selectedCardsForCafeteriaGroup.map(card => 
+      card['recid'] ?? card['CardID'] ?? card['id']
+    );
+    
+    // API call to update cafeteria groups
+    this.http.post(`${environment.apiUrl}/api/Cards/BulkUpdateCafeteriaGroup`, {
+      CardIDs: cardIds,
+      CafeteriaGroupID: this.selectedCafeteriaGroupId
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingCafeteriaGroup = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Kafeterya grubu güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating cafeteria groups:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingCafeteriaGroup = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Kafeterya grupları başarıyla güncellendi.');
+        this.closeBulkCafeteriaGroupModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  /**
+   * Load cafeteria group options if not already loaded
+   */
+  private loadCafeteriaGroupOptionsIfNeeded(): void {
+    const cafeteriaGroupField = this.formFields.find(col => col.field === 'CafeteriaGroupID');
+    if (!cafeteriaGroupField || !cafeteriaGroupField.load) {
+      return;
+    }
+    
+    // Check if options already loaded
+    if (cafeteriaGroupField.options && Array.isArray(cafeteriaGroupField.options) && cafeteriaGroupField.options.length > 0) {
+      return;
+    }
+    
+    // Load options from API
+    const load = cafeteriaGroupField.load;
+    const url = typeof load.url === 'function' ? load.url({}) : load.url;
+    const method = load.method || 'GET';
+    const data = typeof load.data === 'function' ? load.data({}) : (load.data || {});
+    
+    let request: Observable<any>;
+    if (method === 'GET') {
+      request = this.http.get(url);
+    } else {
+      request = this.http.request(method, url, { body: data });
+    }
+    
+    request.pipe(
+      map((response: any) => {
+        // Apply map function if provided
+        if (load.map && typeof load.map === 'function') {
+          const mapped = load.map(response);
+          // Convert { id, text } format to { label, value } format
+          if (Array.isArray(mapped)) {
+            return mapped.map((item: any) => ({
+              label: item.text || item.label || item.CafeteriaGroupName || item.Name || String(item.id || item.value),
+              value: item.id || item.value || item.CafeteriaGroupID || item.Id
+            }));
+          }
+          return mapped;
+        }
+        
+        // Default mapping
+        let records: any[] = [];
+        if (response && response.records && Array.isArray(response.records)) {
+          records = response.records;
+        } else if (response && Array.isArray(response)) {
+          records = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          records = response.data;
+        }
+        
+        return records.map((item: any) => ({
+          label: item.CafeteriaGroupName || item.Name || item.text || item.label || String(item.CafeteriaGroupID || item.Id || item.id),
+          value: item.CafeteriaGroupID || item.Id || item.id || item.value
+        }));
+      }),
+      catchError(error => {
+        console.error('Error loading cafeteria group options:', error);
+        return of([]);
+      })
+    ).subscribe(options => {
+      if (cafeteriaGroupField) {
+        cafeteriaGroupField.options = options;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  /**
+   * Get cafeteria group options for bulk cafeteria group change modal
+   */
+  getCafeteriaGroupOptions(): any[] {
+    const cafeteriaGroupField = this.formFields.find(col => col.field === 'CafeteriaGroupID');
+    if (cafeteriaGroupField && cafeteriaGroupField.options && Array.isArray(cafeteriaGroupField.options)) {
+      return cafeteriaGroupField.options.map(opt => ({
+        label: opt.label,
+        value: opt.value
+      }));
+    }
+    return [];
+  }
+
+  onChangeStatus(event: MouseEvent, item: any): void {
+    // Handle change status
+    console.log('Change status:', event, item);
+  }
+
+  onGetAllCards(event: MouseEvent, item: any): void {
+    // Handle get all cards
+    console.log('Get all cards:', event, item);
+  }
+
+  onGetFreeCard(event: MouseEvent, item: any): void {
+    // Handle get free card
+    console.log('Get free card:', event, item);
+  }
+
+  onGetAvailableCard(event: MouseEvent, item: any): void {
+    // Handle get available card
+    console.log('Get available card:', event, item);
+  }
+
+  onGetUsedAvailableCard(event: MouseEvent, item: any): void {
+    // Handle get used available card
+    console.log('Get used available card:', event, item);
+  }
+
+  onSetAvailable(event: MouseEvent, item: any): void {
+    // Handle set available
+    console.log('Set available:', event, item);
+  }
+
+  onFreeAvailable(event: MouseEvent, item: any): void {
+    // Handle free available
+    console.log('Free available:', event, item);
+  }
+
+  onCardWrite(event: MouseEvent, item: any): void {
+    // Handle card write
+    console.log('Card write:', event, item);
   }
 }

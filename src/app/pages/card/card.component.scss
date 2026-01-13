@@ -7,3 +7,222 @@
     max-width: 100%;
   }
 }
+
+// Modal Styles (copied from employee component)
+.cancel-confirmation-content {
+  padding: 0;
+  
+  .cancel-warning-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    
+    .cancel-warning-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #856404;
+      font-size: 20px;
+    }
+    
+    .cancel-warning-text {
+      flex: 1;
+      color: #856404;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  }
+  
+  .cancel-section {
+    margin-bottom: 24px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .cancel-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      
+      .cancel-section-title {
+        flex: 1;
+      }
+      
+      .cancel-section-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 24px;
+        height: 24px;
+      }
+    }
+    
+    .selected-events-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 8px;
+      background: #f8f9fa;
+    }
+    
+    .selected-event-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      .selected-event-number {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      
+      .selected-event-content {
+        flex: 1;
+        
+        .selected-event-row {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 4px;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          .selected-event-label {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 100px;
+            font-size: 13px;
+          }
+          
+          .selected-event-value {
+            color: #212529;
+            font-size: 13px;
+          }
+        }
+      }
+    }
+    
+    .cancel-description-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #e7f3ff;
+      border-left: 3px solid #0d6efd;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #0c5460;
+      
+      i {
+        font-size: 14px;
+        color: #0d6efd;
+      }
+    }
+  }
+}
+
+.cancel-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  
+  .cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    &.cancel-btn-secondary {
+      background: white;
+      border-color: #6c757d;
+      color: #6c757d;
+      
+      &:hover:not(:disabled) {
+        background: #f8f9fa;
+        border-color: #5a6268;
+        color: #5a6268;
+      }
+    }
+    
+    &.cancel-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      color: white;
+      
+      &:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+      }
+    }
+  }
+  
+  .cancel-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
