@@ -34,13 +34,14 @@ export class LocationBasedDailyReportsComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    // Process search conditions - API expects array format for search
+    // Process search conditions - API expects object format for search (logic and conditions)
     let processedSearch = params.search;
+    const searchLogic = params.searchLogic || 'AND';
     
-    // Convert search conditions to array format if needed
+    // Convert search conditions to object format if needed
     if (processedSearch && processedSearch.conditions && Array.isArray(processedSearch.conditions)) {
-      // API expects search as array, not object with conditions
-      processedSearch = processedSearch.conditions.map((condition: any) => {
+      // API expects search as object with logic and conditions
+      const processedConditions = processedSearch.conditions.map((condition: any) => {
         const column = this.tableColumns.find(col => col.field === condition.field);
         if (column) {
           // Use searchField if available (for Location field, it will be DeviceSerial)
@@ -58,13 +59,37 @@ export class LocationBasedDailyReportsComponent implements OnInit {
             operator = 'begins';
           }
           
-          // For Date with between operator, ensure value is array
+          // For Date with between operator, convert value to comma-separated string
           let value = condition.value;
           if (searchField === 'Date' && operator === 'between') {
-            if (!Array.isArray(value)) {
-              // If single datetime, create range
-              const dateStr = String(value);
-              value = [dateStr, dateStr];
+            if (Array.isArray(value)) {
+              // If already array, handle comma-separated strings inside
+              const flatArray = value.flatMap((v: any) => {
+                if (typeof v === 'string' && v.includes(',')) {
+                  // Split comma-separated string
+                  return v.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+                }
+                return v;
+              });
+              // Ensure we have exactly 2 elements (min and max), then join with comma
+              if (flatArray.length === 0) {
+                value = '';
+              } else if (flatArray.length === 1) {
+                value = `${flatArray[0]},${flatArray[0]}`;
+              } else {
+                // Take first as min, last as max, join with comma
+                value = `${flatArray[0]},${flatArray[flatArray.length - 1]}`;
+              }
+            } else if (typeof value === 'string') {
+              // If value is already a comma-separated string, keep it
+              // If not, use as both min and max
+              if (!value.includes(',')) {
+                value = `${value.trim()},${value.trim()}`;
+              }
+            } else {
+              // Fallback: convert to comma-separated string
+              const dateStr = String(value || '');
+              value = `${dateStr},${dateStr}`;
             }
           }
           
@@ -95,18 +120,26 @@ export class LocationBasedDailyReportsComponent implements OnInit {
         }
         return condition;
       });
-    } else if (processedSearch && !Array.isArray(processedSearch)) {
-      // If search is an object but not in expected format, convert it
-      processedSearch = [];
+      
+      // Keep search as object with logic and conditions
+      processedSearch = {
+        logic: processedSearch.logic || searchLogic,
+        conditions: processedConditions
+      };
     } else if (!processedSearch) {
-      processedSearch = [];
+      // If no search, set empty object
+      processedSearch = {
+        logic: searchLogic,
+        conditions: []
+      };
     }
     
     return this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/LocationBasedDailyPass`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
-      search: processedSearch
+      search: processedSearch,
+      searchLogic: searchLogic
     }).pipe(
       map((response: any) => {
         if (response.status === 'success') {
