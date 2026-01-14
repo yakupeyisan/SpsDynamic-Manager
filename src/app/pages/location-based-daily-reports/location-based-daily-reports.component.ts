@@ -24,7 +24,8 @@ import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOptio
 export class LocationBasedDailyReportsComponent implements OnInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
   private isReloading: boolean = false;
-  tableColumns: TableColumn[] = tableColumns;
+  private terminalsMap: Map<string, string> = new Map(); // DeviceSerial -> ReaderName mapping
+  tableColumns: TableColumn[] = [...tableColumns];
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
   formTabs: FormTab[] = formTabs;
@@ -42,6 +43,7 @@ export class LocationBasedDailyReportsComponent implements OnInit {
       processedSearch = processedSearch.conditions.map((condition: any) => {
         const column = this.tableColumns.find(col => col.field === condition.field);
         if (column) {
+          // Use searchField if available (for Location field, it will be DeviceSerial)
           const searchField = column.searchField || condition.field;
           
           // Map operator names to API format
@@ -63,6 +65,18 @@ export class LocationBasedDailyReportsComponent implements OnInit {
               // If single datetime, create range
               const dateStr = String(value);
               value = [dateStr, dateStr];
+            }
+          }
+          
+          // For Location field, if searchField is DeviceSerial but condition.field is Location,
+          // convert the value if it's a terminal name to DeviceSerial
+          if (condition.field === 'Location' && searchField === 'DeviceSerial' && value) {
+            // If value is a terminal name (ReaderName), find the corresponding DeviceSerial
+            for (const [deviceSerial, readerName] of this.terminalsMap.entries()) {
+              if (readerName === value || String(readerName).toLowerCase() === String(value).toLowerCase()) {
+                value = deviceSerial;
+                break;
+              }
             }
           }
           
@@ -138,7 +152,55 @@ export class LocationBasedDailyReportsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Component initialization
+    // Load terminals to map DeviceSerial to ReaderName
+    // setupLocationColumnRender will be called after terminals are loaded
+    this.loadTerminals();
+  }
+
+  private loadTerminals(): void {
+    this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: GridResponse) => {
+        if (response.records) {
+          // Create mapping: DeviceSerial (SerialNumber) -> ReaderName
+          response.records.forEach((terminal: any) => {
+            const deviceSerial = terminal.SerialNumber || terminal.DeviceSerial;
+            const readerName = terminal.ReaderName || terminal.TerminalName || terminal.Name || deviceSerial;
+            if (deviceSerial) {
+              this.terminalsMap.set(deviceSerial, readerName);
+            }
+          });
+        }
+        // After terminals are loaded, setup render function and refresh table
+        this.setupLocationColumnRender();
+        this.cdr.detectChanges();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.onRefresh();
+        }
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error loading terminals:', error);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  private setupLocationColumnRender(): void {
+    // Find Location column and set render function
+    const locationColumn = this.tableColumns.find(col => col.field === 'Location');
+    if (locationColumn) {
+      locationColumn.render = (record: TableRow) => {
+        const deviceSerial = record['Location'] || record['DeviceSerial'];
+        if (deviceSerial && this.terminalsMap.has(deviceSerial)) {
+          return this.terminalsMap.get(deviceSerial) || String(deviceSerial);
+        }
+        // If not found in map, return the original value
+        return String(deviceSerial || '');
+      };
+    }
   }
 
   onTableRowClick(event: TableRow): void {

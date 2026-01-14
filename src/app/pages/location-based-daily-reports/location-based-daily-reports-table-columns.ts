@@ -1,5 +1,8 @@
 // LocationBasedDailyReports table columns configuration
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.apiUrl;
 
 export const tableColumns: TableColumn[] = [
   { 
@@ -37,13 +40,54 @@ export const tableColumns: TableColumn[] = [
     field: 'Location', 
     label: 'Konum', 
     text: 'Konum',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'DeviceSerial', // API'de DeviceSerial alanıyla arama yapılacak
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        // Terminal listesini SerialNumber (DeviceSerial) ve ReaderName ile map'le
+        return (data.records || []).map((item: any) => ({
+          id: item.ReaderName,
+          text: item.ReaderName
+        }));
+      }
+    }
+  },
+  { 
+    field: 'CafeteriaGroupName', 
+    label: 'Kafeterya Grubu', 
+    text: 'Kafeterya Grubu',
+    type: 'enum' as ColumnType, 
+    sortable: false, 
+    width: '200px', 
+    size: '200px',
+    min: 20,
+    searchable: 'enum' as ColumnType,
+    searchField: 'CafeteriaGroupID', // API'de CafeteriaGroupID alanıyla arama yapılacak
+    resizable: true,
+    hidden: true, // Sadece filtrede görünsün, tabloda görünmesin
+    load: {
+      url: `${apiUrl}/api/CafeteriaGroups`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        // CafeteriaGroups listesini CafeteriaGroupID ve CafeteriaGroupName ile map'le
+        return (data.records || []).map((item: any) => ({
+          id: item.CafeteriaGroupName,
+          text: item.CafeteriaGroupName
+        }));
+      }
+    }
   },
   { 
     field: 'Subscription', 
