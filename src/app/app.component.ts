@@ -3,10 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { environment } from '../environments/environment';
+import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet],
+    standalone: true,
+    imports: [RouterOutlet, LoadingSpinnerComponent],
     templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {

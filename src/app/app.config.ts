@@ -10,6 +10,7 @@ import {
 } from '@angular/common/http';
 import { httpHeadersInterceptor } from './interceptors/http-headers.interceptor';
 import { httpErrorInterceptor } from './interceptors/http-error.interceptor';
+import { loadingInterceptor } from './interceptors/loading.interceptor';
 import { routes } from './app.routes';
 import {
   provideRouter,
@@ -66,7 +67,7 @@ export const appConfig: ApplicationConfig = {
       }),
       withComponentInputBinding()
     ),
-    provideHttpClient(withInterceptors([httpHeadersInterceptor, httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([loadingInterceptor, httpHeadersInterceptor, httpErrorInterceptor])),
     provideAnimationsAsync(),
     importProvidersFrom(
       FormsModule,

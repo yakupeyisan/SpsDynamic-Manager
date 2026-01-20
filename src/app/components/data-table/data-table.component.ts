@@ -2854,10 +2854,21 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             // Fallback to record data if API doesn't return record or has error
             this.formData = { ...record };
           }
-          
-          // Ensure EmployeeID is set if recid exists (for dynamic field options)
-          if (this.formData['recid'] && !this.formData['EmployeeID']) {
-            this.formData['EmployeeID'] = this.formData['recid'];
+
+          // Ensure record id fields are present even if API doesn't return them
+          const idField = this.recid || 'recid';
+          if (this.isEditMode && this.editingRecordId != null) {
+            // Populate both the configured id field and w2ui-style "recid" for compatibility
+            if (this.formData[idField] == null) {
+              this.formData[idField] = this.editingRecordId;
+            }
+            if (this.formData['recid'] == null) {
+              this.formData['recid'] = this.editingRecordId;
+            }
+            // Employee form convenience: keep EmployeeID in sync when it is the id field
+            if (idField === 'EmployeeID' && this.formData['EmployeeID'] == null) {
+              this.formData['EmployeeID'] = this.editingRecordId;
+            }
           }
           
           // Normalize checkbox values to boolean
@@ -2869,6 +2880,17 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             // Load dynamic field options that depend on formData (e.g., SubscriptionCard)
             this.loadDynamicFieldOptions();
           }, 0);
+
+          // Reload nested grids after formData is set (safe: grids can opt-out via __skipRequest)
+          setTimeout(() => {
+            if (this.nestedGrids) {
+              this.nestedGrids.forEach((grid: DataTableComponent) => {
+                if (grid.dataSource && typeof grid.dataSource === 'function' && !grid.isLoading) {
+                  grid.loadDataSource();
+                }
+              });
+            }
+          }, 150);
           
           this.cdr.markForCheck();
           
@@ -2895,12 +2917,37 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           
           // Fallback to record data on error
           this.formData = { ...record };
+
+          // Ensure record id fields are present even on fallback
+          const idField = this.recid || 'recid';
+          if (this.isEditMode && this.editingRecordId != null) {
+            if (this.formData[idField] == null) {
+              this.formData[idField] = this.editingRecordId;
+            }
+            if (this.formData['recid'] == null) {
+              this.formData['recid'] = this.editingRecordId;
+            }
+            if (idField === 'EmployeeID' && this.formData['EmployeeID'] == null) {
+              this.formData['EmployeeID'] = this.editingRecordId;
+            }
+          }
           
           // Normalize checkbox values to boolean
           this.normalizeCheckboxValues();
           
           // Load dynamic field options that depend on formData (e.g., SubscriptionCard)
           this.loadDynamicFieldOptions();
+
+          // Reload nested grids after fallback formData is set (safe: grids can opt-out via __skipRequest)
+          setTimeout(() => {
+            if (this.nestedGrids) {
+              this.nestedGrids.forEach((grid: DataTableComponent) => {
+                if (grid.dataSource && typeof grid.dataSource === 'function' && !grid.isLoading) {
+                  grid.loadDataSource();
+                }
+              });
+            }
+          }, 150);
           
           this.cdr.markForCheck();
           
@@ -3205,6 +3252,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const wrapperFunction = (params: any) => {
       // Build params with form data
       const enrichedParams = this.buildGridDataSourceParams(grid, params);
+      // Allow grid.data(...) to signal "don't call API yet"
+      if (enrichedParams && (enrichedParams.__skipRequest === true || enrichedParams.__skip === true)) {
+        return of({
+          status: 'success',
+          total: 0,
+          records: []
+        } as GridResponse);
+      }
+      // Never send internal flags to backend
+      if (enrichedParams && (enrichedParams.__skipRequest !== undefined || enrichedParams.__skip !== undefined)) {
+        delete enrichedParams.__skipRequest;
+        delete enrichedParams.__skip;
+      }
       return baseDataSource(enrichedParams);
     };
     
@@ -3243,9 +3303,13 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       });
     }
     
-    // Ensure EmployeeID is always included if formData has it
-    if (this.formData && (this.formData['recid'])) {
-      params.EmployeeID = this.formData['EmployeeID'] || this.formData['recid'];
+    // Ensure EmployeeID is included when available (supports initial load before formData arrives)
+    const employeeIdFromForm = this.formData?.['EmployeeID'] ?? this.formData?.['recid'];
+    if (employeeIdFromForm != null) {
+      params.EmployeeID = employeeIdFromForm;
+    } else if (this.recid === 'EmployeeID' && this.isEditMode && this.editingRecordId != null) {
+      // Employee form: inject EmployeeID even if formData hasn't been loaded yet
+      params.EmployeeID = this.editingRecordId;
     }
     
     return params;

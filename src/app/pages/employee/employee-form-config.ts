@@ -359,11 +359,17 @@ export const formTabs: FormTab[] = [
           save: false
         }
       },
-      data: (formData: any) => ({
-        EmployeeID: formData.EmployeeID || formData.recid,
-        limit: 100,
-        offset: 0
-      }),
+      data: (formData: any) => {
+        const employeeId = formData?.EmployeeID || formData?.recid || null;
+        if (!employeeId) {
+          return { __skipRequest: true, limit: 100, offset: 0 };
+        }
+        return {
+          EmployeeID: employeeId,
+          limit: 100,
+          offset: 0
+        };
+      },
       joinOptions: [
         { key: 'CardType', label: 'Kart Tipi', nested: true },
         { key: 'CafeteriaGroup', label: 'Kafeterya Grubu', nested: true }
@@ -395,6 +401,14 @@ export const formTabs: FormTab[] = [
         console.log('EmployeeAccessGroupReaders data function - AccessGroup:', formData?.AccessGroup);
         console.log('EmployeeAccessGroupReaders data function - accessGroups:', accessGroups);
         
+        if (!accessGroups || accessGroups.length === 0) {
+          return {
+            __skipRequest: true,
+            limit: 100,
+            offset: 0,
+            AccessGroups: []
+          };
+        }
         return {
           limit: 100,
           offset: 0,
@@ -428,10 +442,14 @@ export const formTabs: FormTab[] = [
       formHeight: '600px',
       recid: 'ID',
       data: (formData: any) => {
+        const employeeId = formData?.EmployeeID || formData?.recid || null;
+        if (!employeeId) {
+          return { __skipRequest: true, limit: 100, offset: 0 };
+        }
         return {
           limit: 100,
           offset: 0,
-          EmployeeID: formData.EmployeeID || formData.recid
+          EmployeeID: employeeId
         };
       },
       toolbar: {
@@ -472,6 +490,9 @@ export const formTabs: FormTab[] = [
         console.log('SubscriptionEvents data function - formData:', formData);
         console.log('SubscriptionEvents data function - TagCode:', tagCode);
         
+        if (!tagCode) {
+          return { __skipRequest: true, limit: 100, offset: 0 };
+        }
         return {
           limit: 100,
           offset: 0,
