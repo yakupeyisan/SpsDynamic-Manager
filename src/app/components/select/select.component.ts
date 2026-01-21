@@ -50,9 +50,11 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
   @Input() searchable: boolean = true; // Enable search by default
   @Input() searchPlaceholder: string = PLACEHOLDERS.SEARCH;
   @Input() minOptionsForSearch: number = 5; // Auto-enable search if options >= this number
+  @Input() disableClientFilter: boolean = false; // Disable client-side filtering (for backend-filtered options)
   
   @Output() valueChange = new EventEmitter<any>();
   @Output() openChange = new EventEmitter<boolean>();
+  @Output() searchChange = new EventEmitter<string>();
 
   @ViewChild('selectContainer', { static: false }) selectContainer?: ElementRef;
   @ViewChild('dropdown', { static: false }) dropdown?: ElementRef;
@@ -218,6 +220,11 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
    * Get filtered options based on search term
    */
   get filteredOptions(): SelectOption[] {
+    // If client-side filtering is disabled, return all options (backend already filtered)
+    if (this.disableClientFilter) {
+      return this.options;
+    }
+    
     if (!this.shouldShowSearch || !this.searchTerm.trim()) {
       return this.options;
     }
@@ -253,6 +260,7 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
     const input = event.target as HTMLInputElement;
     this.searchTerm = input.value;
     this.cdr.markForCheck();
+    this.searchChange.emit(this.searchTerm);
   }
 
   /**

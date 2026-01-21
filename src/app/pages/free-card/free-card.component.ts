@@ -4,7 +4,8 @@ import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, firstValueFrom } from 'rxjs';
+import { Observable, of, firstValueFrom, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
@@ -91,6 +92,10 @@ export class FreeCardComponent implements OnInit {
   showCardAssignmentModal: boolean = false;
   selectedEmployeeId: number | null = null;
   employees: any[] = [];
+  employeeSearchTerm$ = new Subject<string>();
+  isLoadingEmployees: boolean = false;
+  selectedCardsForAssignment: any[] = []; // Selected cards to display in modal
+  currentSelectedCards: any[] = []; // Store selected cards from rowSelect event
 
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
@@ -169,32 +174,76 @@ export class FreeCardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Load employees for card assignment
-    this.loadEmployees();
-  }
-
-  /**
-   * Load employees for card assignment dropdown
-   */
-  private loadEmployees(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/Employees`, {
-      limit: -1,
-      offset: 0,
-      columns: [{ field: 'EmployeeID' }, { field: 'Name' }, { field: 'SurName' }]
-    }).pipe(
-      map((response: GridResponse) => {
-        return (response.records || []).map((item: any) => ({
-          label: `${item.Name || ''} ${item.SurName || ''}`.trim() || `ID: ${item.EmployeeID}`,
-          value: item.EmployeeID
-        }));
-      }),
-      catchError(error => {
-        console.error('Error loading employees:', error);
-        this.toastr.error('Personel listesi yüklenirken hata oluştu.', 'Hata');
-        return of([]);
+    // Setup employee search with debounce
+    this.employeeSearchTerm$.pipe(
+      debounceTime(300), // Wait 300ms after user stops typing
+      distinctUntilChanged(), // Only search if term changed
+      switchMap(searchTerm => {
+        if (!searchTerm || searchTerm.trim().length < 2) {
+          // If search term is too short, return empty array
+          this.employees = [];
+          this.cdr.detectChanges();
+          return of([]);
+        }
+        
+        this.isLoadingEmployees = true;
+        this.cdr.detectChanges();
+        
+        // Search employees via API
+        return this.http.post<any>(`${environment.apiUrl}/api/Employees/find`, {
+          search: searchTerm.trim(),
+          limit: 50, // Limit results to 50
+          offset: 0
+        }).pipe(
+          map((response: any) => {
+            console.log('Employee search response:', response);
+            
+            // Handle different response formats
+            let records: any[] = [];
+            if (response.records && Array.isArray(response.records)) {
+              records = response.records;
+            } else if (response.data && Array.isArray(response.data)) {
+              records = response.data;
+            } else if (Array.isArray(response)) {
+              records = response;
+            }
+            
+            console.log('Extracted records:', records);
+            
+            // Map to select options format
+            const mapped = records.map((item: any) => {
+              const name = item.Name || '';
+              const surname = item.SurName || '';
+              const company = item.CompanyName || '';
+              let label = `${name} ${surname}`.trim();
+              if (company) {
+                label += ` - ${company}`;
+              }
+              if (!label) {
+                label = `ID: ${item.EmployeeID}`;
+              }
+              
+              return {
+                label: label,
+                value: item.EmployeeID
+              };
+            });
+            
+            console.log('Mapped employees:', mapped);
+            return mapped;
+          }),
+          catchError(error => {
+            console.error('Error searching employees:', error);
+            this.toastr.error('Personel arama sırasında hata oluştu.', 'Hata');
+            return of([]);
+          })
+        );
       })
     ).subscribe(employees => {
+      this.isLoadingEmployees = false;
       this.employees = employees;
+      console.log('Final employees array:', this.employees);
+      console.log('Employees count:', this.employees.length);
       this.cdr.detectChanges();
     });
   }
@@ -208,20 +257,60 @@ export class FreeCardComponent implements OnInit {
       return;
     }
 
-    // Get selected rows
-    const selectedRows = this.dataTableComponent.selectedRows;
-    if (selectedRows.size === 0) {
-      this.toastr.warning('Lütfen atamak için en az bir kart seçiniz.');
+    // Get selected row IDs
+    const selectedRowIds = this.dataTableComponent.selectedRows;
+    if (selectedRowIds.size === 0) {
+      this.toastr.warning('Lütfen atamak için bir kart seçiniz.');
       return;
     }
 
-    // Reset selection
+    if (selectedRowIds.size > 1) {
+      this.toastr.warning('Sadece bir kart seçebilirsiniz. Lütfen tek bir kart seçiniz.');
+      return;
+    }
+
+    // Use stored selected cards from rowSelect event
+    let selectedCard: any = null;
+    
+    if (this.currentSelectedCards.length > 0) {
+      selectedCard = this.currentSelectedCards[0];
+    } else {
+      // Fallback: Get from internalData
+      const sourceData = (this.dataTableComponent as any).internalData || [];
+      const selectedCards = sourceData.filter((row: any) => {
+        const rowId = row.CardID || row.recid;
+        return selectedRowIds.has(rowId);
+      });
+      if (selectedCards.length > 0) {
+        selectedCard = selectedCards[0];
+      }
+    }
+
+    if (!selectedCard) {
+      this.toastr.warning('Seçili kart bulunamadı.');
+      return;
+    }
+
+    // Store selected card for display (only one card)
+    this.selectedCardsForAssignment = [selectedCard];
+    
+    console.log('Selected card for assignment:', this.selectedCardsForAssignment[0]);
+
+    // Reset selection and employees list
     this.selectedEmployeeId = null;
+    this.employees = [];
     this.showCardAssignmentModal = true;
   }
 
   /**
-   * Assign selected cards to employee
+   * Handle employee search term change
+   */
+  onEmployeeSearchChange(searchTerm: string): void {
+    this.employeeSearchTerm$.next(searchTerm);
+  }
+
+  /**
+   * Assign selected card to employee
    */
   onAssignCardsToEmployee(): void {
     if (!this.selectedEmployeeId) {
@@ -229,62 +318,59 @@ export class FreeCardComponent implements OnInit {
       return;
     }
 
-    if (!this.dataTableComponent) {
-      this.toastr.warning('DataTableComponent not found');
+    if (this.selectedCardsForAssignment.length === 0) {
+      this.toastr.warning('Seçili kart bulunamadı.');
       return;
     }
 
-    // Get selected card IDs
-    const selectedCardIds: number[] = [];
-    this.dataTableComponent.selectedRows.forEach((row: any) => {
-      const cardId = row.CardID || row.recid;
-      if (cardId) {
-        selectedCardIds.push(cardId);
-      }
-    });
+    // Get selected card
+    const selectedCard = this.selectedCardsForAssignment[0];
+    const cardId = selectedCard.CardID || selectedCard.recid;
 
-    if (selectedCardIds.length === 0) {
+    if (!cardId) {
       this.toastr.warning('Geçerli kart seçilmedi.');
       return;
     }
 
-    // Assign cards to employee via API
-    // Using Cards/form endpoint with EmployeeID field
-    const assignPromises = selectedCardIds.map(cardId => {
-      return this.http.post(`${environment.apiUrl}/api/Cards/FreeCards/save`, {
-        request: {
-          action: 'save',
-          recid: cardId,
-          name: 'EditCard',
-          record: {
-            EmployeeID: this.selectedEmployeeId
+    // Get selected employee name
+    const selectedEmployee = this.employees.find(emp => emp.value === this.selectedEmployeeId);
+    const employeeName = selectedEmployee?.label || 'Seçili Personel';
+
+    // Extract Name and SurName from label (format: "Name SurName" or "Name SurName - CompanyName")
+    let employeeDisplayName = employeeName;
+    if (employeeName.includes(' - ')) {
+      employeeDisplayName = employeeName.split(' - ')[0].trim();
+    }
+
+    // Show confirmation dialog
+    if (!confirm(`${employeeDisplayName} kişisine kart atanacaktır. Onaylıyor musunuz?`)) {
+      return;
+    }
+
+    // Assign card to employee via API
+    this.http.post(`${environment.apiUrl}/api/Cards/FreeCards/setEmployee`, {
+      EmployeeID: this.selectedEmployeeId,
+      CardID: cardId
+    }).subscribe({
+      next: (response: any) => {
+        if (response.error === false || response.status === 'success') {
+          this.toastr.success('Kart başarıyla atandı.', 'Başarılı');
+          
+          // Close modal and reload grid
+          this.showCardAssignmentModal = false;
+          this.selectedEmployeeId = null;
+          this.selectedCardsForAssignment = [];
+          if (this.dataTableComponent) {
+            this.dataTableComponent.reload();
           }
+        } else {
+          this.toastr.error(response.message || 'Kart atanamadı.', 'Hata');
         }
-      }).pipe(
-        catchError(error => {
-          console.error(`Error assigning card ${cardId}:`, error);
-          return of({ error: true, message: error.message });
-        })
-      );
-    });
-
-    // Execute all assignments
-    Promise.all(assignPromises.map(p => firstValueFrom(p))).then((results: any[]) => {
-      const successCount = results.filter((r: any) => !r?.error).length;
-      const errorCount = results.filter((r: any) => r?.error).length;
-
-      if (successCount > 0) {
-        this.toastr.success(`${successCount} kart başarıyla atandı.`, 'Başarılı');
-      }
-      if (errorCount > 0) {
-        this.toastr.error(`${errorCount} kart atanamadı.`, 'Hata');
-      }
-
-      // Close modal and reload grid
-      this.showCardAssignmentModal = false;
-      this.selectedEmployeeId = null;
-      if (this.dataTableComponent) {
-        this.dataTableComponent.reload();
+      },
+      error: (error) => {
+        console.error('Error assigning card:', error);
+        const errorMessage = error.error?.message || error.message || 'Kart atanamadı.';
+        this.toastr.error(errorMessage, 'Hata');
       }
     });
   }
@@ -295,6 +381,21 @@ export class FreeCardComponent implements OnInit {
   onCloseCardAssignmentModal(): void {
     this.showCardAssignmentModal = false;
     this.selectedEmployeeId = null;
+    this.selectedCardsForAssignment = [];
+  }
+
+  /**
+   * Get card type name from card record
+   */
+  getCardTypeName(card: any): string {
+    return card.CardType?.CardType || card.CardType?.CardTypeName || card.CardType?.Name || card.CardTypeName || '-';
+  }
+
+  /**
+   * Get card status name from card record
+   */
+  getCardStatusName(card: any): string {
+    return card.CardStatus?.Name || card.CardStatusName || '-';
   }
 
   // Event handlers
@@ -307,7 +408,10 @@ export class FreeCardComponent implements OnInit {
   }
 
   onTableRowSelect(event: any): void {
-    // Handle row selection
+    // Store selected rows from event (event is array of selected row objects)
+    this.currentSelectedCards = Array.isArray(event) ? event : [event];
+    console.log('Row select event:', event);
+    console.log('Current selected cards:', this.currentSelectedCards);
   }
 
   onTableRefresh(): void {
