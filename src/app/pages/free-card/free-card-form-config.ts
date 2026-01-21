@@ -104,7 +104,7 @@ export const formTabs: FormTab[] = [
 ];
 
 // Form load URL
-export const formLoadUrl = `${apiUrl}/api/Cards/form`;
+export const formLoadUrl = `${apiUrl}/api/Cards/FreeCards/form`;
 
 // Form load request builder
 export const formLoadRequest = (recid: any) => ({

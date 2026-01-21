@@ -56,3 +56,41 @@
     </div>
   </div>
 </div>
+
+<!-- Card Assignment Modal -->
+<ui-modal
+  [show]="showCardAssignmentModal"
+  [title]="'Kart Ata'"
+  [size]="'md'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="showCardAssignmentModal = $event"
+  (closed)="onCloseCardAssignmentModal()">
+  
+  <div class="card-assignment-modal-content">
+    <div class="form-group mb-3">
+      <label class="form-label">Personel Seçiniz:</label>
+      <ui-select
+        [(ngModel)]="selectedEmployeeId"
+        [options]="employees"
+        [placeholder]="'Personel seçiniz...'">
+      </ui-select>
+    </div>
+    
+    <div class="alert alert-info">
+      <i class="ti ti-info-circle me-2"></i>
+      Seçili kartlar seçilen personele atanacaktır.
+    </div>
+  </div>
+  
+  <div slot="footer" class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="onCloseCardAssignmentModal()">
+      <i class="ti ti-x me-1"></i>
+      İptal
+    </button>
+    <button type="button" class="btn btn-primary" (click)="onAssignCardsToEmployee()" [disabled]="!selectedEmployeeId">
+      <i class="ti ti-check me-1"></i>
+      Ata
+    </button>
+  </div>
+</ui-modal>
