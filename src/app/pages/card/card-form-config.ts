@@ -7,24 +7,6 @@ const apiUrl = environment.apiUrl;
 // Custom form fields for add/edit form
 export const formFields: TableColumn[] = [
   { 
-    field: 'EmployeeID', 
-    label: 'Kişi', 
-    text: 'Kişi', 
-    type: 'list', 
-    load: {
-      url: `${apiUrl}/api/Employees`,
-      injectAuth: true,
-      method: 'POST' as const,
-      data: { limit: -1, offset: 0 },
-      map: (data: any) => {
-        return data.records.map((item: any) => ({
-          id: item.EmployeeID,
-          text: `${item.Name || ''} ${item.SurName || ''}`.trim() || item.Name || item.SurName || `ID: ${item.EmployeeID}`
-        }));
-      }
-    }
-  },
-  { 
     field: 'CardTypeID', 
     label: 'Kart Tipi', 
     text: 'Kart Tipi', 

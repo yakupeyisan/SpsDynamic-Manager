@@ -95,6 +95,12 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   selectedDepartmentIds: number[] = [];
   isUpdatingDepartment: boolean = false;
   
+  // Bulk Scoring modal state
+  showBulkScoringModal = false;
+  selectedEmployeesForScoring: any[] = [];
+  scoringEnabled: boolean = true;
+  isUpdatingScoring: boolean = false;
+
   // Bulk Access Group modal state
   showBulkAccessGroupModal = false;
   selectedEmployeesForAccessGroup: any[] = [];
@@ -200,6 +206,11 @@ export class EmployeeComponent implements OnInit, OnDestroy {
               id: 'bulk-position',
               text: this.translate.instant('operations.bulkPosition'),
               onClick: (event: MouseEvent, item: any) => this.onBulkPosition(event, item)
+            },
+            {
+              id: 'bulk-scoring',
+              text: this.translate.instant('operations.bulkScoring'),
+              onClick: (event: MouseEvent, item: any) => this.onBulkScoring(event, item)
             },
             {
               id: 'bulk-department',
@@ -444,7 +455,57 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onTableDelete(rows: any[]) {
-    //console.log('Delete records requested:', rows);
+    // Warn if nothing selected
+    if (!rows || (Array.isArray(rows) && rows.length === 0)) {
+      this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
+      return;
+    }
+
+    const selectedIds: number[] = [];
+    const rowsArray = Array.isArray(rows) ? rows : [rows];
+
+    rowsArray.forEach((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      if (id !== null && id !== undefined) {
+        selectedIds.push(Number(id));
+      }
+    });
+
+    if (selectedIds.length === 0) {
+      this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
+      return;
+    }
+
+    const confirmMessage =
+      this.translate.instant('common.deleteConfirm') ||
+      'Seçili kayıtları silmek istediğinize emin misiniz?';
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/api/Employees/delete`, {
+      request: {
+        action: 'delete',
+        recid: selectedIds
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.status === 'success') {
+          this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));
+          if (this.dataTableComponent) {
+            this.dataTableComponent.reload();
+          }
+        } else {
+          this.toastr.error(response.message || this.translate.instant('common.deleteError'), this.translate.instant('common.error'));
+        }
+      },
+      error: (error) => {
+        console.error('Delete error:', error);
+        const errorMessage = error.error?.message || error.message || this.translate.instant('common.deleteError');
+        this.toastr.error(errorMessage, this.translate.instant('common.error'));
+      }
+    });
   }
   
   onTableAdd() {
@@ -597,6 +658,30 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.showBulkPositionModal = true;
   }
 
+  onBulkScoring(event: MouseEvent, item: any) {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForScoring = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+
+    this.scoringEnabled = true;
+
+    this.showBulkScoringModal = true;
+  }
+
   onBulkDepartment(event: MouseEvent, item: any) {
     if (!this.dataTableComponent) {
       this.toastr.warning('DataTableComponent not found');
@@ -635,11 +720,25 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       this.closeBulkDepartmentModal();
     }
   }
+
+  onBulkScoringModalChange(show: boolean) {
+    this.showBulkScoringModal = show;
+    if (!show) {
+      this.closeBulkScoringModal();
+    }
+  }
   
   closeBulkDepartmentModal() {
     this.showBulkDepartmentModal = false;
     this.selectedEmployeesForDepartment = [];
     this.selectedDepartmentIds = [];
+  }
+
+  closeBulkScoringModal() {
+    this.showBulkScoringModal = false;
+    this.selectedEmployeesForScoring = [];
+    this.scoringEnabled = true;
+    this.isUpdatingScoring = false;
   }
   
   onConfirmBulkDepartment() {
@@ -686,6 +785,43 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     });
   }
   
+  onConfirmBulkScoring() {
+    if (this.selectedEmployeesForScoring.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+
+    this.isUpdatingScoring = true;
+
+    const employeeIds = this.selectedEmployeesForScoring.map(emp =>
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+
+    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateScoring`, {
+      EmployeeIDs: employeeIds,
+      Scoring: this.scoringEnabled
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingScoring = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Puantaj güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating scoring:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingScoring = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Puantaj bilgisi başarıyla güncellendi.');
+        this.closeBulkScoringModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+
   // Bulk Access Group Modal Methods
   onBulkAccessGroupModalChange(show: boolean) {
     this.showBulkAccessGroupModal = show;

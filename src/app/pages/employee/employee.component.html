@@ -598,6 +598,99 @@
   </div>
 </ui-modal>
 
+<!-- Bulk Scoring Modal -->
+<ui-modal
+  [show]="showBulkScoringModal"
+  [title]="'Toplu Puantaj Tanımlama'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkScoringModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların puantaj bilgisi güncellenecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForScoring.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForScoring; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoring Toggle Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-clipboard-check me-2"></i>
+        <span class="cancel-section-title">Puantaj Durumu</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none;">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="scoringEnabled"
+            [disabled]="isUpdatingScoring"
+            style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 500;">Puantaj Aktif</span>
+        </label>
+      </div>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>İşaretli olduğunda seçili çalışanlar için puantaj aktif edilir, kaldırıldığında pasif edilir.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkScoringModal()"
+      [disabled]="isUpdatingScoring">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkScoring()"
+      [disabled]="isUpdatingScoring || selectedEmployeesForScoring.length === 0">
+      <span *ngIf="isUpdatingScoring" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingScoring" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
 <!-- Bulk Web Client Access Modal -->
 <ui-modal
   [show]="showBulkWebClientModal"

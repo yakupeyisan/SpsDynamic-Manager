@@ -48,7 +48,14 @@
     "clear": "Temizle",
     "filter": "Filtrele",
     "export": "Dışa Aktar",
-    "import": "İçe Aktar"
+    "import": "İçe Aktar",
+    "warning": "Uyarı",
+    "success": "Başarılı",
+    "error": "Hata",
+    "selectRowToDelete": "Lütfen silmek için en az bir kayıt seçin.",
+    "deleteSuccess": "Silme işlemi başarıyla tamamlandı.",
+    "deleteError": "Silme işlemi sırasında bir hata oluştu.",
+    "deleteConfirm": "Seçili kayıtları silmek istediğinize emin misiniz?"
   },
   "toolbar": {
     "reload": "Yenile",
@@ -70,6 +77,7 @@
     "bulkAccessPermission": "Toplu Geçiş Yetkisi Tanımlama",
     "bulkCompany": "Toplu Firma Tanımlama",
     "bulkPosition": "Toplu Kadro Tanımlama",
+    "bulkScoring": "Toplu Puantaj Tanımlama",
     "bulkDepartment": "Toplu Bölüm Tanımlama",
     "bulkSms": "Toplu Sms Gönderme",
     "bulkMail": "Toplu Mail Gönderme",
