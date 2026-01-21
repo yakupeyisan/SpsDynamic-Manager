@@ -19,7 +19,8 @@ import {
   DataTableComponent, 
   TableColumn, 
   ToolbarConfig, 
-  GridResponse
+  GridResponse,
+  ColumnType
 } from 'src/app/components/data-table/data-table.component';
 import { WebSocketService } from 'src/app/services/websocket.service';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
@@ -58,6 +59,54 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   liveViewSettings: any[] = [];
   selectedLiveViewSettingId: number | null = null;
   newRowSize: number = 100;
+  currentReaderList: number[] = []; // Store readerList for WebSocket
+  selectedTerminals: any[] = []; // Selected terminals from API
+  terminalsTableColumns: TableColumn[] = [
+    { 
+      field: 'ReaderID', 
+      label: 'ID', 
+      text: 'ID',
+      type: 'int' as ColumnType, 
+      sortable: true, 
+      width: '80px', 
+      size: '80px',
+      searchable: 'int',
+      resizable: true
+    },
+    { 
+      field: 'SerialNumber', 
+      label: 'Seri Numarası', 
+      text: 'Seri Numarası',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'ReaderName', 
+      label: 'Terminal Adı', 
+      text: 'Terminal Adı',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '300px', 
+      size: '300px',
+      searchable: 'text',
+      resizable: true
+    },
+    { 
+      field: 'IpAddress', 
+      label: 'IP Adresi', 
+      text: 'IP Adresi',
+      type: 'text' as ColumnType, 
+      sortable: true, 
+      width: '150px', 
+      size: '150px',
+      searchable: 'text',
+      resizable: true
+    }
+  ];
   
   // WebSocket subscription
   private wsSubscription?: Subscription;
@@ -155,38 +204,25 @@ export class LiveViewComponent implements OnInit, OnDestroy {
    * Start live view with WebSocket connection
    */
   private startLiveView(): void {
-    // Get reader list from selected live view setting
-    let readerList: number[] = [];
+    // Use stored readerList if available, otherwise get from selectedTerminals
+    let readerList: number[] = this.currentReaderList;
     
-    if (this.selectedLiveViewSettingId) {
-      // Get terminals for selected live view setting
-      this.http.post<any>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
-        LiveViewSettingId: this.selectedLiveViewSettingId
-      }).pipe(
-        map((response: any) => {
-          if (response.data && response.data.data) {
-            return response.data.data.map((item: any) => parseInt(item.SerialNumber));
-          }
-          return [];
-        }),
-        catchError(error => {
-          console.error('Error loading terminals:', error);
-          return of([]);
-        })
-      ).subscribe(serialNumbers => {
-        readerList = serialNumbers;
-        this.connectWebSocket(readerList);
-      });
-    } else {
-      // No filter, connect with empty reader list
-      this.connectWebSocket([]);
+    if (readerList.length === 0 && this.selectedTerminals && this.selectedTerminals.length > 0) {
+      // Fallback: Use terminals from selectedTerminals
+      readerList = this.selectedTerminals.map((terminal: any) => {
+        return parseInt(terminal.SerialNumber || terminal.serialNumber || '0');
+      }).filter((num: number) => !isNaN(num) && num > 0);
     }
+    
+    this.connectWebSocket(readerList);
   }
 
   /**
    * Connect to WebSocket
    */
   private connectWebSocket(readerList: number[]): void {
+    console.log('Connecting WebSocket with readerList:', readerList);
+    
     // Send clientconnect message to WebSocket
     this.wsService.sendMessage({
       type: 'clientconnect',
@@ -217,7 +253,11 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     // Subscribe to connection status
     this.connectionStatusSubscription = this.wsService.getConnectionStatus().subscribe((connected: boolean) => {
       if (!connected && this.isLiveViewEnabled) {
-        this.toastr.warning('WebSocket bağlantısı kesildi');
+        // Automatically close toggle when connection is lost
+        this.isLiveViewEnabled = false;
+        this.stopLiveView();
+        this.toastr.warning('WebSocket bağlantısı kesildi. Canlı izleme durduruldu.', 'Bağlantı Hatası');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -285,22 +325,146 @@ export class LiveViewComponent implements OnInit, OnDestroy {
    * Filter by group
    */
   onFilterByGroup(event: MouseEvent, item: any): void {
+    this.selectedLiveViewSettingId = null;
+    this.selectedTerminals = [];
     this.showFilterModal = true;
   }
 
   /**
-   * Apply filter
+   * Handle live view setting selection change
+   * Only load terminals for display, don't send to WebSocket yet
+   */
+  onLiveViewSettingChange(): void {
+    if (!this.selectedLiveViewSettingId) {
+      this.selectedTerminals = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Load terminals for selected live view setting (just for display)
+    this.http.post<any>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+      LiveViewSettingId: this.selectedLiveViewSettingId
+    }).pipe(
+      map((response: any) => {
+        // Handle different response formats
+        let terminals: any[] = [];
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          terminals = response.data.data;
+        } else if (response.records && Array.isArray(response.records)) {
+          terminals = response.records;
+        } else if (response.data && Array.isArray(response.data)) {
+          terminals = response.data;
+        } else if (Array.isArray(response)) {
+          terminals = response;
+        }
+        return terminals;
+      }),
+      catchError(error => {
+        console.error('Error loading terminals:', error);
+        this.toastr.error('Terminal listesi yüklenirken hata oluştu', 'Hata');
+        return of([]);
+      })
+    ).subscribe(terminals => {
+      this.selectedTerminals = terminals || [];
+      this.cdr.detectChanges();
+    });
+  }
+
+  /**
+   * Data source for terminals table in filter modal
+   */
+  terminalsDataSource = (params: any) => {
+    return of({
+      status: 'success' as const,
+      total: this.selectedTerminals.length,
+      records: this.selectedTerminals
+    } as GridResponse);
+  };
+
+  /**
+   * Toolbar config for terminals table (read-only, no actions)
+   */
+  get terminalsTableToolbarConfig(): ToolbarConfig {
+    return {
+      items: [],
+      show: {
+        reload: false,
+        columns: false,
+        search: false,
+        add: false,
+        edit: false,
+        delete: false,
+        save: false
+      }
+    };
+  }
+
+  /**
+   * Apply filter - Load terminals and send to WebSocket when "Tamam" is clicked
    */
   onApplyFilter(): void {
-    this.showFilterModal = false;
-    
-    // If live view is enabled, restart with new filter
-    if (this.isLiveViewEnabled) {
-      this.stopLiveView();
-      setTimeout(() => {
-        this.startLiveView();
-      }, 500);
+    if (!this.selectedLiveViewSettingId) {
+      this.toastr.warning('Lütfen bir grup seçin', 'Uyarı');
+      return;
     }
+
+    // Load terminals for selected live view setting (like old system onSave)
+    this.http.post<any>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+      LiveViewSettingId: this.selectedLiveViewSettingId
+    }).pipe(
+      map((response: any) => {
+        // Handle different response formats (like old system: event.xhr.responseJSON.data.data)
+        let terminals: any[] = [];
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          terminals = response.data.data;
+        } else if (response.records && Array.isArray(response.records)) {
+          terminals = response.records;
+        } else if (response.data && Array.isArray(response.data)) {
+          terminals = response.data;
+        } else if (Array.isArray(response)) {
+          terminals = response;
+        }
+        
+        // Store terminals for display
+        this.selectedTerminals = terminals || [];
+        
+        // Extract SerialNumber array (like old system: datas[index]=el.SerialNumber)
+        const readerList = terminals.map((terminal: any) => {
+          return parseInt(terminal.SerialNumber || terminal.serialNumber || '0');
+        }).filter((num: number) => !isNaN(num) && num > 0);
+        
+        return readerList;
+      }),
+      catchError(error => {
+        console.error('Error loading terminals:', error);
+        this.toastr.error('Terminal listesi yüklenirken hata oluştu', 'Hata');
+        return of([]);
+      })
+    ).subscribe(readerList => {
+      // Store readerList
+      this.currentReaderList = readerList || [];
+      
+      console.log('ReaderList loaded and sending to WebSocket:', this.currentReaderList);
+      
+      // Close modal
+      this.showFilterModal = false;
+      this.cdr.detectChanges();
+      
+      // Send to WebSocket (like old system: toggleWebsocket(true, datas))
+      if (this.isLiveViewEnabled) {
+        // Stop current connection and restart with new readerList
+        this.stopLiveView();
+        setTimeout(() => {
+          this.connectWebSocket(this.currentReaderList);
+        }, 500);
+      } else {
+        // Even if live view is not enabled, send to WebSocket and enable toggle
+        // This automatically enables live view when WebSocket connects
+        this.isLiveViewEnabled = true; // Automatically enable toggle
+        this.connectWebSocket(this.currentReaderList);
+        this.toastr.success(`${this.currentReaderList.length} terminal için filtre uygulandı ve canlı izleme başlatıldı`, 'Başarılı');
+      }
+    });
   }
 
   /**
@@ -308,6 +472,8 @@ export class LiveViewComponent implements OnInit, OnDestroy {
    */
   onCloseFilterModal(): void {
     this.showFilterModal = false;
+    this.selectedLiveViewSettingId = null;
+    this.selectedTerminals = [];
   }
 
   /**

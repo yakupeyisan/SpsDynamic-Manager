@@ -72,7 +72,7 @@
 <ui-modal
   [show]="showFilterModal"
   [title]="'Terminal Gruplarını Seç'"
-  [size]="'md'"
+  [size]="'lg'"
   [closable]="true"
   [showFooter]="true"
   (showChange)="onCloseFilterModal()">
@@ -82,8 +82,37 @@
       <ui-select
         [(ngModel)]="selectedLiveViewSettingId"
         [options]="liveViewSettings"
-        [placeholder]="'Grup seçiniz...'">
+        [placeholder]="'Grup seçiniz...'"
+        (ngModelChange)="onLiveViewSettingChange()">
       </ui-select>
+    </div>
+    
+    <!-- Terminals List -->
+    <div class="form-group" *ngIf="selectedTerminals.length > 0">
+      <label>Seçili Terminaller ({{ selectedTerminals.length }}):</label>
+      <div class="terminals-list-container">
+        <ui-data-table
+          [id]="'filter-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="terminalsDataSource"
+          [selectable]="false"
+          [pagination]="true"
+          [pageSize]="10"
+          [height]="'300px'"
+          [recid]="'ReaderID'"
+          [showRefresh]="false"
+          [searchable]="false"
+          [showFooter]="true"
+          [toolbar]="terminalsTableToolbarConfig">
+        </ui-data-table>
+      </div>
+    </div>
+    
+    <div class="form-group" *ngIf="selectedLiveViewSettingId && selectedTerminals.length === 0">
+      <div class="alert alert-info">
+        <i class="ti ti-info-circle me-2"></i>
+        Bu grup için terminal bulunamadı.
+      </div>
     </div>
   </div>
   
@@ -97,8 +126,9 @@
     <button 
       type="button" 
       class="btn btn-primary" 
-      (click)="onApplyFilter()">
-      Filtrele
+      (click)="onApplyFilter()"
+      [disabled]="selectedTerminals.length === 0">
+      Tamam
     </button>
   </div>
 </ui-modal>
