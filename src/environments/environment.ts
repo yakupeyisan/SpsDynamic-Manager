@@ -4,7 +4,8 @@ export const environment = {
   // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
   apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
   // WebSocket URL (otomatik olarak apiUrl'den türetilir, gerekirse manuel ayarlayabilirsiniz)
-  wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir
+  // LiveView için özel WebSocket URL (eski sistem: ws://172.16.1.186:8282)
+  wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir, LiveView için 'ws://172.16.1.186:8282' gibi ayarlanabilir
   
   // Açılış sayfası ayarı: 'home' veya 'other'
   // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir

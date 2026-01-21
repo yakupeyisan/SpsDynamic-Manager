@@ -1,0 +1,137 @@
+// LiveView Component Styles
+.live-view-page {
+  padding: 20px;
+  
+  .container-fluid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.live-view-control-panel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    .control-label {
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+    }
+    
+    .control-info {
+      color: #6c757d;
+      font-size: 14px;
+    }
+  }
+}
+
+// Toggle Switch Styles
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .slider {
+      background-color: #36c76c;
+      
+      &:before {
+        transform: translateX(26px);
+      }
+    }
+    
+    &:focus + .slider {
+      box-shadow: 0 0 1px #36c76c;
+    }
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+    
+    &:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+  }
+}
+
+.filter-modal-content,
+.row-size-modal-content {
+  padding: 20px;
+  
+  .form-group {
+    margin-bottom: 20px;
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #495057;
+    }
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid #e9ecef;
+  
+  .btn {
+    padding: 8px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    
+    &.btn-secondary {
+      background: #6c757d;
+      color: white;
+      
+      &:hover {
+        background: #5a6268;
+      }
+    }
+    
+    &.btn-primary {
+      background: #36c76c;
+      color: white;
+      
+      &:hover {
+        background: #2da857;
+      }
+    }
+  }
+}

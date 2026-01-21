@@ -1,0 +1,140 @@
+<!-- LiveView Component Template -->
+<div class="live-view-page">
+  <div class="container-fluid">
+    <!-- Live View Control Panel -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="live-view-control-panel">
+          <div class="control-item">
+            <label class="control-label">Canlı İzle:</label>
+            <label class="switch">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="isLiveViewEnabled"
+                (change)="toggleLiveView(isLiveViewEnabled)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="control-item">
+            <span class="control-info">Kayıt Sayısı: {{ liveViewRecords.length }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Data Table Section -->
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'live-view-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [canViewDeleted]="false"
+          [selectable]="true"
+          [pagination]="false"
+          [height]="'calc(100vh - 200px)'"
+          [recordHeight]="recordHeight"
+          [showEmptyRows]="false"
+          [fixedBody]="true"
+          [advancedFilter]="false"
+          [showRefresh]="true"
+          [searchPlaceholder]="'Ara...'"
+          [recid]="'Id'"
+          [selectType]="'row'"
+          [multiSelect]="false"
+          [multiSort]="false"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()"
+          (delete)="onTableDelete($event)"
+          (add)="onTableAdd()"
+          (edit)="onTableEdit($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<ui-modal
+  [show]="showFilterModal"
+  [title]="'Terminal Gruplarını Seç'"
+  [size]="'md'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCloseFilterModal()">
+  <div class="filter-modal-content">
+    <div class="form-group">
+      <label>Grup:</label>
+      <ui-select
+        [(ngModel)]="selectedLiveViewSettingId"
+        [options]="liveViewSettings"
+        [placeholder]="'Grup seçiniz...'">
+      </ui-select>
+    </div>
+  </div>
+  
+  <div slot="footer" class="modal-footer">
+    <button 
+      type="button" 
+      class="btn btn-secondary" 
+      (click)="onCloseFilterModal()">
+      İptal
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-primary" 
+      (click)="onApplyFilter()">
+      Filtrele
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Row Size Modal -->
+<ui-modal
+  [show]="showRowSizeModal"
+  [title]="'Satır Yüksekliğini Düzenle'"
+  [size]="'sm'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCloseRowSizeModal()">
+  <div class="row-size-modal-content">
+    <div class="form-group">
+      <label>Satır Yüksekliği:</label>
+      <input 
+        type="number" 
+        class="form-control"
+        [(ngModel)]="newRowSize"
+        min="40"
+        max="200">
+    </div>
+  </div>
+  
+  <div slot="footer" class="modal-footer">
+    <button 
+      type="button" 
+      class="btn btn-secondary" 
+      (click)="onCloseRowSizeModal()">
+      İptal
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-primary" 
+      (click)="onApplyRowSize()">
+      Ayarla
+    </button>
+  </div>
+</ui-modal>

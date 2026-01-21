@@ -278,6 +278,12 @@ export class WebSocketService {
           reader: message.reader,
           token: localStorage.getItem('token')
         };
+      } else if (message.type === 'clientconnect' && message.readerList) {
+        // Special handling for clientconnect - send as is with readerList at top level
+        messageToSend = {
+          type: 'clientconnect',
+          readerList: message.readerList
+        };
       } else if (message.type) {
         // Has type, use as is or wrap data
         messageToSend = {

@@ -106,6 +106,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'LiveView',
+        loadComponent: () =>
+          import('./pages/live-view/live-view.component').then(
+            (m) => m.LiveViewComponent
+          ),
+        data: {
+          title: 'Canlı İzleme',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(
