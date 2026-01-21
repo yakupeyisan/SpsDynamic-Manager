@@ -243,10 +243,14 @@
           [filter]="activeFilter || undefined"
           [limit]="currentLimit"
           [limitOptions]="limitOptions"
+          [enableReportSave]="enableReportSave"
+          [reportConfig]="reportConfig"
+          [hasActiveFilter]="!!activeFilter"
           (filterChange)="onFilterChange($event)"
           (limitChange)="onLimitChange($event)"
           (clear)="onFilterClear()"
-          (close)="closeFilterPanel()">
+          (close)="closeFilterPanel()"
+          (saveAsReport)="onSaveAsReport($event)">
         </ui-filter-panel>
       </div>
     </div>

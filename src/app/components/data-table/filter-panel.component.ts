@@ -7,9 +7,12 @@ import { map, catchError } from 'rxjs/operators';
 import { InputComponent } from '../input/input.component';
 import { SelectComponent, SelectOption } from '../select/select.component';
 import { ButtonComponent } from '../button/button.component';
+import { ModalComponent } from '../modal/modal.component';
 import { AdvancedFilter, FilterCondition, FilterLogic, FilterOperator, FILTER_OPERATORS, ColumnType, OperatorType, getOperatorTypeForColumnType, getOperatorsForOperatorType, getDefaultOperatorForType, getOperatorLabel } from './filter.model';
 import { TableColumn } from '../data-table/data-table.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { environment } from '../../../environments/environment';
+import { ToastrService } from 'ngx-toastr';
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
 const PLACEHOLDERS = {
@@ -39,11 +42,15 @@ export class FilterPanelComponent implements OnInit {
   @Input() data?: any[]; // Optional: for auto-generating options from data
   @Input() limit?: number = 100; // Current limit value
   @Input() limitOptions?: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
+  @Input() enableReportSave?: boolean = false; // Enable report save feature
+  @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
+  @Input() hasActiveFilter?: boolean = false; // Whether there's an active filter applied
   
   @Output() filterChange = new EventEmitter<AdvancedFilter>();
   @Output() close = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();
   @Output() limitChange = new EventEmitter<number>(); // Emit limit changes
+  @Output() saveAsReport = new EventEmitter<{ name: string; grid: string; url: string; logic: string; filters: any[] }>(); // Emit when saving as report
 
   currentFilter: AdvancedFilter = {
     logic: 'AND',
@@ -55,6 +62,10 @@ export class FilterPanelComponent implements OnInit {
   selectedFieldForAdd: string = '';
   
   logicOptions: SelectOption[] = [];
+  
+  // Report save modal
+  showReportSaveModal: boolean = false;
+  reportName: string = '';
 
   // Cache for enum values to prevent creating new array references
   private readonly EMPTY_ARRAY: any[] = [];
@@ -75,7 +86,8 @@ export class FilterPanelComponent implements OnInit {
   constructor(
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
-    public translate: TranslateService
+    public translate: TranslateService,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit() {
@@ -756,9 +768,27 @@ export class FilterPanelComponent implements OnInit {
       return;
     }
 
+    // Format datetime values: remove "T" from ISO datetime strings
+    const formattedConditions = validConditions.map(cond => {
+      if (this.isDateType(cond.field) && cond.value) {
+        // Handle between operator (value is a string with format "minValue,maxValue")
+        if (cond.operator === 'between' && typeof cond.value === 'string' && cond.value.includes(',')) {
+          const [minValue, maxValue] = cond.value.split(',');
+          const formattedMin = minValue ? minValue.trim().replace('T', ' ') : '';
+          const formattedMax = maxValue ? maxValue.trim().replace('T', ' ') : '';
+          return { ...cond, value: `${formattedMin},${formattedMax}` };
+        }
+        // Handle single datetime value
+        else if (typeof cond.value === 'string') {
+          return { ...cond, value: cond.value.replace('T', ' ') };
+        }
+      }
+      return cond;
+    });
+
     this.filterChange.emit({
       logic: this.currentFilter.logic,
-      conditions: validConditions
+      conditions: formattedConditions
     });
   }
 
@@ -781,6 +811,116 @@ export class FilterPanelComponent implements OnInit {
 
   onClose() {
     this.close.emit();
+  }
+
+  /**
+   * Check if there are valid filter conditions
+   */
+  get hasValidFilters(): boolean {
+    if (!this.hasActiveFilter) {
+      return false;
+    }
+    const validConditions = this.currentFilter.conditions.filter(cond => {
+      if (!cond.field || !cond.operator) return false;
+      const requiresVal = this.requiresValue(cond.operator);
+      return !requiresVal || (cond.value !== null && cond.value !== undefined && cond.value !== '');
+    });
+    return validConditions.length > 0;
+  }
+
+  /**
+   * Open report save modal
+   */
+  openReportSaveModal(): void {
+    if (!this.reportConfig) {
+      this.toastr.warning('Rapor yapılandırması bulunamadı.', 'Uyarı');
+      return;
+    }
+    this.reportName = '';
+    this.showReportSaveModal = true;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Close report save modal
+   */
+  closeReportSaveModal(): void {
+    this.showReportSaveModal = false;
+    this.reportName = '';
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Save report template
+   */
+  saveReport(): void {
+    if (!this.reportName || !this.reportName.trim()) {
+      this.toastr.warning('Lütfen rapor adı giriniz.', 'Uyarı');
+      return;
+    }
+
+    if (!this.reportConfig) {
+      this.toastr.error('Rapor yapılandırması bulunamadı.', 'Hata');
+      return;
+    }
+
+    // Get valid filter conditions
+    const validConditions = this.currentFilter.conditions.filter(cond => {
+      if (!cond.field || !cond.operator) return false;
+      const requiresVal = this.requiresValue(cond.operator);
+      return !requiresVal || (cond.value !== null && cond.value !== undefined && cond.value !== '');
+    });
+
+    if (validConditions.length === 0) {
+      this.toastr.warning('Geçerli filtre bulunamadı.', 'Uyarı');
+      return;
+    }
+
+    // Convert filter conditions to filter IDs (backend will create IDs)
+    // For now, we'll send the filter conditions as JSON and let backend handle ID creation
+    const filters = validConditions.map((cond, index) => ({
+      field: cond.field,
+      operator: cond.operator,
+      value: cond.value
+    }));
+
+    // Save report template via API
+    this.http.post(`${environment.apiUrl}/api/ReportTemplates`, {
+      request: {
+        action: 'save',
+        recid: null,
+        name: 'AddReportTemplate',
+        record: {
+          Name: this.reportName.trim(),
+          Grid: this.reportConfig.grid,
+          Logic: this.currentFilter.logic,
+          Url: this.reportConfig.url,
+          Filters: JSON.stringify(filters) // Send filters as JSON string, backend will create IDs
+        }
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response.error === false || response.status === 'success') {
+          this.toastr.success('Rapor şablonu başarıyla kaydedildi.', 'Başarılı');
+          this.closeReportSaveModal();
+          // Emit event for parent component if needed
+          this.saveAsReport.emit({
+            name: this.reportName.trim(),
+            grid: this.reportConfig!.grid,
+            url: this.reportConfig!.url,
+            logic: this.currentFilter.logic,
+            filters: filters
+          });
+        } else {
+          this.toastr.error(response.message || 'Rapor şablonu kaydedilirken hata oluştu.', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error saving report template:', error);
+        const errorMessage = error.error?.message || error.message || 'Rapor şablonu kaydedilirken hata oluştu.';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
   }
 }
 

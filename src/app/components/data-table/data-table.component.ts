@@ -265,6 +265,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() advancedFilter: boolean = true;
   @Input() limit: number = 100; // Record limit
   @Input() limitOptions: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
+  @Input() enableReportSave?: boolean = false; // Enable report save feature
+  @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
   @Input() height?: string; // Fixed height for table body (e.g., '400px', '50vh')
   @Input() recordHeight: number = 40; // Height of each row in pixels (default: 40px)
   @Input() showEmptyRows: boolean = true; // Show empty rows when height is set (Excel-like)
@@ -2457,6 +2459,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   get hasActiveFilter(): boolean {
     return this.activeFilter !== null && this.activeFilter.conditions.length > 0;
+  }
+
+  onSaveAsReport(event: { name: string; grid: string; url: string; logic: string; filters: any[] }): void {
+    // This can be handled by parent component if needed
+    // For now, the filter-panel component handles the API call directly
+    console.log('Report saved:', event);
   }
 
   get columnOptions(): TableColumn[] {

@@ -97,6 +97,13 @@ export class FreeCardComponent implements OnInit {
   selectedCardsForAssignment: any[] = []; // Selected cards to display in modal
   currentSelectedCards: any[] = []; // Store selected cards from rowSelect event
 
+  // Report save configuration
+  enableReportSave: boolean = true; // Enable report save feature
+  reportConfig = {
+    grid: 'FreeCardGrid',
+    url: `${environment.apiUrl}/api/Cards/FreeCards`
+  };
+
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
