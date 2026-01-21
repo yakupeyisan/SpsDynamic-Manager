@@ -17,7 +17,24 @@ export const navItems: NavItem[] = [
   {
     displayName: 'Kartlar',
     iconName: 'mdi:credit-card',
-    route: '/Card',
+    children:[
+      {
+        displayName: 'Bütün Kartlar',
+        route: '/Card',
+      },
+      {
+        displayName: 'Kullanılabilir Kartlar',
+        route: '/FreeCard',
+      },
+      {
+        displayName: 'Geçici Kartlar',
+        route: '/AvailableCard',
+      },
+      {
+        displayName: 'Kullanılan Geçici Kartlar',
+        route: '/UsedAvailableCard',
+      },
+    ]
   },
   {
     displayName: 'Canlı İzleme',
@@ -306,7 +323,7 @@ export const navItems: NavItem[] = [
   },
   {
     displayName: 'Rapor Tanımları',
-    iconName: 'mdi:file-archive',
+    iconName: 'mdi:archive',
     children: [
       {
         displayName: 'Rapor Şablonları',

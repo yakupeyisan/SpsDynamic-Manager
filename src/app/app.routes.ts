@@ -117,6 +117,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'FreeCard',
+        loadComponent: () =>
+          import('./pages/free-card/free-card.component').then(
+            (m) => m.FreeCardComponent
+          ),
+        data: {
+          title: 'Kullanılabilir Kartlar',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'PdksCompany',
         loadComponent: () =>
           import('./pages/pdks-company/pdks-company.component').then(
