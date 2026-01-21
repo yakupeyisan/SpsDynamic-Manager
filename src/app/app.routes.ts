@@ -128,6 +128,28 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AvailableCard',
+        loadComponent: () =>
+          import('./pages/available-card/available-card.component').then(
+            (m) => m.AvailableCardComponent
+          ),
+        data: {
+          title: 'Geçici Kartlar',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'UsedAvailableCard',
+        loadComponent: () =>
+          import('./pages/used-available-card/used-available-card.component').then(
+            (m) => m.UsedAvailableCardComponent
+          ),
+        data: {
+          title: 'Kullanılan Geçici Kartlar',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'PdksCompany',
         loadComponent: () =>
           import('./pages/pdks-company/pdks-company.component').then(
