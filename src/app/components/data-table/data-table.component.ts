@@ -265,8 +265,26 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() advancedFilter: boolean = true;
   @Input() limit: number = 100; // Record limit
   @Input() limitOptions: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
-  @Input() enableReportSave?: boolean = false; // Enable report save feature
+  @Input() enableReportSave?: boolean = true; // Enable report save feature
   @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
+  
+  /**
+   * Get report configuration, auto-generate if not provided
+   */
+  get effectiveReportConfig(): { grid: string; url: string; } | undefined {
+    if (this.reportConfig) {
+      return this.reportConfig;
+    }
+    // Auto-generate reportConfig from id if available
+    if (this.id) {
+      return {
+        grid: this.id,
+        url: '' // URL will be determined by the backend or can be set later
+      };
+    }
+    return undefined;
+  }
+  
   @Input() height?: string; // Fixed height for table body (e.g., '400px', '50vh')
   @Input() recordHeight: number = 40; // Height of each row in pixels (default: 40px)
   @Input() showEmptyRows: boolean = true; // Show empty rows when height is set (Excel-like)

@@ -137,6 +137,10 @@
     "max": "Max",
     "all": "Tümü",
     "any": "Herhangi biri",
+    "saveAsReport": "Rapor Olarak Kaydet",
+    "reportName": "Rapor Adı",
+    "enterReportName": "Rapor adı giriniz...",
+    "reportSaveInfo": "Mevcut filtreler rapor şablonu olarak kaydedilecektir.",
     "operators": {
       "equals": "Eşittir",
       "notEquals": "Eşit Değildir",

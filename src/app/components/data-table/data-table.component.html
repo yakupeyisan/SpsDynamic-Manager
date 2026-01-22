@@ -244,7 +244,7 @@
           [limit]="currentLimit"
           [limitOptions]="limitOptions"
           [enableReportSave]="enableReportSave"
-          [reportConfig]="reportConfig"
+          [reportConfig]="effectiveReportConfig"
           [hasActiveFilter]="!!activeFilter"
           (filterChange)="onFilterChange($event)"
           (limitChange)="onLimitChange($event)"

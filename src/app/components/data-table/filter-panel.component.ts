@@ -31,7 +31,7 @@ const PLACEHOLDERS = {
 @Component({
   selector: 'ui-filter-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, SelectComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, SelectComponent, ButtonComponent, ModalComponent],
   templateUrl: './filter-panel.component.html',
   styleUrl: './filter-panel.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -42,7 +42,7 @@ export class FilterPanelComponent implements OnInit {
   @Input() data?: any[]; // Optional: for auto-generating options from data
   @Input() limit?: number = 100; // Current limit value
   @Input() limitOptions?: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
-  @Input() enableReportSave?: boolean = false; // Enable report save feature
+  @Input() enableReportSave?: boolean = true; // Enable report save feature
   @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
   @Input() hasActiveFilter?: boolean = false; // Whether there's an active filter applied
   
@@ -817,13 +817,25 @@ export class FilterPanelComponent implements OnInit {
    * Check if there are valid filter conditions
    */
   get hasValidFilters(): boolean {
-    if (!this.hasActiveFilter) {
+    // Check currentFilter conditions directly, not just hasActiveFilter
+    // At least one condition with field and operator is required
+    if (!this.currentFilter.conditions || this.currentFilter.conditions.length === 0) {
       return false;
     }
+    
     const validConditions = this.currentFilter.conditions.filter(cond => {
       if (!cond.field || !cond.operator) return false;
       const requiresVal = this.requiresValue(cond.operator);
-      return !requiresVal || (cond.value !== null && cond.value !== undefined && cond.value !== '');
+      // For operators that require value, check if value is provided
+      // For operators that don't require value (like 'is null', 'is not null'), field and operator are enough
+      if (!requiresVal) {
+        return true; // Operator doesn't require value, so condition is valid
+      }
+      // Check if value is provided (not null, undefined, or empty string/array)
+      if (Array.isArray(cond.value)) {
+        return cond.value.length > 0; // For array values (enum), check if at least one item is selected
+      }
+      return cond.value !== null && cond.value !== undefined && cond.value !== '';
     });
     return validConditions.length > 0;
   }
