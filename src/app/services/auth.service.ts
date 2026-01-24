@@ -99,7 +99,7 @@ export interface GetCustomFieldDetailsResponse {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
   constructor(private http: HttpClient) {}
 

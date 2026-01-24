@@ -33,7 +33,7 @@ export class SmsSettingsComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/SmsSettings`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SmsSettings`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -61,7 +61,7 @@ export class SmsSettingsComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/SmsSettings/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SmsSettings/form`;
     const recid = data.ID || data.recid || null;
     const { ID, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -111,7 +111,7 @@ export class SmsSettingsComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
-    this.http.post(`${environment.apiUrl}/api/SmsSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SmsSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

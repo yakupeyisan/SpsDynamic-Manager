@@ -43,16 +43,29 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Environment ayarları
   readonly env = environment;
+  readonly activeSettings = environment.settings[environment.setting as keyof typeof environment.settings];
   
-  // Aktif tema için auth ayarları
+  // Aktif ayar için auth ayarları
   get authConfig() {
-    const activeTheme = this.env.theme as keyof typeof this.env.auth;
-    return this.env.auth[activeTheme] || {
-      googleLoginEnabled: false,
-      cloudflareEnabled: false,
-      forgotPasswordEnabled: true,
-      signUpEnabled: false,
-      notificationType: 'mail' as 'mail' | 'sms'
+    const key = this.env.setting as keyof typeof this.env.settings;
+    const activeSettings = this.env.settings[key];
+
+    if (!activeSettings) {
+      return {
+        googleLoginEnabled: false,
+        cloudflareEnabled: false,
+        forgotPasswordEnabled: true,
+        signUpEnabled: false,
+        notificationType: 'mail' as 'mail' | 'sms',
+      };
+    }
+
+    return {
+      googleLoginEnabled: activeSettings.googleLoginEnabled,
+      cloudflareEnabled: activeSettings.cloudflareEnabled,
+      forgotPasswordEnabled: activeSettings.forgotPasswordEnabled,
+      signUpEnabled: activeSettings.signUpEnabled,
+      notificationType: activeSettings.notificationType as 'mail' | 'sms',
     };
   }
   
@@ -82,20 +95,35 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Ordu Üniversitesi logo scriptini yükle
-    // setTimeout ile bir sonraki tick'te çalıştır ki DOM tamamen hazır olsun
-    setTimeout(() => {
+    const loginImage = environment.settings[environment.setting as keyof typeof environment.settings].loginImage;
+
+    //environment.setting değeri ordu ise
+    if (environment.setting === 'ordu') {
       this.loadOrduImageScript();
-    }, 0);
+    } else {
+      //değilse environment.settings[environment.setting as keyof typeof environment.settings].loginImage url'sini kullanarak logo scriptini yükle
+      this.loadLoginImageScript(loginImage);
+
+    }
     
     // View render edildikten sonra Turnstile scriptini yükle (sadece cloudflare enabled ise)
     if (this.authConfig.cloudflareEnabled) {
       this.loadTurnstileScript();
     }
   }
+  loadLoginImageScript(loginImage: string) {
+    // loginImage elementinin hazır olduğundan emin ol
+    const loginImageElement = document.getElementById('randomImage');
+    if (!loginImageElement) {
+      console.warn('loginImage elementi bulunamadı');
+      return;
+    }
+    loginImageElement.setAttribute('src', loginImage);
+  }
 
   loadOrduImageScript() {
     // randomImage elementinin hazır olduğundan emin ol
+
     const imageElement = document.getElementById('randomImage');
     if (!imageElement) {
       console.warn('randomImage elementi bulunamadı');

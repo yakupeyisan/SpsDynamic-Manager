@@ -56,7 +56,7 @@ export class PdksCompanyComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanys`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class PdksCompanyComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/PdksCompanys/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/form`;
     const recid = data.PdksCompanyID || data.recid || null;
     const { PdksCompanyID, recid: _, ...record } = data;
     
@@ -200,7 +200,7 @@ export class PdksCompanyComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/PdksCompanys/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

@@ -56,7 +56,7 @@ export class AccessZonesComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessZones`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessZones`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class AccessZonesComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/AccessZones/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessZones/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     
@@ -189,7 +189,7 @@ export class AccessZonesComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/AccessZones/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessZones/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

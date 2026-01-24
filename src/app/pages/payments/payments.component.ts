@@ -63,7 +63,7 @@ export class PaymentsComponent implements OnInit {
       };
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/Payments`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Payments`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),

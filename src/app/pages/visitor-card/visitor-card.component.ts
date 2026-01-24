@@ -38,12 +38,12 @@ export class VisitorCardComponent implements OnInit {
   enableReportSave: boolean = true;
   reportConfig = {
     grid: 'VisitorCardGrid',
-    url: `${environment.apiUrl}/api/Cards/VisitorCards`,
+    url: `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/VisitorCards`,
   };
 
   tableDataSource = (params: any): Observable<GridResponse> => {
     return this.http
-      .post<GridResponse>(`${environment.apiUrl}/api/Cards/VisitorCards`, {
+      .post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/VisitorCards`, {
         page: params.page || 1,
         limit: params.limit || 10,
         offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -83,7 +83,7 @@ export class VisitorCardComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/Cards/VisitorCards/save`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/VisitorCards/save`;
     const recid = data.CardID || data.recid || null;
     const { CardID, recid: _, ...record } = data;
 
@@ -172,7 +172,7 @@ export class VisitorCardComponent implements OnInit {
     }
 
     this.http
-      .post(`${environment.apiUrl}/api/Cards/VisitorCards/delete`, { Selecteds: selectedIds })
+      .post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/VisitorCards/delete`, { Selecteds: selectedIds })
       .subscribe({
         next: (response: any) => {
           if (response?.error === false || response?.status === 'success') {

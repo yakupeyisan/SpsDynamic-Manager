@@ -85,7 +85,7 @@ export class ProfileComponent implements OnInit {
   updateProfileImage(): void {
     const pictureId = this.currentUser?.['PictureID'];
     if (pictureId) {
-      this.userProfileImage = `${environment.apiUrl}/images/${pictureId}`;
+      this.userProfileImage = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/images/${pictureId}`;
     } else {
       this.userProfileImage = '/assets/images/profile/avaatar.png';
     }

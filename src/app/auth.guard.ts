@@ -25,10 +25,10 @@ export class AuthGuard implements CanActivate {
     
     if (!token) {
       // Token yoksa environment ayarına göre yönlendir
-      if (environment.landingPage === 'login') {
+      if (environment.settings[environment.setting as keyof typeof environment.settings].landingPage === 'login') {
         this.router.navigate(['/authentication/login']);
       } else {
-        this.router.navigate([`/${environment.landingPage}`]);
+        this.router.navigate([`/${environment.settings[environment.setting as keyof typeof environment.settings].landingPage}`]);
       }
       return false;
     }

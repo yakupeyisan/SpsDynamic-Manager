@@ -72,7 +72,7 @@ export class ReportsComponent implements OnInit {
 
   tableDataSource = (params: any): Observable<GridResponse> => {
     return this.http
-      .post<GridResponse>(`${environment.apiUrl}/api/ReportTemplates`, {
+      .post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates`, {
         page: params.page || 1,
         limit: params.limit || 50,
         offset: ((params.page || 1) - 1) * (params.limit || 50),
@@ -164,7 +164,7 @@ export class ReportsComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/ReportTemplates/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response?.status === 'success' || response?.error === false) {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));
@@ -336,7 +336,7 @@ export class ReportsComponent implements OnInit {
 
     try {
       const resp: any = await lastValueFrom(
-        this.http.post<any>(`${environment.apiUrl}/api/Fields`, {
+        this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Fields`, {
           page: 1,
           limit: Math.max(ids.length, 100),
           offset: 0,
@@ -446,7 +446,7 @@ export class ReportsComponent implements OnInit {
     this.isTaskModalLoading = true;
 
     this.http
-      .post<any>(`${environment.apiUrl}/api/ReportTasks/Add`, {
+      .post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTasks/Add`, {
         ReportId: reportId,
         Name: this.taskName.trim(),
         Params: JSON.stringify(params),

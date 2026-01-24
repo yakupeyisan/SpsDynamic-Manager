@@ -66,7 +66,7 @@ export class CardComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -185,7 +185,7 @@ export class CardComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean) => {
-    const url = `${environment.apiUrl}/api/Cards/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/form`;
     const recid = data.CardID || data.recid || null;
     const { CardID, recid: _, ...record } = data;
     
@@ -313,7 +313,7 @@ export class CardComponent implements OnInit {
     );
     
     // API call to update cafeteria groups
-    this.http.post(`${environment.apiUrl}/api/Cards/BulkUpdateCafeteriaGroup`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/BulkUpdateCafeteriaGroup`, {
       CardIDs: cardIds,
       CafeteriaGroupID: this.selectedCafeteriaGroupId
     }).pipe(

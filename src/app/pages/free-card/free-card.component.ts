@@ -61,7 +61,7 @@ export class FreeCardComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/FreeCards`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class FreeCardComponent implements OnInit {
   enableReportSave: boolean = true; // Enable report save feature
   reportConfig = {
     grid: 'FreeCardGrid',
-    url: `${environment.apiUrl}/api/Cards/FreeCards`
+    url: `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards`
   };
 
   // Toolbar configuration
@@ -140,7 +140,7 @@ export class FreeCardComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean) => {
-    const url = `${environment.apiUrl}/api/Cards/FreeCards/save`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards/save`;
     const recid = data.CardID || data.recid || null;
     const { CardID, recid: _, ...record } = data;
     
@@ -197,7 +197,7 @@ export class FreeCardComponent implements OnInit {
         this.cdr.detectChanges();
         
         // Search employees via API
-        return this.http.post<any>(`${environment.apiUrl}/api/Employees/find`, {
+        return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/find`, {
           search: searchTerm.trim(),
           limit: 50, // Limit results to 50
           offset: 0
@@ -355,7 +355,7 @@ export class FreeCardComponent implements OnInit {
     }
 
     // Assign card to employee via API
-    this.http.post(`${environment.apiUrl}/api/Cards/FreeCards/setEmployee`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards/setEmployee`, {
       EmployeeID: this.selectedEmployeeId,
       CardID: cardId
     }).subscribe({
@@ -458,7 +458,7 @@ export class FreeCardComponent implements OnInit {
     }
 
     // Delete via API
-    this.http.post(`${environment.apiUrl}/api/Cards/FreeCards/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards/delete`, {
       Selecteds: selectedIds
     }).subscribe({
       next: (response: any) => {

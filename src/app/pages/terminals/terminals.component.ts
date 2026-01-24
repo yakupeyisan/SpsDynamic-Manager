@@ -44,7 +44,7 @@ export class TerminalsComponent implements OnInit {
   selectedRecords: TableRow[] = [];
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -84,7 +84,7 @@ export class TerminalsComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/Terminals/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/form`;
     const recid = data.ReaderID || data.recid || null;
     const { ReaderID, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -480,7 +480,7 @@ export class TerminalsComponent implements OnInit {
       if (!this.accessPermissionReaderId) {
         return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
       }
-      return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetHasAccessByReaderId`, {
+      return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/GetHasAccessByReaderId`, {
         page: params.page || 1,
         limit: params.limit || 100,
         offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -504,7 +504,7 @@ export class TerminalsComponent implements OnInit {
   }
 
   private loadCafeteriaApplications(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaApplications`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaApplications`, {
       limit: -1,
       offset: 0
     }).pipe(
@@ -657,7 +657,7 @@ export class TerminalsComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
-    this.http.post(`${environment.apiUrl}/api/Terminals/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

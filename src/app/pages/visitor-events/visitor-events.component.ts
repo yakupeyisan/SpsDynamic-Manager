@@ -56,7 +56,7 @@ export class VisitorEventsComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/VisitorEvents`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/VisitorEvents`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class VisitorEventsComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/VisitorEvents/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/VisitorEvents/form`;
     const recid = data.ID || data.recid || null;
     const { ID, recid: _, ...record } = data;
     
@@ -189,7 +189,7 @@ export class VisitorEventsComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/VisitorEvents/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/VisitorEvents/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

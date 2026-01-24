@@ -54,7 +54,7 @@ export class InputOutputReportsComponent implements OnInit {
       };
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/AccessEvents/InputOutputReports`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessEvents/InputOutputReports`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),

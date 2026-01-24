@@ -1,28 +1,28 @@
 export const environment = {
   production: false,
-  // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
-  // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
-  apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
-  // WebSocket URL (otomatik olarak apiUrl'den türetilir, gerekirse manuel ayarlayabilirsiniz)
-  // LiveView için özel WebSocket URL (eski sistem: ws://172.16.1.186:8282)
-  wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir, LiveView için 'ws://172.16.1.186:8282' gibi ayarlanabilir
   
-  // Açılış sayfası ayarı: 'home' veya 'other'
-  // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir
-  // '$1' : açılışha hangi sayfaya yönlendirilmesini istiyorson onun route değerini yaz
-  landingPage: 'login', // 'login' veya '$1'
+  // Aktif ayar adı
+  setting: 'development',
   
-  // Aktif tema adı
-  theme: 'ordu',
-  
-  // Logo URL
-  logoUrl: '/assets/images/logos/logo-ordu.png',
-  // Logo URL for Login page
-  logoUrlLogin: '/assets/images/logos/logo-ordu-login.png',
   
   // Authentication ayarları
-  auth: {
+  settings: {
     ordu: {
+      // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
+      // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
+      apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
+      // WebSocket URL (otomatik olarak apiUrl'den türetilir, gerekirse manuel ayarlayabilirsiniz)
+      // LiveView için özel WebSocket URL (eski sistem: ws://172.16.1.186:8282)
+      wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir, LiveView için 'ws://172.16.1.186:8282' gibi ayarlanabilir
+      
+      // Açılış sayfası ayarı: 'home' veya 'other'
+      // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir
+      // '$1' : açılışha hangi sayfaya yönlendirilmesini istiyorson onun route değerini yaz
+      landingPage: 'login', // 'login' veya '$1'
+      // Logo URL
+      logoUrl: '/assets/images/logos/logo-ordu.png',
+      // Logo URL for Login page
+      logoUrlLogin: '/assets/images/logos/logo-ordu-login.png',
       // Google ile login aktif mi
       googleLoginEnabled: false,
       
@@ -37,6 +37,20 @@ export const environment = {
       
       // Bildirim tipi: 'mail' veya 'sms'
       notificationType: 'sms', // 'mail' | 'sms'
+      loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
+    },
+    development: {
+      apiUrl: 'http://localhost',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-technolife.png',
+      logoUrlLogin: '/assets/images/logos/logo-technolife-login.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'sms',
+      loginImage: '',
     }
   },
   

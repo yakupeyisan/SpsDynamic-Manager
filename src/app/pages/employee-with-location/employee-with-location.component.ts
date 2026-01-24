@@ -32,7 +32,7 @@ export class EmployeeWithLocationComponent implements OnInit {
   formDataMapper = (data: any) => data;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Employees/WithLocation`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/WithLocation`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -51,7 +51,7 @@ export class EmployeeWithLocationComponent implements OnInit {
       catchError(error => {
         console.error('Error loading employees with location:', error);
         // Fallback: Try regular Employees endpoint if WithLocation doesn't exist
-        return this.http.post<GridResponse>(`${environment.apiUrl}/api/Employees`, {
+        return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees`, {
           page: params.page || 1,
           limit: params.limit || 100,
           offset: ((params.page || 1) - 1) * (params.limit || 100),

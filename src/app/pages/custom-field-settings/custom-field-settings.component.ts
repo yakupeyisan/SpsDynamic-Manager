@@ -56,7 +56,7 @@ export class CustomFieldSettingsComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/CustomFieldSettings`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CustomFieldSettings`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class CustomFieldSettingsComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/CustomFieldSettings/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CustomFieldSettings/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     
@@ -200,7 +200,7 @@ export class CustomFieldSettingsComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/CustomFieldSettings/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CustomFieldSettings/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

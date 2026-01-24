@@ -56,7 +56,7 @@ export class SubscriptionPackagesComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/SubscriptionPackages`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SubscriptionPackages`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class SubscriptionPackagesComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/SubscriptionPackages/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SubscriptionPackages/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     
@@ -189,7 +189,7 @@ export class SubscriptionPackagesComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/SubscriptionPackages/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SubscriptionPackages/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

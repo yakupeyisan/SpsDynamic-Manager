@@ -34,7 +34,7 @@ import { environment } from 'src/environments/environment';
 })
 export class BrandingComponent {
   options = this.settings.getOptions();
-  readonly logoUrl = environment.logoUrl;
+  readonly logoUrl = environment.settings[environment.setting as keyof typeof environment.settings].logoUrl;
   
   constructor(private settings: CoreService) {} 
 }

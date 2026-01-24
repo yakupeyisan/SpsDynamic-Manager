@@ -4,7 +4,7 @@
 import { environment } from 'src/environments/environment';
 import { TableColumn, ColumnType, FormTab, JoinOption } from 'src/app/components/data-table/data-table.component';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // Custom form fields for add/edit form
 export const formFields: TableColumn[] = [

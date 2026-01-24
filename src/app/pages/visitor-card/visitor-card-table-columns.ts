@@ -2,7 +2,7 @@
 import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
 import { environment } from 'src/environments/environment';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 export const tableColumns: TableColumn[] = [
   {

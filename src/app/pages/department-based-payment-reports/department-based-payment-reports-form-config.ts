@@ -40,7 +40,7 @@ export const formTabs: FormTab[] = [
   }
 ];
 
-export const formLoadUrl = `${environment.apiUrl}/api/CafeteriaEvents/DepartmentBasedPayments`;
+export const formLoadUrl = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/DepartmentBasedPayments`;
 export const formLoadRequest = (recid: any) => ({
   recid: recid
 });

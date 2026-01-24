@@ -56,7 +56,7 @@ export class CafeteriaAccountsComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaAccounts`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaAccounts`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -101,7 +101,7 @@ export class CafeteriaAccountsComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/CafeteriaAccounts/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaAccounts/form`;
     const recid = data.ID || data.recid || null;
     const { ID, recid: _, ...record } = data;
     
@@ -189,7 +189,7 @@ export class CafeteriaAccountsComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/CafeteriaAccounts/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaAccounts/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds

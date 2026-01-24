@@ -2546,7 +2546,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       type: cond.type
     }));
 
-    this.http.post(`${environment.apiUrl}/api/ReportTemplates/form`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates/form`, {
       request: {
         action: 'save',
         recid: null,

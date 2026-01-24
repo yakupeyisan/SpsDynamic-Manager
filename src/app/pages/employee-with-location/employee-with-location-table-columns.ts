@@ -2,7 +2,7 @@
 import { environment } from 'src/environments/environment';
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // Helper function to render inOUT field (Giriş/Çıkış)
 function renderInOut(record: TableRow): string {

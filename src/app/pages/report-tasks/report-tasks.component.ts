@@ -35,7 +35,7 @@ export class ReportTasksComponent implements OnInit {
 
   tableDataSource = (params: any): Observable<GridResponse> => {
     return this.http
-      .post<GridResponse>(`${environment.apiUrl}/api/ReportTasks`, {
+      .post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTasks`, {
         page: params.page || 1,
         limit: params.limit || 50,
         offset: ((params.page || 1) - 1) * (params.limit || 50),
@@ -75,7 +75,7 @@ export class ReportTasksComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/ReportTasks/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTasks/form`;
     const recid = data.Id || data.ID || data.recid || null;
     const record = {
       Name: data?.Name,
@@ -146,7 +146,7 @@ export class ReportTasksComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/ReportTasks/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTasks/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response?.status === 'success' || response?.error === false) {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

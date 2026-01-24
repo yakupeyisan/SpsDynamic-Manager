@@ -239,7 +239,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     ];
     
     // Try to load from API (optional - if endpoint exists)
-    this.http.post<any>(`${environment.apiUrl}/api/CardTemplates/GetFieldList`, {}).pipe(
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardTemplates/GetFieldList`, {}).pipe(
       catchError(() => {
         // Silently fail - use default options
         return of(null);
@@ -260,7 +260,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   }
 
   loadTemplate(id: number): void {
-    this.http.post<any>(`${environment.apiUrl}/api/CardTemplates/form`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardTemplates/form`, {
       request: {
         action: 'get',
         recid: id,
@@ -1085,7 +1085,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     const templateDataJson = JSON.stringify(saveData);
     
     // Save to API
-    this.http.post<any>(`${environment.apiUrl}/api/CardTemplates/form`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardTemplates/form`, {
       request: {
         action: 'save',
         recid: this.templateId || null,

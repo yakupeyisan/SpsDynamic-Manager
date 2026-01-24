@@ -33,6 +33,7 @@ import { TranslateModule } from '@ngx-translate/core';
 export class AppSideForgotPasswordComponent implements AfterViewInit {
   options = this.settings.getOptions();
   readonly env = environment;
+  readonly activeSettings = environment.settings[environment.setting as keyof typeof environment.settings];
   isLoading: boolean = false;
   isSuccess: boolean = false;
   step: number = 1; // 1: Kimlik numarası girme, 2: Kod ve şifre girme

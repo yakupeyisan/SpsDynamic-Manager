@@ -33,7 +33,7 @@ export class EmployeeTransferListComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/EmployeeTransferList`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/EmployeeTransferList`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),

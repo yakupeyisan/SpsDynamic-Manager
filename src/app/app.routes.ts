@@ -745,7 +745,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: environment.landingPage === 'login' ? '/authentication/login' : `/${environment.landingPage}`,
+        redirectTo: environment.settings[environment.setting as keyof typeof environment.settings].landingPage === 'login' ? '/authentication/login' : `/${environment.settings[environment.setting as keyof typeof environment.settings].landingPage}`,
         pathMatch: 'full',
       },
       {

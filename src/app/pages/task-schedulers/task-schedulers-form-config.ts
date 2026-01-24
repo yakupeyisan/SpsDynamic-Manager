@@ -2,7 +2,7 @@
 import { environment } from 'src/environments/environment';
 import { TableColumn, ColumnType, FormTab } from 'src/app/components/data-table/data-table.component';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 const monthOptions = [
   { label: 'Ocak', value: '1' },

@@ -134,7 +134,7 @@ export class LocationBasedDailyReportsComponent implements OnInit {
       };
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/LocationBasedDailyPass`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/LocationBasedDailyPass`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -191,7 +191,7 @@ export class LocationBasedDailyReportsComponent implements OnInit {
   }
 
   private loadTerminals(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals`, {
       limit: -1,
       offset: 0
     }).pipe(

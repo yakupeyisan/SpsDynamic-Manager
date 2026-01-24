@@ -81,7 +81,7 @@ export class CafeteriaSummaryComponent implements OnInit {
       processedSearch = [];
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/Summary`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/Summary`, {
       page: params.page || 1,
       limit: params.limit || 50,
       offset: ((params.page || 1) - 1) * (params.limit || 50),

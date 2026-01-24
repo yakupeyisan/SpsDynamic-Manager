@@ -33,7 +33,7 @@ export class HesSettingsComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/HesSettings`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/HesSettings`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -61,7 +61,7 @@ export class HesSettingsComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/HesSettings/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/HesSettings/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -111,7 +111,7 @@ export class HesSettingsComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
-    this.http.post(`${environment.apiUrl}/api/HesSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/HesSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

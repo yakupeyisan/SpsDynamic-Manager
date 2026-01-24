@@ -2,7 +2,7 @@
 import { environment } from 'src/environments/environment';
 import { TableColumn, ColumnType, TableRow, TableColumnGroup } from 'src/app/components/data-table/data-table.component';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // Helper function to get first entry event from InEvent array
 function getFirstEntry(record: TableRow): any {

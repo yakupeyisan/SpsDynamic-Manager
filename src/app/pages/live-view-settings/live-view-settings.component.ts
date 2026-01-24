@@ -42,7 +42,7 @@ export class LiveViewSettingsComponent implements OnInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/LiveViewSettings`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LiveViewSettings`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -88,7 +88,7 @@ export class LiveViewSettingsComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/LiveViewSettings/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LiveViewSettings/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -166,7 +166,7 @@ export class LiveViewSettingsComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
-    this.http.post(`${environment.apiUrl}/api/LiveViewSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LiveViewSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));
@@ -234,7 +234,7 @@ export class LiveViewSettingsComponent implements OnInit {
     if (!this.liveViewSettingIdForTerminals) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
       LiveViewSettingId: this.liveViewSettingIdForTerminals,
       limit: params.limit || 100,
       offset: params.offset || 0
@@ -256,7 +256,7 @@ export class LiveViewSettingsComponent implements OnInit {
     if (!this.liveViewSettingIdForTerminals) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetUnSelectedByLiveViewSettingId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetUnSelectedByLiveViewSettingId`, {
       LiveViewSettingId: this.liveViewSettingIdForTerminals,
       limit: params.limit || 100,
       offset: params.offset || 0
@@ -296,7 +296,7 @@ export class LiveViewSettingsComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/AppendLiveViewSettingId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/AppendLiveViewSettingId`, {
       Selecteds: selectedIds,
       LiveViewSettingId: this.liveViewSettingIdForTerminals
     }).subscribe({
@@ -347,7 +347,7 @@ export class LiveViewSettingsComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/RemoveListLiveViewSettingId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/RemoveListLiveViewSettingId`, {
       Selecteds: selectedIds,
       LiveViewSettingId: this.liveViewSettingIdForTerminals
     }).subscribe({

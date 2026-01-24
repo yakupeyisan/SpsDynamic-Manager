@@ -57,7 +57,7 @@ export class TaskSchedulersComponent implements OnInit {
 
   tableDataSource = (params: any): Observable<GridResponse> => {
     return this.http
-      .post<GridResponse>(`${environment.apiUrl}/api/TaskSchedulers`, {
+      .post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TaskSchedulers`, {
         page: params.page || 1,
         limit: params.limit || 100,
         offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -97,7 +97,7 @@ export class TaskSchedulersComponent implements OnInit {
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/TaskSchedulers/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TaskSchedulers/form`;
     const recid = data.Id || data.ID || data.recid || null;
     const { Id, ID, recid: _, ...record } = data;
 
@@ -231,7 +231,7 @@ export class TaskSchedulersComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/TaskSchedulers/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TaskSchedulers/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response?.status === 'success' || response?.error === false) {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

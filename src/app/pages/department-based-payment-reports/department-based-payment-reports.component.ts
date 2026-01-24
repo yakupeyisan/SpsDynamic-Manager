@@ -86,7 +86,7 @@ export class DepartmentBasedPaymentReportsComponent implements OnInit {
       processedSearch = [];
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/DepartmentBasedPayments`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/DepartmentBasedPayments`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),

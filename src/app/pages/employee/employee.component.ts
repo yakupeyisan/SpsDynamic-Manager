@@ -151,7 +151,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Employees`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -275,7 +275,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         return (params: any) => {
           const requestBody = params;
           
-          return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetCardsByEmployeeID`, requestBody).pipe(
+          return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/GetCardsByEmployeeID`, requestBody).pipe(
             map((response: GridResponse) => ({
               status: 'success' as const,
               total: response.total || (response.records ? response.records.length : 0),
@@ -301,7 +301,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
           
           //console.log('EmployeeAccessGroupReaders API request:', requestBody);
           
-          return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroupReaders/GetReadersByAccessGroups`, requestBody).pipe(
+          return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroupReaders/GetReadersByAccessGroups`, requestBody).pipe(
             map((response: GridResponse) => ({
               status: 'success' as const,
               total: response.total || (response.records ? response.records.length : 0),
@@ -322,7 +322,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
           const requestBody = params;
           //console.log('EmployeeHistories API request:', requestBody);
           
-          return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanyHistories/EmployeeHistories`, requestBody).pipe(
+          return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanyHistories/EmployeeHistories`, requestBody).pipe(
             map((response: GridResponse) => ({
               status: 'success' as const,
               total: response.total || (response.records ? response.records.length : 0),
@@ -342,7 +342,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         return (params: any) => {
           const requestBody = params;
           
-          return this.http.post<GridResponse>(`${environment.apiUrl}/api/SubscriptionEvents/GetAllByCardTagCode`, requestBody).pipe(
+          return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SubscriptionEvents/GetAllByCardTagCode`, requestBody).pipe(
             map((response: GridResponse) => ({
               status: 'success' as const,
               total: response.total || (response.records ? response.records.length : 0),
@@ -365,7 +365,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
   // Save callback
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/Employees/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/form`;
     const recid = data.EmployeeID || data.recid || null;
     const { EmployeeID, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -484,7 +484,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Employees/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds
@@ -760,7 +760,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to update departments
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateDepartment`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateDepartment`, {
       EmployeeIDs: employeeIds,
       DepartmentIDs: this.selectedDepartmentIds
     }).pipe(
@@ -797,7 +797,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
     );
 
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateScoring`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateScoring`, {
       EmployeeIDs: employeeIds,
       Scoring: this.scoringEnabled
     }).pipe(
@@ -855,7 +855,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to update access groups
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateAccessGroup`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateAccessGroup`, {
       EmployeeIDs: employeeIds,
       AccessGroupIDs: this.selectedAccessGroupIds
     }).pipe(
@@ -913,7 +913,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to update companies
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateCompany`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateCompany`, {
       EmployeeIDs: employeeIds,
       CompanyID: this.selectedCompanyId
     }).pipe(
@@ -971,7 +971,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to update positions
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdatePosition`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdatePosition`, {
       EmployeeIDs: employeeIds,
       PositionID: this.selectedPositionId
     }).pipe(
@@ -1030,7 +1030,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to update web client access
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkUpdateWebClient`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateWebClient`, {
       EmployeeIDs: employeeIds,
       WebClient: this.webClientEnabled,
       WebClientAuthorizationId: this.webClientEnabled ? this.selectedWebClientAuthorizationId : null
@@ -1083,7 +1083,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to reset passwords
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkResetPassword`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkResetPassword`, {
       EmployeeIDs: employeeIds
     }).pipe(
       catchError(error => {
@@ -1208,7 +1208,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to send SMS
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkSendSms`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkSendSms`, {
       EmployeeIDs: employeeIds,
       Message: this.smsMessage.trim()
     }).pipe(
@@ -1280,7 +1280,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
     
     // API call to send mail
-    this.http.post(`${environment.apiUrl}/api/Employees/BulkSendMail`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkSendMail`, {
       EmployeeIDs: employeeIds,
       Subject: this.mailSubject.trim(),
       Message: this.mailMessage.trim()
@@ -1667,7 +1667,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.readers = [];
     this.readerStatuses.clear();
     
-    const url = `${environment.apiUrl}/api/Terminals/GetDefinitionReaders`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetDefinitionReaders`;
     
     this.http.post<any>(url, {}).pipe(
       catchError(error => {
@@ -1920,7 +1920,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     }
 
     //console.log('Loading card details for IDs:', this.selectedCardIdsForFormat);
-    const url = `${environment.apiUrl}/api/Cards`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards`;
     
     // Use the same format as Card component - with proper search structure
     const requestBody = {
@@ -2109,7 +2109,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
     console.log('Transfer edilecek kart ID\'leri:', selectedCardIds);
     // TODO: Transfer API'sine gönder
-    // Örnek: this.http.post(`${environment.apiUrl}/api/Cards/Transfer`, { CardIDs: selectedCardIds })
+    // Örnek: this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/Transfer`, { CardIDs: selectedCardIds })
   }
 
   onCardReset(event: MouseEvent, item: any) {
@@ -2124,7 +2124,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
 
     console.log('Sıfırlanacak kart ID\'leri:', selectedCardIds);
     // TODO: Sıfırla API'sine gönder
-    // Örnek: this.http.post(`${environment.apiUrl}/api/Cards/Reset`, { CardIDs: selectedCardIds })
+    // Örnek: this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/Reset`, { CardIDs: selectedCardIds })
   }
 
   /**
@@ -2191,7 +2191,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const url = `${environment.apiUrl}/api/Cards/CloseAndClone`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/CloseAndClone`;
     const payload = {
       CardID: cardId,
       CardDesc: this.closeAndCloneCardDesc.trim()
@@ -2280,7 +2280,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const url = `${environment.apiUrl}/api/CafeteriaEvents/GetTotalBalanceWithAccountIdAndEmployeeId`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/GetTotalBalanceWithAccountIdAndEmployeeId`;
     const payload = {
       EmployeeID: employeeId,
       AccountId: accountId
@@ -2335,7 +2335,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
    * Load custom field settings from API and update columns
    */
   private loadCustomFieldSettings(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/CustomFieldSettings`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CustomFieldSettings`, {
       limit: -1,
       offset: 0
     }).pipe(

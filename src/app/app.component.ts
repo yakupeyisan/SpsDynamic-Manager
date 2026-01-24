@@ -36,7 +36,8 @@ export class AppComponent implements OnInit {
 
   private applyThemeColors(): void {
     const htmlElement = this.document.documentElement;
-    const activeThemeName = environment.theme as keyof typeof environment.themes;
+    // Theme seçimi artık environment.setting üzerinden yapılıyor
+    const activeThemeName = environment.setting as keyof typeof environment.themes;
     const theme = environment.themes[activeThemeName];
     
     if (!theme) {

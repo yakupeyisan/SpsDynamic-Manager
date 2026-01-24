@@ -105,7 +105,7 @@ export class TerminalTariffsComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/TerminalTariffs`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TerminalTariffs`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -167,7 +167,7 @@ export class TerminalTariffsComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/TerminalTariffs/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TerminalTariffs/form`;
     const recid = data.TariffID || data.recid || null;
     const { TariffID, recid: _, ...record } = data;
     
@@ -249,7 +249,7 @@ export class TerminalTariffsComponent implements OnInit {
   }
 
   private loadCafeteriaApplications(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaApplications`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaApplications`, {
       limit: -1,
       offset: 0
     }).pipe(
@@ -379,7 +379,7 @@ export class TerminalTariffsComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/TerminalTariffs/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TerminalTariffs/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds
@@ -454,7 +454,7 @@ export class TerminalTariffsComponent implements OnInit {
 
   // Load dropdown options
   private loadCafeteriaGroups(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/CafeteriaGroups`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaGroups`, {
       limit: -1,
       offset: 0
     }).pipe(
@@ -474,7 +474,7 @@ export class TerminalTariffsComponent implements OnInit {
   }
 
   private loadTerminals(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals`, {
       limit: -1,
       offset: 0
     }).pipe(
@@ -498,7 +498,7 @@ export class TerminalTariffsComponent implements OnInit {
     if (this.bulkDefinitionForm.valid) {
       const formData = this.bulkDefinitionForm.value;
       // TODO: Implement bulk definition API call
-      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/bulk`, {
+      this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TerminalTariffs/bulk`, {
         request: {
           action: 'bulk',
           record: formData
@@ -529,7 +529,7 @@ export class TerminalTariffsComponent implements OnInit {
     if (this.copySettingsForm.valid) {
       const formData = this.copySettingsForm.value;
       // API call to clone terminal tariff
-      this.http.post(`${environment.apiUrl}/api/TerminalTariffs/Clone`, {
+      this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TerminalTariffs/Clone`, {
         SourceReaderID: formData.SourceReaderID,
         TargetReaderID: formData.TargetReaderID
       }).pipe(

@@ -95,7 +95,7 @@ export class ErrorLogsComponent implements OnInit {
       processedSearch = [];
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/LogError`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LogError`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),

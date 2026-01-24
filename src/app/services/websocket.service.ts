@@ -43,11 +43,11 @@ export class WebSocketService {
       
       // Use wsUrl if provided, otherwise derive from apiUrl
       let wsUrl: string;
-      if (environment.wsUrl) {
-        wsUrl = environment.wsUrl;
+      if (environment.settings[environment.setting as keyof typeof environment.settings].wsUrl) {
+        wsUrl = environment.settings[environment.setting as keyof typeof environment.settings].wsUrl;
       } else {
         // Convert http:// to ws:// or https:// to wss://
-        wsUrl = environment.apiUrl
+        wsUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl
           .replace('http://', 'ws://')
           .replace('https://', 'wss://');
       }

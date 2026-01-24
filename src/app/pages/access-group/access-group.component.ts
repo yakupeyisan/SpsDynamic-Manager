@@ -130,7 +130,7 @@ export class AccessGroupComponent implements OnInit {
   
   // Data source function for table
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroups`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -187,7 +187,7 @@ export class AccessGroupComponent implements OnInit {
 
   // Save handler
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/AccessGroups/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/form`;
     const recid = data.AccessGroupID || data.Id || data.recid || null;
     const { AccessGroupID, Id, recid: _, ...record } = data;
     
@@ -286,7 +286,7 @@ export class AccessGroupComponent implements OnInit {
     }
 
     // Call delete API
-    this.http.post(`${environment.apiUrl}/api/AccessGroups/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/delete`, {
       request: {
         action: 'delete',
         recid: selectedIds
@@ -420,7 +420,7 @@ export class AccessGroupComponent implements OnInit {
     if (!this.accessGroupIdForDoors) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetSelectedByAccessGroupID`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByAccessGroupID`, {
       limit: params.limit || 100,
       offset: params.offset || 0,
       AccessGroupID: this.accessGroupIdForDoors
@@ -442,7 +442,7 @@ export class AccessGroupComponent implements OnInit {
     if (!this.accessGroupIdForDoors) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetUnSelectedByAccessGroupID`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetUnSelectedByAccessGroupID`, {
       limit: params.limit || 100,
       offset: params.offset || 0,
       AccessGroupID: this.accessGroupIdForDoors
@@ -482,7 +482,7 @@ export class AccessGroupComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/AppendAccessGroupID`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/AppendAccessGroupID`, {
       Selecteds: selectedIds,
       AccessGroupID: this.accessGroupIdForDoors
     }).subscribe({
@@ -533,7 +533,7 @@ export class AccessGroupComponent implements OnInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/RemoveListAccessGroupID`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/RemoveListAccessGroupID`, {
       Selecteds: selectedIds,
       AccessGroupID: this.accessGroupIdForDoors
     }).subscribe({

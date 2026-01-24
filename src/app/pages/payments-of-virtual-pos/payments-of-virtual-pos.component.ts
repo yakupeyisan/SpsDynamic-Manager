@@ -64,7 +64,7 @@ export class PaymentsOfVirtualPosComponent implements OnInit {
       };
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/PaymentOfVirtualPos`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PaymentOfVirtualPos`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -198,7 +198,7 @@ export class PaymentsOfVirtualPosComponent implements OnInit {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/PaymentLogs`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PaymentLogs`, {
       page: params.page || 1,
       limit: params.limit || 1000,
       offset: ((params.page || 1) - 1) * (params.limit || 1000),
@@ -321,7 +321,7 @@ export class PaymentsOfVirtualPosComponent implements OnInit {
       return record?.['PaymentId'] || id;
     });
 
-    this.http.post<any>(`${environment.apiUrl}/api/Banks/CheckPayments`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Banks/CheckPayments`, {
       Selecteds: selectedIds
     }).pipe(
       catchError(error => {

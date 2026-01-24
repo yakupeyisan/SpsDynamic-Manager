@@ -202,7 +202,7 @@ export interface EventsForGraphResponse {
   providedIn: 'root',
 })
 export class CafeteriaAccountsService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
   constructor(private http: HttpClient) {}
 

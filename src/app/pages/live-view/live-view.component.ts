@@ -282,7 +282,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
    * Load LiveView settings for filter
    */
   private loadLiveViewSettings(): void {
-    this.http.post<GridResponse>(`${environment.apiUrl}/api/LiveViewSettings`, {
+    this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LiveViewSettings`, {
       limit: -1,
       offset: 0
     }).pipe(
@@ -342,7 +342,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     }
 
     // Load terminals for selected live view setting (just for display)
-    this.http.post<any>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
       LiveViewSettingId: this.selectedLiveViewSettingId
     }).pipe(
       map((response: any) => {
@@ -409,7 +409,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     }
 
     // Load terminals for selected live view setting (like old system onSave)
-    this.http.post<any>(`${environment.apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
       LiveViewSettingId: this.selectedLiveViewSettingId
     }).pipe(
       map((response: any) => {

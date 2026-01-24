@@ -2,7 +2,7 @@
 import { TableColumn, ColumnType, FormTab, TableRow } from 'src/app/components/data-table/data-table.component';
 import { environment } from 'src/environments/environment';
 
-const apiUrl = environment.apiUrl;
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // Helper function to get employee from PaymentOfVirtualPos or CafeteriaEvent
 const getEmployee = (record: TableRow): any => {

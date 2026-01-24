@@ -65,7 +65,7 @@ export class CafeteriaEventsComponent implements OnInit {
       };
     }
     
-    return this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents`, {
+    return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents`, {
       page: params.page || 1,
       limit: params.limit || 100,
       offset: ((params.page || 1) - 1) * (params.limit || 100),
@@ -202,7 +202,7 @@ export class CafeteriaEventsComponent implements OnInit {
     const selecteds = this.selectedEventsForCancel.map(event => event['CafeteriaEventID']);
     
     // Send single request with Selecteds array and Description
-    this.http.post<any>(`${environment.apiUrl}/api/CafeteriaEvents/Cancel`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CafeteriaEvents/Cancel`, {
       Selecteds: selecteds,
       Description: this.cancelDescription.trim()
     }).pipe(

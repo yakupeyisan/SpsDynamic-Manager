@@ -75,7 +75,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
   formDataMapper = formDataMapper;
   
   tableDataSource = (params: any) => {
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Authorizations`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations`, {
       page: params.page || 1,
       limit: params.limit || 10,
       offset: ((params.page || 1) - 1) * (params.limit || 10),
@@ -421,7 +421,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
 
     // First, check if a record exists in AuthorizationSecureFields
     // Get the existing permission record ID if it exists
-    this.http.post<any>(`${environment.apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
       limit: -1,
       offset: 0,
       AuthorizationId: this.authorizationIdForPermissions
@@ -471,7 +471,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
         }
 
         // Send update/create request
-        this.http.post(`${environment.apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, request).subscribe({
+        this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, request).subscribe({
           next: (updateResponse: any) => {
             if (updateResponse.error === false || updateResponse.status === 'success') {
               // Update the row data immediately to reflect the change
@@ -510,7 +510,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     }
     
     // First, get all SecureFields
-    const allSecureFieldsRequest = this.http.post<any>(`${environment.apiUrl}/api/SecureFields`, {
+    const allSecureFieldsRequest = this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields`, {
       page: 1,
       limit: -1,
       offset: 0
@@ -534,7 +534,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     );
     
     // Then, get authorization-specific permissions
-    const authorizationPermissionsRequest = this.http.post<any>(`${environment.apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
+    const authorizationPermissionsRequest = this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/GetAllByAuthorizationId`, {
       limit: -1,
       offset: 0,
       AuthorizationId: this.authorizationIdForPermissions
@@ -621,7 +621,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     }
 
     const formValue = this.secureFieldForm.value;
-    this.http.post(`${environment.apiUrl}/api/SecureFields/form`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/form`, {
       request: {
         action: 'save',
         recid: null,
@@ -673,7 +673,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/SecureFields/delete`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/delete`, {
       request: { action: 'delete', recid: selectedIds }
     }).subscribe({
       next: (response: any) => {
@@ -700,7 +700,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/SecureFields/UpdateAuthorizationPermission`, {
       SecureFieldId: secureFieldId,
       AuthorizationId: this.authorizationIdForPermissions,
       Field: field,
@@ -735,7 +735,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/OperationClaims/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/OperationClaims/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -759,7 +759,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/OperationClaims/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/OperationClaims/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -801,7 +801,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/OperationClaims/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/OperationClaims/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -850,7 +850,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/OperationClaims/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/OperationClaims/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -952,7 +952,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanys/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -976,7 +976,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksCompanys/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1018,7 +1018,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/PdksCompanys/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1069,7 +1069,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/PdksCompanys/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksCompanys/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1128,7 +1128,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksStaffs/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksStaffs/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1152,7 +1152,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/PdksStaffs/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksStaffs/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1194,7 +1194,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/PdksStaffs/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksStaffs/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1245,7 +1245,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/PdksStaffs/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/PdksStaffs/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1304,7 +1304,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Departments/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Departments/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1328,7 +1328,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Departments/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Departments/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1370,7 +1370,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Departments/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Departments/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1421,7 +1421,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Departments/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Departments/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1480,7 +1480,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1504,7 +1504,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Cards/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1546,7 +1546,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Cards/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1597,7 +1597,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Cards/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1630,7 +1630,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroups/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1654,7 +1654,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/AccessGroups/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1696,7 +1696,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/AccessGroups/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1747,7 +1747,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/AccessGroups/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1780,7 +1780,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1804,7 +1804,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     if (!this.authorizationIdForPermissions) {
       return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
     }
-    return this.http.post<GridResponse>(`${environment.apiUrl}/api/Terminals/GetUnSelectedByAuthorizationId`, {
+    return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetUnSelectedByAuthorizationId`, {
       request: {
         limit: params.limit || 100,
         offset: params.offset || 0,
@@ -1846,7 +1846,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/AppendAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/AppendAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -1897,7 +1897,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post(`${environment.apiUrl}/api/Terminals/RemoveListAuthorizationId`, {
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/RemoveListAuthorizationId`, {
       Selecteds: selectedIds,
       AuthorizationId: this.authorizationIdForPermissions
     }).subscribe({
@@ -2081,7 +2081,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
   ];
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
-    const url = `${environment.apiUrl}/api/Authorizations/form`;
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations/form`;
     const recid = data.Id || data.recid || null;
     const { Id, recid: _, ...record } = data;
     return this.http.post(url, {
@@ -2194,7 +2194,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
-    this.http.post(`${environment.apiUrl}/api/Authorizations/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
           this.toastr.success(this.translate.instant('common.deleteSuccess'), this.translate.instant('common.success'));

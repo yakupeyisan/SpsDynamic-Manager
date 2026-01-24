@@ -168,7 +168,7 @@ export class HeaderComponent implements OnInit {
     // Set profile image (API'den PictureID geliyor, format: http://localhost/images/{PictureID})
     const pictureId = this.currentUser['PictureID'];
     if (pictureId) {
-      this.userProfileImage = `${environment.apiUrl}/images/${pictureId}`;
+      this.userProfileImage = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/images/${pictureId}`;
     } else {
       this.userProfileImage = '/assets/images/profile/avaatar.png'; // Default image
     }
