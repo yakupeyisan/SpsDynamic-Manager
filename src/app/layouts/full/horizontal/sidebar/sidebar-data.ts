@@ -34,6 +34,10 @@ export const navItems: NavItem[] = [
         displayName: 'Kullanılan Geçici Kartlar',
         route: '/UsedAvailableCard',
       },
+      {
+        displayName: 'Ziyaretçi Kartları',
+        route: '/VisitorCard',
+      },
     ]
   },
   {

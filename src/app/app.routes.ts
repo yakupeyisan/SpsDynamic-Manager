@@ -161,6 +161,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'VisitorCard',
+        loadComponent: () =>
+          import('./pages/visitor-card/visitor-card.component').then(
+            (m) => m.VisitorCardComponent
+          ),
+        data: {
+          title: 'Ziyaretçi Kartları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'PdksCompany',
         loadComponent: () =>
           import('./pages/pdks-company/pdks-company.component').then(
@@ -503,6 +514,39 @@ export const routes: Routes = [
           ),
         data: {
           title: 'Otomat Kayıtları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'Reports',
+        loadComponent: () =>
+          import('./pages/reports/reports.component').then(
+            (m) => m.ReportsComponent
+          ),
+        data: {
+          title: 'Rapor Şablonları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'ReportTasks',
+        loadComponent: () =>
+          import('./pages/report-tasks/report-tasks.component').then(
+            (m) => m.ReportTasksComponent
+          ),
+        data: {
+          title: 'Raporlar',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'TaskSchedulers',
+        loadComponent: () =>
+          import('./pages/task-schedulers/task-schedulers.component').then(
+            (m) => m.TaskSchedulersComponent
+          ),
+        data: {
+          title: 'Zamanlanmış Görevler',
           breadcrumb: false,
         },
       },

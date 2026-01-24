@@ -159,7 +159,7 @@
         *ngIf="(enableReportSave && hasValidFilters)" 
         variant="secondary" 
         size="sm" 
-        (clicked)="openReportSaveModal()"
+        (clicked)="requestSaveReport()"
         class="ui-filter-save-report-btn">
         <i class="ti ti-file-text me-1"></i>
         {{ translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet' }}
@@ -170,44 +170,3 @@
     </div>
   </div>
 </div>
-
-<!-- Report Save Modal -->
-<ui-modal
-  [show]="showReportSaveModal"
-  [title]="translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet'"
-  [size]="'md'"
-  [closable]="true"
-  [showFooter]="true"
-  (showChange)="showReportSaveModal = $event"
-  (closed)="closeReportSaveModal()">
-  
-  <div class="ui-report-save-modal-content">
-    <div class="form-group">
-      <label class="form-label">
-        <i class="ti ti-file-text me-1"></i>
-        {{ translate.instant('filter.reportName') || 'Rapor Adı' }}
-      </label>
-      <ui-input
-        [(ngModel)]="reportName"
-        [placeholder]="translate.instant('filter.enterReportName') || 'Rapor adı giriniz...'"
-        (keyup.enter)="saveReport()">
-      </ui-input>
-    </div>
-    
-    <div class="alert alert-info">
-      <i class="ti ti-info-circle me-2"></i>
-      {{ translate.instant('filter.reportSaveInfo') || 'Mevcut filtreler rapor şablonu olarak kaydedilecektir.' }}
-    </div>
-  </div>
-  
-  <div slot="footer" class="modal-footer">
-    <ui-button variant="secondary" size="sm" (clicked)="closeReportSaveModal()">
-      <i class="ti ti-x me-1"></i>
-      {{ translate.instant('common.cancel') || 'İptal' }}
-    </ui-button>
-    <ui-button variant="primary" size="sm" (clicked)="saveReport()" [disabled]="!reportName || !reportName.trim()">
-      <i class="ti ti-check me-1"></i>
-      {{ translate.instant('common.save') || 'Kaydet' }}
-    </ui-button>
-  </div>
-</ui-modal>

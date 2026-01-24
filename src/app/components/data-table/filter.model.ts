@@ -21,6 +21,11 @@ export interface FilterCondition {
   field: string;
   operator: FilterOperator;
   value: any;
+  /**
+   * Optional value type for API-side filtering (e.g. "int", "text", "datetime").
+   * When provided, backend can parse "value" correctly.
+   */
+  type?: ColumnType;
 }
 
 export interface AdvancedFilter {

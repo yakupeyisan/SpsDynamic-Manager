@@ -7,12 +7,9 @@ import { map, catchError } from 'rxjs/operators';
 import { InputComponent } from '../input/input.component';
 import { SelectComponent, SelectOption } from '../select/select.component';
 import { ButtonComponent } from '../button/button.component';
-import { ModalComponent } from '../modal/modal.component';
 import { AdvancedFilter, FilterCondition, FilterLogic, FilterOperator, FILTER_OPERATORS, ColumnType, OperatorType, getOperatorTypeForColumnType, getOperatorsForOperatorType, getDefaultOperatorForType, getOperatorLabel } from './filter.model';
 import { TableColumn } from '../data-table/data-table.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { environment } from '../../../environments/environment';
-import { ToastrService } from 'ngx-toastr';
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
 const PLACEHOLDERS = {
@@ -31,7 +28,7 @@ const PLACEHOLDERS = {
 @Component({
   selector: 'ui-filter-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, SelectComponent, ButtonComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, InputComponent, SelectComponent, ButtonComponent],
   templateUrl: './filter-panel.component.html',
   styleUrl: './filter-panel.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,14 +40,13 @@ export class FilterPanelComponent implements OnInit {
   @Input() limit?: number = 100; // Current limit value
   @Input() limitOptions?: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
   @Input() enableReportSave?: boolean = true; // Enable report save feature
-  @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
   @Input() hasActiveFilter?: boolean = false; // Whether there's an active filter applied
   
   @Output() filterChange = new EventEmitter<AdvancedFilter>();
   @Output() close = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();
   @Output() limitChange = new EventEmitter<number>(); // Emit limit changes
-  @Output() saveAsReport = new EventEmitter<{ name: string; grid: string; url: string; logic: string; filters: any[] }>(); // Emit when saving as report
+  @Output() saveReportRequested = new EventEmitter<AdvancedFilter>(); // Emit when user wants to save current filters as report
 
   currentFilter: AdvancedFilter = {
     logic: 'AND',
@@ -62,10 +58,6 @@ export class FilterPanelComponent implements OnInit {
   selectedFieldForAdd: string = '';
   
   logicOptions: SelectOption[] = [];
-  
-  // Report save modal
-  showReportSaveModal: boolean = false;
-  reportName: string = '';
 
   // Cache for enum values to prevent creating new array references
   private readonly EMPTY_ARRAY: any[] = [];
@@ -86,8 +78,7 @@ export class FilterPanelComponent implements OnInit {
   constructor(
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
-    public translate: TranslateService,
-    private toastr: ToastrService
+    public translate: TranslateService
   ) {}
 
   ngOnInit() {
@@ -120,6 +111,10 @@ export class FilterPanelComponent implements OnInit {
       this.currentFilter = { ...this.filter };
       // Validate operators for each condition
       this.currentFilter.conditions = this.currentFilter.conditions.map(cond => {
+        // Ensure condition has type information (for API payloads and correct value parsing)
+        if (!cond.type) {
+          cond.type = this.getColumnType(cond.field);
+        }
         if (!this.isValidOperatorForField(cond.operator, cond.field)) {
           const operatorType = this.getOperatorTypeForField(cond.field);
           const defaultOperator = getDefaultOperatorForType(operatorType);
@@ -308,6 +303,7 @@ export class FilterPanelComponent implements OnInit {
         ...this.currentFilter.conditions,
         {
           field: this.selectedFieldForAdd,
+          type: this.getColumnType(this.selectedFieldForAdd),
           operator: defaultOperator,
           value: initialValue
         }
@@ -331,6 +327,7 @@ export class FilterPanelComponent implements OnInit {
 
   onFieldChange(index: number, field: string) {
     this.currentFilter.conditions[index].field = field;
+    this.currentFilter.conditions[index].type = this.getColumnType(field);
     
     // Reset operator to default for the new field type (w2ui compatible)
     const operatorType = this.getOperatorTypeForField(field);
@@ -802,6 +799,7 @@ export class FilterPanelComponent implements OnInit {
       logic: 'AND',
       conditions: [{
         field: defaultField,
+        type: this.getColumnType(defaultField),
         operator: defaultOperator,
         value: ''
       }]
@@ -840,98 +838,21 @@ export class FilterPanelComponent implements OnInit {
     return validConditions.length > 0;
   }
 
-  /**
-   * Open report save modal
-   */
-  openReportSaveModal(): void {
-    if (!this.reportConfig) {
-      this.toastr.warning('Rapor yapılandırması bulunamadı.', 'Uyarı');
-      return;
-    }
-    this.reportName = '';
-    this.showReportSaveModal = true;
-    this.cdr.markForCheck();
-  }
-
-  /**
-   * Close report save modal
-   */
-  closeReportSaveModal(): void {
-    this.showReportSaveModal = false;
-    this.reportName = '';
-    this.cdr.markForCheck();
-  }
-
-  /**
-   * Save report template
-   */
-  saveReport(): void {
-    if (!this.reportName || !this.reportName.trim()) {
-      this.toastr.warning('Lütfen rapor adı giriniz.', 'Uyarı');
-      return;
-    }
-
-    if (!this.reportConfig) {
-      this.toastr.error('Rapor yapılandırması bulunamadı.', 'Hata');
-      return;
-    }
-
-    // Get valid filter conditions
+  requestSaveReport(): void {
+    // Build a filter payload with only valid conditions
     const validConditions = this.currentFilter.conditions.filter(cond => {
       if (!cond.field || !cond.operator) return false;
       const requiresVal = this.requiresValue(cond.operator);
-      return !requiresVal || (cond.value !== null && cond.value !== undefined && cond.value !== '');
+      if (!requiresVal) return true;
+      if (Array.isArray(cond.value)) return cond.value.length > 0;
+      return cond.value !== null && cond.value !== undefined && cond.value !== '';
     });
 
-    if (validConditions.length === 0) {
-      this.toastr.warning('Geçerli filtre bulunamadı.', 'Uyarı');
-      return;
-    }
+    if (validConditions.length === 0) return;
 
-    // Convert filter conditions to filter IDs (backend will create IDs)
-    // For now, we'll send the filter conditions as JSON and let backend handle ID creation
-    const filters = validConditions.map((cond, index) => ({
-      field: cond.field,
-      operator: cond.operator,
-      value: cond.value
-    }));
-
-    // Save report template via API
-    this.http.post(`${environment.apiUrl}/api/ReportTemplates`, {
-      request: {
-        action: 'save',
-        recid: null,
-        name: 'AddReportTemplate',
-        record: {
-          Name: this.reportName.trim(),
-          Grid: this.reportConfig.grid,
-          Logic: this.currentFilter.logic,
-          Url: this.reportConfig.url,
-          Filters: JSON.stringify(filters) // Send filters as JSON string, backend will create IDs
-        }
-      }
-    }).subscribe({
-      next: (response: any) => {
-        if (response.error === false || response.status === 'success') {
-          this.toastr.success('Rapor şablonu başarıyla kaydedildi.', 'Başarılı');
-          this.closeReportSaveModal();
-          // Emit event for parent component if needed
-          this.saveAsReport.emit({
-            name: this.reportName.trim(),
-            grid: this.reportConfig!.grid,
-            url: this.reportConfig!.url,
-            logic: this.currentFilter.logic,
-            filters: filters
-          });
-        } else {
-          this.toastr.error(response.message || 'Rapor şablonu kaydedilirken hata oluştu.', 'Hata');
-        }
-      },
-      error: (error) => {
-        console.error('Error saving report template:', error);
-        const errorMessage = error.error?.message || error.message || 'Rapor şablonu kaydedilirken hata oluştu.';
-        this.toastr.error(errorMessage, 'Hata');
-      }
+    this.saveReportRequested.emit({
+      logic: this.currentFilter.logic,
+      conditions: validConditions
     });
   }
 }

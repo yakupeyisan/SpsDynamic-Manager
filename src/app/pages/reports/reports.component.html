@@ -1,0 +1,146 @@
+<div class="reports-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'report-templates-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="true"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="50"
+          [limit]="50"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="40"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [recid]="'Id'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="false"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (refresh)="onTableRefresh()"
+          (rowSelect)="onRowSelect($event)"
+          (delete)="onTableDelete($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Task Modal -->
+<ui-modal
+  [show]="showCreateTaskModal"
+  title="Görev oluştur"
+  size="lg"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="showCreateTaskModal = $event"
+  (closed)="closeCreateTaskModal()">
+
+  <div class="report-task-modal">
+    <div class="report-task-row">
+      <label class="report-task-label">Rapor Görev Adı</label>
+      <ui-input
+        [(ngModel)]="taskName"
+        [placeholder]="'Rapor görev adı'"
+        [disabled]="isTaskModalLoading">
+      </ui-input>
+    </div>
+
+    <div *ngIf="isTaskModalLoading" class="report-task-loading">
+      Yükleniyor...
+    </div>
+
+    <div *ngIf="!isTaskModalLoading && taskFields.length === 0" class="report-task-empty">
+      Bu şablon için alan bulunamadı.
+    </div>
+
+    <div *ngIf="!isTaskModalLoading && taskFields.length > 0" class="report-task-fields">
+      <div *ngFor="let f of taskFields; let i = index" class="report-task-field">
+        <label class="report-task-label">{{ f.Name || f.Field }}</label>
+
+        <!-- date/datetime -->
+        <div *ngIf="f.Type === 'date' || f.Type === 'datetime'" class="report-task-field-controls">
+          <ui-select
+            [options]="[{label:'Tanımlı', value:'defined'},{label:'Tanımsız', value:'notDefined'}]"
+            [ngModel]="taskFieldStates[i].dateMode"
+            (valueChange)="onDateModeChange(i, $event)">
+          </ui-select>
+
+          <ui-select
+            *ngIf="taskFieldStates[i].dateMode === 'defined'"
+            [options]="[{label:'Günlük', value:'daily'},{label:'Haftalık', value:'weekly'},{label:'Aylık', value:'monthly'}]"
+            [(ngModel)]="taskFieldStates[i].dateDefinedValue">
+          </ui-select>
+
+          <ui-input
+            *ngIf="taskFieldStates[i].dateMode === 'notDefined'"
+            type="number"
+            [(ngModel)]="taskFieldStates[i].dateNotDefinedDays"
+            [placeholder]="'Gün Sayısı'">
+          </ui-input>
+        </div>
+
+        <!-- list/enum -->
+        <div *ngIf="f.Type === 'list' || f.Type === 'enum'" class="report-task-field-controls">
+          <ui-select
+            [options]="getOperatorOptionsForType(f.Type)"
+            [(ngModel)]="taskFieldStates[i].operator">
+          </ui-select>
+
+          <ng-container *ngIf="getListEnumOptions(f).length > 0; else listEnumFallback">
+            <ui-select
+              [options]="getListEnumOptions(f)"
+              [multiple]="true"
+              [(ngModel)]="taskFieldStates[i].values">
+            </ui-select>
+          </ng-container>
+          <ng-template #listEnumFallback>
+            <ui-input
+              [(ngModel)]="taskFieldStates[i].value"
+              [placeholder]="'Değer(ler)'">
+            </ui-input>
+          </ng-template>
+        </div>
+
+        <!-- text/textarea/int -->
+        <div *ngIf="f.Type !== 'date' && f.Type !== 'datetime' && f.Type !== 'list' && f.Type !== 'enum'" class="report-task-field-controls">
+          <ui-select
+            [options]="getOperatorOptionsForType(f.Type)"
+            [(ngModel)]="taskFieldStates[i].operator">
+          </ui-select>
+
+          <ui-input
+            [(ngModel)]="taskFieldStates[i].value"
+            [type]="f.Type === 'int' ? 'number' : 'text'"
+            [placeholder]="'Değer'">
+          </ui-input>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ui-button slot="footer" variant="secondary" size="sm" (clicked)="closeCreateTaskModal()" [disabled]="isTaskModalLoading">
+    İptal
+  </ui-button>
+  <ui-button slot="footer" variant="primary" size="sm" (clicked)="saveTask()" [disabled]="isTaskModalLoading">
+    Kaydet
+  </ui-button>
+</ui-modal>
+

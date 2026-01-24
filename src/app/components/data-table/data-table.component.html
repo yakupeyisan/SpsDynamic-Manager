@@ -244,13 +244,12 @@
           [limit]="currentLimit"
           [limitOptions]="limitOptions"
           [enableReportSave]="enableReportSave"
-          [reportConfig]="effectiveReportConfig"
           [hasActiveFilter]="!!activeFilter"
           (filterChange)="onFilterChange($event)"
           (limitChange)="onLimitChange($event)"
           (clear)="onFilterClear()"
           (close)="closeFilterPanel()"
-          (saveAsReport)="onSaveAsReport($event)">
+          (saveReportRequested)="openReportSaveModal($event)">
         </ui-filter-panel>
       </div>
     </div>
@@ -448,6 +447,45 @@
     </div>
   </ui-modal>
 
+  <!-- Report Save Modal (grid-layer) -->
+  <ui-modal
+    [show]="showReportSaveModal"
+    [title]="translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet'"
+    [size]="'md'"
+    [closable]="true"
+    [showFooter]="true"
+    (showChange)="showReportSaveModal = $event"
+    (closed)="closeReportSaveModal()">
+    
+    <div class="ui-report-save-modal-content">
+      <div class="form-group">
+        <label class="form-label">
+          <i class="ti ti-file-text me-1"></i>
+          {{ translate.instant('filter.reportName') || 'Rapor Adı' }}
+        </label>
+        <ui-input
+          [(ngModel)]="reportName"
+          [placeholder]="translate.instant('filter.enterReportName') || 'Rapor adı giriniz...'"
+          (keyup.enter)="saveReportTemplate()">
+        </ui-input>
+      </div>
+      
+      <div class="alert alert-info">
+        <i class="ti ti-info-circle me-2"></i>
+        {{ translate.instant('filter.reportSaveInfo') || 'Mevcut filtreler rapor şablonu olarak kaydedilecektir.' }}
+      </div>
+    </div>
+    
+    <ui-button slot="footer" variant="secondary" size="sm" (clicked)="closeReportSaveModal()">
+      <i class="ti ti-x me-1"></i>
+      {{ translate.instant('common.cancel') || 'İptal' }}
+    </ui-button>
+    <ui-button slot="footer" variant="primary" size="sm" (clicked)="saveReportTemplate()" [disabled]="!reportName || !reportName.trim()">
+      <i class="ti ti-check me-1"></i>
+      {{ translate.instant('common.save') || 'Kaydet' }}
+    </ui-button>
+  </ui-modal>
+
   <!-- Form Modal for Add/Edit -->
   <ui-modal
     [title]="isEditMode ? translate.instant('form.editRecord') : translate.instant('form.addNewRecord')"
@@ -473,7 +511,7 @@
             <!-- Text Input -->
             <ui-input
               *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
-              type="text"
+              [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
               [(ngModel)]="formData[column.field]"
               [placeholder]="getColumnLabel(column)"
               [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
@@ -639,7 +677,7 @@
                         <!-- Text Input -->
                         <ui-input
                           *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
-                          type="text"
+                          [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
                           [(ngModel)]="formData[column.field]"
                           [placeholder]="getColumnLabel(column)"
                           [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
@@ -790,7 +828,7 @@
                   <!-- Text Input -->
                   <ui-input
                     *ngIf="column.type === 'text' || column.type === 'alphanumeric' || column.type === 'date' || column.type === 'time' || column.type === 'datetime'"
-                    type="text"
+                    [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
                     [(ngModel)]="formData[column.field]"
                     [placeholder]="getColumnLabel(column)"
                     [disabled]="column.disabled || column.field === recid || column.field === 'recid'">

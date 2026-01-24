@@ -18,7 +18,7 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InputComponent implements ControlValueAccessor {
-  @Input() type: 'text' | 'number' | 'email' | 'password' | 'tel' | 'url' = 'text';
+  @Input() type: 'text' | 'number' | 'email' | 'password' | 'tel' | 'url' | 'time' | 'date' = 'text';
   @Input() placeholder: string = '';
   @Input() label?: string;
   @Input() helperText?: string;

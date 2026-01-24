@@ -19,6 +19,8 @@ import { TabItemComponent } from '../tabs/tab-item.component';
 import { AdvancedFilter, FilterCondition, FilterOperator, FILTER_OPERATORS } from './filter.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ButtonComponent } from '../button/button.component';
+import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../environments/environment';
 
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
@@ -279,7 +281,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (this.id) {
       return {
         grid: this.id,
-        url: '' // URL will be determined by the backend or can be set later
+        // Persist current page (useful for later report opening)
+        url: (typeof window !== 'undefined' && window.location) ? window.location.href : ''
       };
     }
     return undefined;
@@ -401,6 +404,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   imagePreview: string | null = null;
   activeFormTab: number = 0; // Active tab index for form
   isFormFullscreen: boolean = false; // Form fullscreen state
+
+  // Report save modal state (grid-layer)
+  showReportSaveModal: boolean = false;
+  reportName: string = '';
+  private pendingReportFilter: AdvancedFilter | null = null;
   
   // Column resizing state
   private isResizing: boolean = false;
@@ -432,7 +440,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     private sanitizer: DomSanitizer,
     private http: HttpClient,
     private dataService: DataService,
-    public translate: TranslateService
+    public translate: TranslateService,
+    private toastr: ToastrService
   ) {
     this.currentLimit = this.limit;
     
@@ -875,11 +884,15 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         // Use searchField property if available, otherwise use field
         const filterField = targetColumn.searchField || targetColumn.field!;
         const isNumberType = targetColumn.type && numberTypes.includes(targetColumn.type);
+        const conditionType = (typeof targetColumn.searchable === 'string'
+          ? targetColumn.searchable
+          : targetColumn.type);
         
         const condition = {
           field: filterField,
           operator: isNumberType ? 'equals' as FilterOperator : 'startsWith' as FilterOperator,
-          value: searchValue
+          value: searchValue,
+          type: conditionType
         };
         
         
@@ -929,6 +942,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const conditions = searchableColumns.map(col => {
       const isNumberType = col.type && numberTypes.includes(col.type);
       const isEnumListType = col.type && enumListTypes.includes(col.type);
+      const conditionType = (typeof col.searchable === 'string' ? col.searchable : col.type);
       
       // For enum/list types, always use searchField if available (for nested fields)
       // For other types, use searchField if provided, otherwise use field
@@ -941,7 +955,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const condition = {
         field: filterField,
         operator: isNumberType ? 'equals' as FilterOperator : 'startsWith' as FilterOperator,
-        value: searchValue
+        value: searchValue,
+        type: conditionType
       };
       return condition;
     });
@@ -2226,19 +2241,24 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
     // Transform each condition to use searchField if available
     const transformedConditions = filter.conditions.map(condition => {
-      // Find the column that matches the field
-      const column = this.columns.find(col => col.field === condition.field);
+      // Find the column that matches the field (field or searchField)
+      const column = this.columns.find(col => col.field === condition.field || col.searchField === condition.field);
+      const conditionType = condition.type ?? (typeof column?.searchable === 'string' ? column.searchable : column?.type);
       
       // If column has searchField, use it instead of field
-      if (column && column.searchField) {
+      if (column && column.searchField && column.field === condition.field) {
         return {
           ...condition,
-          field: column.searchField
+          field: column.searchField,
+          type: conditionType
         };
       }
       
-      // Return condition as-is if no searchField
-      return condition;
+      // Return condition as-is if no searchField transform needed
+      return {
+        ...condition,
+        type: conditionType
+      };
     });
 
     return {
@@ -2479,10 +2499,81 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return this.activeFilter !== null && this.activeFilter.conditions.length > 0;
   }
 
-  onSaveAsReport(event: { name: string; grid: string; url: string; logic: string; filters: any[] }): void {
-    // This can be handled by parent component if needed
-    // For now, the filter-panel component handles the API call directly
-    console.log('Report saved:', event);
+  openReportSaveModal(filter: AdvancedFilter): void {
+    const cfg = this.effectiveReportConfig;
+    if (!cfg) {
+      this.toastr.warning('Rapor yapılandırması bulunamadı.', 'Uyarı');
+      return;
+    }
+
+    // Keep a copy of the filter to be saved
+    this.pendingReportFilter = {
+      logic: filter.logic,
+      conditions: [...(filter.conditions || [])]
+    };
+
+    this.reportName = '';
+    this.showReportSaveModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeReportSaveModal(): void {
+    this.showReportSaveModal = false;
+    this.reportName = '';
+    this.pendingReportFilter = null;
+    this.cdr.markForCheck();
+  }
+
+  saveReportTemplate(): void {
+    const cfg = this.effectiveReportConfig;
+    if (!cfg) {
+      this.toastr.error('Rapor yapılandırması bulunamadı.', 'Hata');
+      return;
+    }
+    if (!this.pendingReportFilter || !this.pendingReportFilter.conditions || this.pendingReportFilter.conditions.length === 0) {
+      this.toastr.warning('Geçerli filtre bulunamadı.', 'Uyarı');
+      return;
+    }
+    if (!this.reportName || !this.reportName.trim()) {
+      this.toastr.warning('Lütfen rapor adı giriniz.', 'Uyarı');
+      return;
+    }
+
+    const filters = this.pendingReportFilter.conditions.map((cond: any) => ({
+      field: cond.field,
+      operator: cond.operator,
+      value: cond.value,
+      type: cond.type
+    }));
+
+    this.http.post(`${environment.apiUrl}/api/ReportTemplates/form`, {
+      request: {
+        action: 'save',
+        recid: null,
+        name: 'AddReportTemplate',
+        record: {
+          Name: this.reportName.trim(),
+          Grid: cfg.grid,
+          Logic: this.pendingReportFilter.logic,
+          Url: cfg.url,
+          Filters: JSON.stringify(filters)
+        }
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response?.error === false || response?.status === 'success') {
+          this.toastr.success('Rapor şablonu başarıyla kaydedildi.', 'Başarılı');
+          this.closeReportSaveModal();
+        } else {
+          this.toastr.error(response?.message || 'Rapor şablonu kaydedilirken hata oluştu.', 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error saving report template:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Rapor şablonu kaydedilirken hata oluştu.';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
   }
 
   get columnOptions(): TableColumn[] {
