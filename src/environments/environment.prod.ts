@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'ordu',
+  setting: 'development',
   
   
   // Authentication ayarları
@@ -37,6 +37,20 @@ export const environment = {
       
       // Bildirim tipi: 'mail' veya 'sms'
       notificationType: 'sms', // 'mail' | 'sms'
+      loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
+    },
+    development: {
+      apiUrl: 'http://localhost',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-technolife.png',
+      logoUrlLogin: '/assets/images/logos/logo-technolife-login.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'sms',
+      loginImage: '',
     }
   },
   
