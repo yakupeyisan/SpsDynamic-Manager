@@ -26,21 +26,9 @@ export const formFields: TableColumn[] = [
   },
   { 
     field: 'CardId', 
-    label: 'Kart', 
-    text: 'Kart', 
-    type: 'list', 
-    load: {
-      url: `${apiUrl}/api/Cards`,
-      injectAuth: true,
-      method: 'POST' as const,
-      data: { limit: -1, offset: 0 },
-      map: (data: any) => {
-        return data.records.map((item: any) => ({
-          id: item.CardID,
-          text: `${item.CardCode || item.CardUID || ''} - ${item.Employee ? `${item.Employee.Name || ''} ${item.Employee.SurName || ''}`.trim() : ''}`.trim() || `ID: ${item.CardID}`
-        }));
-      }
-    }
+    label: 'Kart ID', 
+    text: 'Kart ID', 
+    type: 'int' as ColumnType
   },
   { 
     field: 'WritedAt', 

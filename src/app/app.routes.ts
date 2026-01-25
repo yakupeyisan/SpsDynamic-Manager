@@ -584,6 +584,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'VisitorEvents-Insiders',
+        loadComponent: () =>
+          import('./pages/visitor-events-insiders/visitor-events-insiders.component').then(
+            (m) => m.VisitorEventsInsidersComponent
+          ),
+        data: {
+          title: 'Ziyaretçi Kayıt',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Authorizations',
         loadComponent: () =>
           import('./pages/authorizations/authorizations.component').then(

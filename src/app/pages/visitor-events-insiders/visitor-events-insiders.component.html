@@ -1,0 +1,162 @@
+<!-- VisitorEvents-Insiders Component Template -->
+<div class="visitor-events-insiders-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          #insidersTable
+          [id]="'visitor-events-insiders-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="[]"
+          [canViewDeleted]="false"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="'800px'"
+          [recordHeight]="40"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [recid]="'ID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ziyaretçi Giriş Modal (VisitorEvents/AddVisit) -->
+<ui-modal
+  [show]="showEntryModal"
+  [title]="'Ziyaretçi Giriş'"
+  [size]="'full'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onEntryModalShowChange($event)"
+  (onSave)="submitEntry()">
+  <div class="entry-modal">
+    <div class="entry-modal-left">
+      <div class="entry-modal-title">Ziyaretçi Listesi (Çift tık ile seç)</div>
+      <ui-data-table
+        #visitorTable
+        [id]="'visitor-grid'"
+        [showFooter]="true"
+        [page]="1"
+        [columns]="visitorTableColumns"
+        [dataSource]="visitorListDataSource"
+        [joinOptions]="[]"
+        [canViewDeleted]="false"
+        [selectable]="true"
+        [pagination]="true"
+        [pageSize]="100"
+        [height]="'650px'"
+        [recordHeight]="40"
+        [showEmptyRows]="true"
+        [fixedBody]="true"
+        [advancedFilter]="true"
+        [showRefresh]="true"
+        [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+        [recid]="'EmployeeID'"
+        [selectType]="'row'"
+        [multiSelect]="false"
+        [multiSort]="true"
+        [keyboard]="true"
+        [liveSearch]="true"
+        [reorderColumns]="false"
+        [reorderRows]="false"
+        [lineNumbers]="false"
+        [expandColumn]="false"
+        [nestedFields]="true"
+        [columnTooltip]="'top'"
+        [toolbar]="{ items: [], show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false } }"
+        (rowDblClick)="onVisitorRowDblClick($event)">
+      </ui-data-table>
+    </div>
+
+    <div class="entry-modal-right">
+      <div class="entry-modal-title">Ziyaretçi Giriş Formu</div>
+
+      <form class="entry-form" [formGroup]="entryForm" (ngSubmit)="submitEntry()">
+        <div class="entry-form-grid">
+          <ui-input label="Kişi No" [disabled]="true" formControlName="EmployeeID"></ui-input>
+
+          <ui-input label="Adı" [required]="true" formControlName="Name"></ui-input>
+          <ui-input label="Soyad" [required]="true" formControlName="SurName"></ui-input>
+
+          <ui-input label="Kimlik Numarası" formControlName="IdentificationNumber"></ui-input>
+          <ui-input label="Ziyaretçi Firma" formControlName="Company"></ui-input>
+
+          <ui-select
+            [label]="'Firma Adı'"
+            [required]="true"
+            [options]="companyOptions"
+            formControlName="CompanyId"
+            [placeholder]="'Firma seçiniz...'">
+          </ui-select>
+
+          <ui-select
+            [label]="'Ziyaret Edilen'"
+            [options]="visitedEmployeeOptions"
+            formControlName="VisitedEmployeeID"
+            [placeholder]="'Kişi ara... (en az 2 karakter)'"
+            [searchPlaceholder]="'Kişi ara...'"
+            [disableClientFilter]="true"
+            (searchChange)="onVisitedEmployeeSearchChange($event)">
+          </ui-select>
+
+          <div *ngIf="isLoadingVisitedEmployees" style="font-size: 12px; opacity: 0.8;">
+            Kişiler aranıyor...
+          </div>
+
+          <ui-input label="Açıklama" formControlName="Description"></ui-input>
+
+          <ui-select
+            [label]="'Yetki Türü'"
+            [options]="accessGroupOptions"
+            formControlName="AccessGroupID"
+            [placeholder]="'Yetki seçiniz...'">
+          </ui-select>
+
+          <ui-select
+            [label]="'Ziyaretçi Kartı'"
+            [options]="visitorCardOptions"
+            formControlName="VisitorCard"
+            [placeholder]="'Kart seçiniz...'">
+          </ui-select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div slot="footer" class="entry-modal-footer">
+    <button type="button" class="entry-btn entry-btn-secondary" (click)="closeEntryModal()" [disabled]="isSubmitting">
+      Vazgeç
+    </button>
+    <button type="button" class="entry-btn entry-btn-primary" (click)="submitEntry()" [disabled]="isSubmitting || entryForm.invalid">
+      <span *ngIf="isSubmitting" class="entry-spinner"></span>
+      Kaydet
+    </button>
+  </div>
+</ui-modal>
+
