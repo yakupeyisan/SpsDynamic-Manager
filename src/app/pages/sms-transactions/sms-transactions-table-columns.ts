@@ -15,7 +15,8 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'EmployeeName', 
+    field: 'EmployeeName',
+    searchField: 'Employee.Name',
     label: 'Personel Adı', 
     text: 'Personel Adı',
     type: 'text' as ColumnType, 
@@ -27,14 +28,29 @@ export const tableColumns: TableColumn[] = [
     resizable: true,
     render: (record: TableRow) => {
       const employee = record['Employee'];
-      if (employee) {
-        return `${employee['Name'] || ''} ${employee['SurName'] || ''}`.trim();
-      }
-      return '';
+      return employee?.['Name'] || '';
+    }
+  },
+  { 
+    field: 'EmployeeSurName',
+    searchField: 'Employee.SurName',
+    label: 'Personel Soyadı', 
+    text: 'Personel Soyadı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: false,
+    resizable: true,
+    render: (record: TableRow) => {
+      const employee = record['Employee'];
+      return employee?.['SurName'] || '';
     }
   },
   { 
     field: 'SmsSettingName', 
+    searchField: 'SmsSetting.Name',
     label: 'SMS Ayarı', 
     text: 'SMS Ayarı',
     type: 'text' as ColumnType, 

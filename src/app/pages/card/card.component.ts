@@ -127,43 +127,6 @@ export class CardComponent implements OnInit {
               onClick: (event: MouseEvent, item: any) => this.onGetAllCards(event, item)
             },
             {
-              id: 'getFreeCard',
-              text: 'Kullanılabilir Kartlar',
-              onClick: (event: MouseEvent, item: any) => this.onGetFreeCard(event, item)
-            },
-            {
-              id: 'separator-2',
-              text: '--'
-            },
-            {
-              id: 'getAvaiableCard',
-              text: 'Geçici Kartlar',
-              onClick: (event: MouseEvent, item: any) => this.onGetAvailableCard(event, item)
-            },
-            {
-              id: 'getUsedAvaiableCard',
-              text: 'Kullanılan Geçici Kartlar',
-              onClick: (event: MouseEvent, item: any) => this.onGetUsedAvailableCard(event, item)
-            },
-            {
-              id: 'separator-3',
-              text: '--'
-            },
-            {
-              id: 'setAvailable',
-              text: 'Kart Atama',
-              onClick: (event: MouseEvent, item: any) => this.onSetAvailable(event, item)
-            },
-            {
-              id: 'freeAvailable',
-              text: 'Geçici Kart İade',
-              onClick: (event: MouseEvent, item: any) => this.onFreeAvailable(event, item)
-            },
-            {
-              id: 'separator-4',
-              text: '--'
-            },
-            {
               id: 'cardWrite',
               text: 'Yazdir',
               onClick: (event: MouseEvent, item: any) => this.onCardWrite(event, item)

@@ -270,6 +270,27 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() enableReportSave?: boolean = true; // Enable report save feature
   @Input() reportConfig?: { grid: string; url: string; }; // Report configuration (grid name and URL)
   
+  private inferReportUrlFromDataSource(): string {
+    const fn: any = this.dataSource;
+    const src: string = typeof fn?.toString === 'function' ? fn.toString() : '';
+    if (!src) return '';
+
+    // Find the first "/api/..." path. We intentionally return ONLY the path
+    // (no "http://localhost" / origin) because backend doesn't need host.
+    const apiPathMatch = src.match(/\/api\/[A-Za-z0-9/_-]+/);
+    if (apiPathMatch?.[0]) return apiPathMatch[0];
+
+    // If the function contains a full URL but regex above didn't catch for some reason,
+    // strip origin and return path as a fallback.
+    const fullUrlMatch = src.match(/https?:\/\/[^\s"'`]+/);
+    if (fullUrlMatch?.[0]) {
+      const m = fullUrlMatch[0].match(/\/api\/[A-Za-z0-9/_-]+/);
+      if (m?.[0]) return m[0];
+    }
+
+    return '';
+  }
+
   /**
    * Get report configuration, auto-generate if not provided
    */
@@ -281,8 +302,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (this.id) {
       return {
         grid: this.id,
-        // Persist current page (useful for later report opening)
-        url: (typeof window !== 'undefined' && window.location) ? window.location.href : ''
+        // Default: infer list endpoint from the grid's dataSource function
+        url: this.inferReportUrlFromDataSource()
       };
     }
     return undefined;
@@ -2524,6 +2545,42 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.cdr.markForCheck();
   }
 
+  private buildReportMapsPayload(): Record<string, string> {
+    // Use visible columns (respects hidden/internalColumns)
+    const cols = Array.isArray(this.displayColumns) ? this.displayColumns : [];
+    return cols.reduce((acc: Record<string, string>, c: TableColumn) => {
+      if (!c?.field) return acc;
+      // Backend expects: { ColumnKey: "ApiFieldPath|ApiFieldPath2" }
+      // We use searchField if defined (can also be pipe-separated), otherwise field
+      const key = String(c.field);
+      // Normalize multi-field delimiter to comma (backend expectation)
+      const mapped = String(c.searchField ?? c.field).replaceAll('|', ',');
+      // If same key appears multiple times, append (keeps both)
+      acc[key] = acc[key] ? `${acc[key]},${mapped}` : mapped;
+      return acc;
+    }, {});
+  }
+
+  private buildReportColumnsPayload(): Array<{ Key: string; Name: string }> {
+    // Backend expects array of objects: [{ Key: "EmployeeName", Name: "Personel Adı" }, ...]
+    // Use visible columns (same order as grid)
+    const cols = Array.isArray(this.displayColumns) ? this.displayColumns : [];
+    const seen = new Set<string>();
+    const result: Array<{ Key: string; Name: string }> = [];
+
+    cols.forEach((c) => {
+      if (!c?.field) return;
+      const key = String(c.field);
+      if (seen.has(key)) return;
+      seen.add(key);
+
+      const name = String(c.label ?? c.text ?? c.field);
+      result.push({ Key: key, Name: name });
+    });
+
+    return result;
+  }
+
   saveReportTemplate(): void {
     const cfg = this.effectiveReportConfig;
     if (!cfg) {
@@ -2546,6 +2603,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       type: cond.type
     }));
 
+    const maps = this.buildReportMapsPayload();
+    const columns = this.buildReportColumnsPayload();
+
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates/form`, {
       request: {
         action: 'save',
@@ -2556,7 +2616,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           Grid: cfg.grid,
           Logic: this.pendingReportFilter.logic,
           Url: cfg.url,
-          Filters: JSON.stringify(filters)
+          Filters: JSON.stringify(filters),
+          Maps: JSON.stringify(maps),
+          Columns: JSON.stringify(columns)
         }
       }
     }).subscribe({
