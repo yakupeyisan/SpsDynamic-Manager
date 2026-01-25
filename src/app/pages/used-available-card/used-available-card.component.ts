@@ -84,7 +84,25 @@ export class UsedAvailableCardComponent implements OnInit {
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          type: 'break' as const,
+          id: 'break-operations-menu'
+        },
+        {
+          id: 'operations',
+          type: 'menu' as const,
+          text: 'İşlemler',
+          icon: 'fa fa-cog',
+          items: [
+            {
+              id: 'returnCard',
+              text: 'Kartı İade',
+              onClick: (event: MouseEvent, item: any) => this.onReturnAvailableCard(event, item)
+            }
+          ]
+        }
+      ],
       show: {
         reload: true,
         columns: true,
@@ -116,6 +134,58 @@ export class UsedAvailableCardComponent implements OnInit {
 
   ngOnInit(): void {
     // Component initialization
+  }
+
+  /**
+   * Return selected used temporary card(s) back to available pool
+   */
+  onReturnAvailableCard(_event: MouseEvent, _item: any): void {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+
+    const selected = this.dataTableComponent.selectedRows;
+    if (selected.size === 0) {
+      this.toastr.warning('Lütfen iade etmek için en az bir kart seçiniz.');
+      return;
+    }
+
+    const cardIds = Array.from(selected)
+      .map((x: any) => Number(x))
+      .filter((x) => !isNaN(x));
+
+    if (cardIds.length === 0) {
+      this.toastr.warning('Geçerli kart seçilmedi.');
+      return;
+    }
+
+    if (!confirm(`${cardIds.length} kart iade edilecek. Onaylıyor musunuz?`)) {
+      return;
+    }
+
+    // NOTE: Backend endpoint name may differ. This matches existing naming style used elsewhere (delete, setEmployee).
+    this.http
+      .post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/UsedAvailableCards/freeAvailable`, {
+        Selecteds: cardIds
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Error returning available cards:', error);
+          const msg = error?.error?.message || error?.message || 'Kart iade edilirken hata oluştu.';
+          this.toastr.error(msg, 'Hata');
+          return of(null);
+        })
+      )
+      .subscribe((response: any) => {
+        const ok = response?.error === false || response?.status === 'success' || response?.success === true;
+        if (ok) {
+          this.toastr.success('Kart(lar) başarıyla iade edildi.', 'Başarılı');
+          this.dataTableComponent?.reload();
+        } else {
+          this.toastr.error(response?.message || 'Kart iade edilemedi.', 'Hata');
+        }
+      });
   }
 
   // Event handlers

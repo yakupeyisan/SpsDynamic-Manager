@@ -56,3 +56,117 @@
     </div>
   </div>
 </div>
+
+<!-- Card Assignment Modal -->
+<ui-modal
+  [show]="showCardAssignmentModal"
+  [title]="'Kart Ata'"
+  [size]="'md'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="showCardAssignmentModal = $event"
+  (closed)="onCloseCardAssignmentModal()">
+  
+  <div class="card-assignment-modal-content">
+    <!-- Selected Card Info -->
+    <div class="selected-cards-section" *ngIf="selectedCardsForAssignment.length > 0">
+      <div class="section-header">
+        <i class="ti ti-credit-card me-1"></i>
+        <span>Seçili Kart</span>
+      </div>
+      <div class="cards-list">
+        <div *ngFor="let card of selectedCardsForAssignment; let i = index" class="card-item">
+          <div class="card-item-header">
+            <span class="card-id">ID: {{ card.CardID || card.recid || i + 1 }}</span>
+            <span class="card-type">{{ getCardTypeName(card) }}</span>
+          </div>
+          <div class="card-item-details">
+            <div class="detail-row">
+              <span class="detail-label">Tag Kodu:</span>
+              <span class="detail-value">{{ card.TagCode || card['TagCode'] || '-' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Kart Kodu:</span>
+              <span class="detail-value">{{ card.CardCode || card['CardCode'] || '-' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Kart Yapısı:</span>
+              <span class="detail-value">{{ card.CardCodeType || card['CardCodeType'] || '-' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Facility Code:</span>
+              <span class="detail-value">{{ card.FacilityCode || card['FacilityCode'] || '-' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="card.CardUID || card['CardUID']">
+              <span class="detail-label">Kart UID:</span>
+              <span class="detail-value">{{ card.CardUID || card['CardUID'] }}</span>
+            </div>
+            <div class="detail-row" *ngIf="card.CardDesc || card['CardDesc']">
+              <span class="detail-label">Açıklama:</span>
+              <span class="detail-value">{{ card.CardDesc || card['CardDesc'] }}</span>
+            </div>
+            <div class="detail-row" *ngIf="getCardStatusName(card) !== '-'">
+              <span class="detail-label">Statü:</span>
+              <span class="detail-value">{{ getCardStatusName(card) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        <i class="ti ti-user me-1"></i>
+        Personel Seçiniz
+      </label>
+      <ui-select
+        [(ngModel)]="selectedEmployeeId"
+        [options]="employees"
+        [placeholder]="'Personel ara... (en az 2 karakter)'"
+        [searchPlaceholder]="'Personel ara...'"
+        [disableClientFilter]="true"
+        (searchChange)="onEmployeeSearchChange($event)">
+      </ui-select>
+      
+      <!-- Loading State -->
+      <div *ngIf="isLoadingEmployees" class="form-help-text loading">
+        <i class="ti ti-loader-2 spin me-1"></i>
+        <span>Personel aranıyor...</span>
+      </div>
+      
+      <!-- Empty State -->
+      <div *ngIf="!isLoadingEmployees && employees.length === 0 && selectedEmployeeId === null" class="form-help-text info">
+        <i class="ti ti-info-circle me-1"></i>
+        <span>Arama yapmak için en az 2 karakter giriniz.</span>
+      </div>
+      
+      <!-- Results Count -->
+      <div *ngIf="!isLoadingEmployees && employees.length > 0" class="form-help-text success">
+        <i class="ti ti-check-circle me-1"></i>
+        <span>{{ employees.length }} personel bulundu</span>
+      </div>
+    </div>
+    
+    <!-- Info Alert -->
+    <div class="info-alert">
+      <div class="info-alert-icon">
+        <i class="ti ti-info-circle"></i>
+      </div>
+      <div class="info-alert-content">
+        <strong>Bilgi:</strong>
+        <p>Seçili kart seçilen personele atanacaktır.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="onCloseCardAssignmentModal()">
+      <i class="ti ti-x me-1"></i>
+      İptal
+    </button>
+    <button type="button" class="btn btn-primary" (click)="onAssignCardsToEmployee()" [disabled]="!selectedEmployeeId">
+      <i class="ti ti-check me-1"></i>
+      Ata
+    </button>
+  </div>
+</ui-modal>
