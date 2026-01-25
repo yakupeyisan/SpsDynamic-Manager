@@ -118,8 +118,58 @@ export class VisitorCardComponent implements OnInit {
   };
 
   onFormChange = (_formData: any) => {
-    // no-op
+    // Keep CardStatusId forced to "Ziyaretçi Kartı" in both add & edit.
+    this.applyVisitorCardStatusDefault();
   };
+
+  private setCardStatusDisabled(disabled: boolean): void {
+    const statusField = this.formFields.find((f) => f.field === 'CardStatusId');
+    if (statusField) {
+      statusField.disabled = disabled;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private findVisitorCardStatusId(): number | null {
+    const statusField = this.formFields.find((f) => f.field === 'CardStatusId');
+    const options: any[] = Array.isArray((statusField as any)?.options) ? (statusField as any).options : [];
+    if (!options.length) return null;
+
+    const match = options.find((o: any) => {
+      const label = String(o?.label ?? o?.text ?? '').toLowerCase();
+      return label === 'ziyaretçi kartı' || label === 'ziyaretci karti' || label.includes('ziyaretçi') || label.includes('ziyaretci');
+    });
+
+    const val = match?.value ?? match?.id ?? null;
+    if (val == null) return null;
+    const n = Number(val);
+    return isNaN(n) ? null : n;
+  }
+
+  private applyVisitorCardStatusDefault(): void {
+    // Always disabled (both add & edit)
+    this.setCardStatusDisabled(true);
+
+    const trySet = (attempt: number) => {
+      if (!this.dataTableComponent) return;
+      const dt: any = this.dataTableComponent as any;
+      if (!dt.formData) return;
+
+      const desiredId = this.findVisitorCardStatusId();
+      if (desiredId != null) {
+        dt.formData.CardStatusId = desiredId;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // options might not be loaded yet; retry briefly
+      if (attempt < 10) {
+        setTimeout(() => trySet(attempt + 1), 150);
+      }
+    };
+
+    trySet(0);
+  }
 
   constructor(
     private http: HttpClient,
@@ -137,11 +187,13 @@ export class VisitorCardComponent implements OnInit {
   onAdvancedFilterChange(_event: any): void {}
 
   onTableAdd(): void {
-    // let DataTable handle UI; we only force isVisitor on save
+    // Add mode: force CardStatusId to "Ziyaretçi Kartı" and keep disabled
+    this.applyVisitorCardStatusDefault();
   }
 
   onTableEdit(_event: any): void {
-    // let DataTable handle UI
+    // Edit mode: still forced + disabled
+    this.applyVisitorCardStatusDefault();
   }
 
   onTableDelete(_event: any): void {

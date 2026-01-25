@@ -83,12 +83,9 @@ export const formFields: TableColumn[] = [
   { field: 'CardCode', label: 'Kart Kodu', text: 'Kart Kodu', type: 'int' as ColumnType },
   { field: 'FacilityCode', label: 'FacilityCode', text: 'FacilityCode', type: 'text' as ColumnType },
   { field: 'Plate', label: 'Plaka', text: 'Plaka', type: 'text' as ColumnType },
-  { field: 'TemporaryId', label: 'Geçici ID', text: 'Geçici ID', type: 'text' as ColumnType },
-  { field: 'TemporaryDate', label: 'Geçici Tarih', text: 'Geçici Tarih', type: 'datetime' as ColumnType },
   { field: 'CardDesc', label: 'Kart Açıklaması', text: 'Kart Açıklaması', type: 'textarea' as ColumnType, fullWidth: true },
   { field: 'Status', label: 'Durum', text: 'Durum', type: 'checkbox' as ColumnType },
   { field: 'isDefined', label: 'Tanımlı', text: 'Tanımlı', type: 'checkbox' as ColumnType },
-  { field: 'isVisitor', label: 'Ziyaretçi', text: 'Ziyaretçi', type: 'checkbox' as ColumnType, disabled: true },
 ];
 
 export const formTabs: FormTab[] = [
@@ -104,12 +101,9 @@ export const formTabs: FormTab[] = [
       'CardCode',
       'FacilityCode',
       'Plate',
-      'TemporaryId',
-      'TemporaryDate',
       'CardDesc',
       'Status',
       'isDefined',
-      'isVisitor',
     ],
   },
 ];
