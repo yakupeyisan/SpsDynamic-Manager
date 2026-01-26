@@ -219,6 +219,7 @@ export interface ToolbarConfig {
     edit?: boolean;
     delete?: boolean;
     save?: boolean;
+    export?: boolean;
   };
 }
 
@@ -430,6 +431,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   showReportSaveModal: boolean = false;
   reportName: string = '';
   private pendingReportFilter: AdvancedFilter | null = null;
+  
+  // Export modal state
+  showExportModal: boolean = false;
+  exportReportName: string = '';
+  exportReportType: string = 'excel'; // excel, pdf, etc.
   
   // Column resizing state
   private isResizing: boolean = false;
@@ -2545,6 +2551,131 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.cdr.markForCheck();
   }
 
+  onExport(): void {
+    this.exportReportName = '';
+    this.exportReportType = 'excel';
+    this.showExportModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeExportModal(): void {
+    this.showExportModal = false;
+    this.exportReportName = '';
+    this.exportReportType = 'excel';
+    this.cdr.markForCheck();
+  }
+
+  performExport(): void {
+    if (!this.exportReportName || !this.exportReportName.trim()) {
+      this.toastr.warning('Lütfen rapor adı giriniz.', 'Uyarı');
+      return;
+    }
+
+    if (!this.exportReportType) {
+      this.toastr.warning('Lütfen rapor tipi seçiniz.', 'Uyarı');
+      return;
+    }
+
+    const cfg = this.effectiveReportConfig;
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    
+    // Get current search/filter data
+    const filters = this.activeFilter?.conditions?.map((cond: any) => ({
+      field: cond.field,
+      operator: cond.operator,
+      value: cond.value,
+      type: cond.type
+    })) || [];
+
+    // Build columns payload
+    const columns = this.buildReportColumnsPayload();
+    
+    // Build maps payload
+    const maps = this.buildReportMapsPayload();
+
+    // Get API URL (from reportConfig or infer from dataSource)
+    const exportUrl = cfg?.url || this.inferReportUrlFromDataSource();
+
+    // Prepare export payload
+    const exportPayload = {
+      ReportName: this.exportReportName.trim(),
+      ReportType: this.exportReportType,
+      Columns: columns,
+      Url: exportUrl,
+      Search: filters.length > 0 ? JSON.stringify(filters) : null,
+      SearchLogic: this.activeFilter?.logic || 'AND',
+      Maps: JSON.stringify(maps),
+      Grid: cfg?.grid || this.id || 'default'
+    };
+
+    // Send to Exports endpoint with blob response type
+    this.http.post(`${apiUrl}/api/Exports`, exportPayload, { 
+      responseType: 'blob',
+      observe: 'response'
+    }).subscribe({
+      next: (response: any) => {
+        // Get file extension based on report type
+        const fileExtension = this.exportReportType === 'pdf' ? 'pdf' : 
+                             this.exportReportType === 'csv' ? 'csv' : 'xlsx';
+        
+        // Get filename from response headers or use default
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = `${this.exportReportName.trim()}.${fileExtension}`;
+        
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '');
+          }
+        }
+        
+        // Create blob from response
+        const blob = new Blob([response.body], { 
+          type: response.headers.get('content-type') || 
+                (this.exportReportType === 'pdf' ? 'application/pdf' : 
+                 this.exportReportType === 'csv' ? 'text/csv' : 
+                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.toastr.success('Rapor başarıyla indirildi.', 'Başarılı');
+        this.closeExportModal();
+      },
+      error: (error) => {
+        console.error('Error exporting report:', error);
+        
+        // Try to read error message from blob if response is blob
+        if (error.error instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const errorJson = JSON.parse(reader.result as string);
+              const errorMessage = errorJson?.message || 'Rapor oluşturulurken hata oluştu.';
+              this.toastr.error(errorMessage, 'Hata');
+            } catch (e) {
+              this.toastr.error('Rapor oluşturulurken hata oluştu.', 'Hata');
+            }
+          };
+          reader.readAsText(error.error);
+        } else {
+          const errorMessage = error?.error?.message || error?.message || 'Rapor oluşturulurken hata oluştu.';
+          this.toastr.error(errorMessage, 'Hata');
+        }
+      }
+    });
+  }
+
   private buildReportMapsPayload(): Record<string, string> {
     // Use visible columns (respects hidden/internalColumns)
     const cols = Array.isArray(this.displayColumns) ? this.displayColumns : [];
@@ -2694,6 +2825,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         icon: 'check',
         tooltip: this.translate.instant('toolbar.saveTooltip'),
         onClick: (event: MouseEvent) => this.onUpdate()
+      },
+      export: {
+        id: 'export',
+        type: 'button' as ToolbarItemType,
+        text: this.translate.instant('toolbar.export') || 'Dışarı Aktar',
+        icon: 'export',
+        tooltip: this.translate.instant('toolbar.exportTooltip') || 'Export data',
+        onClick: (event: MouseEvent) => this.onExport()
       }
     };
 
@@ -2723,6 +2862,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           items.push({ type: 'break', id: 'w2ui-break2' });
         }
         items.push(defaultButtons.save);
+      }
+      if (show.export !== false && !customIds.includes(defaultButtons.export.id)) {
+        items.push(defaultButtons.export);
       }
 
       // Map and merge custom items with default buttons (w2ui style)
@@ -2775,6 +2917,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
               mappedItem.disabled = mappedItem.disabled !== undefined ? mappedItem.disabled : this.selectedRows.size === 0;
             } else if (mappedItem.id === 'save') {
               mappedItem.onClick = (event) => this.onUpdate();
+            } else if (mappedItem.id === 'export') {
+              mappedItem.onClick = (event) => this.onExport();
             }
           }
         }
@@ -2808,6 +2952,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           items.push({ id: 'break-save', type: 'break' });
         }
         items.push(defaultButtons.save);
+      }
+
+      if (show.export !== false) {
+        items.push(defaultButtons.export);
       }
     }
 
@@ -2858,6 +3006,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       tooltip: 'Delete selected records',
       disabled: this.selectedRows.size === 0,
       onClick: (event) => this.onDelete()
+    });
+
+    // Export button (always enabled, like add/update)
+    items.push({
+      id: 'export',
+      type: 'button',
+      text: this.translate.instant('toolbar.export') || 'Dışarı Aktar',
+      icon: 'export',
+      tooltip: this.translate.instant('toolbar.exportTooltip') || 'Export data',
+      onClick: (event) => this.onExport()
     });
 
     return items;

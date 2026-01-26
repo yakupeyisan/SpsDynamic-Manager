@@ -1,14 +1,16 @@
 // CardWriteList Component
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
 
 // Import configurations
 import { joinOptions } from './card-write-list-config';
@@ -33,15 +35,24 @@ import {
     CommonModule, 
     TablerIconsModule,
     TranslateModule,
-    DataTableComponent
+    DataTableComponent,
+    ModalComponent
   ],
   templateUrl: './card-write-list.component.html',
   styleUrls: ['./card-write-list.component.scss']
 })
 export class CardWriteListComponent implements OnInit {
+  @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
+  
+  // Preview modal state
+  showPreviewModal = false;
+  previewData: any[] = [];
+  isLoadingPreview = false;
+  previewHtml: SafeHtml = '';
   
   // Form configuration
   formFields: TableColumn[] = formFields;
@@ -82,7 +93,20 @@ export class CardWriteListComponent implements OnInit {
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          type: 'break' as const,
+          id: 'break-preview'
+        },
+        {
+          id: 'preview',
+          type: 'button' as const,
+          text: 'Önizleme',
+          icon: 'eye',
+          tooltip: 'Seçili kartların yazdırma önizlemesini göster',
+          onClick: (event: MouseEvent, item: any) => this.onPreview(event, item)
+        }
+      ],
       show: {
         reload: true,
         columns: true,
@@ -134,7 +158,8 @@ export class CardWriteListComponent implements OnInit {
     private http: HttpClient,
     private toastr: ToastrService,
     public translate: TranslateService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -172,5 +197,553 @@ export class CardWriteListComponent implements OnInit {
 
   onAdvancedFilterChange(event: any): void {
     // Handle advanced filter change
+  }
+
+  onPreview(event: MouseEvent, item: any): void {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir kayıt seçiniz.');
+      return;
+    }
+    
+    // Get selected records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    const selectedRecords = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['Id'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Load preview data
+    this.loadPreviewData(selectedRecords);
+  }
+
+  loadPreviewData(selectedRecords: any[]): void {
+    this.isLoadingPreview = true;
+    this.showPreviewModal = true;
+    this.previewData = [];
+    this.cdr.markForCheck();
+    
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    
+    // Load template and card data for each record
+    const requests = selectedRecords.map(record => {
+      const templateId = record['TemplateId'] || record['TemplateID'] || record['TemplateId'] || record['CardTemplate']?.Id;
+      const cardId = record['CardId'] || record['CardID'] || record['Card']?.CardID || record['Card']?.CardId;
+      
+      // Load template
+      const templateRequest = this.http.post(`${apiUrl}/api/CardTemplates/form`, {
+        request: {
+          action: 'get',
+          recid: templateId,
+          name: 'EditCardTemplate'
+        }
+      });
+      
+      // Load card data with Employee join if not already in record
+      let cardRequest: Observable<any>;
+      if (record['Card'] && record['Card']['Employee'] && record['Card']['Employee']['Name']) {
+        // Card data already loaded with Employee join
+        cardRequest = of({ record: record['Card'] });
+      } else if (cardId) {
+        // Load card data separately with Employee join
+        cardRequest = this.http.post(`${apiUrl}/api/Cards/form`, {
+          request: {
+            action: 'get',
+            recid: cardId,
+            name: 'EditCard'
+          }
+        });
+      } else {
+        // No card ID, use record as is
+        cardRequest = of({ record: record['Card'] || record });
+      }
+      
+      return forkJoin({
+        template: templateRequest,
+        card: cardRequest
+      }).pipe(
+        map((result: any) => {
+          const template = result.template?.record || result.template;
+          const card = result.card?.record || result.card || record['Card'];
+          const employee = card?.Employee || record['Card']?.Employee;
+          
+          // Extract Department from EmployeeDepartments array (like SQL STUFF query)
+          let departmentName = '';
+          if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
+            const deptNames = employee.EmployeeDepartments
+              .map((ed: any) => ed?.Department?.DepartmentName || ed?.Department?.Name)
+              .filter(Boolean);
+            departmentName = deptNames.join(', ');
+          } else if (employee?.Department) {
+            departmentName = employee.Department.DepartmentName || employee.Department.Name || '';
+          }
+          
+          // Extract Faculty from nested structure
+          let facultyName = '';
+          if (employee?.Faculty) {
+            facultyName = employee.Faculty.Name || employee.Faculty.FacultyName || '';
+          }
+          
+          // Build FullName like SQL: Employee.Name+' '+Employee.SurName
+          const fullName = employee ? `${employee.Name || ''} ${employee.SurName || ''}`.trim() : '';
+          
+          // Merge card and employee data into a flat structure (like PHP $data object)
+          // This matches the structure from the SQL query in the old system
+          // IMPORTANT: Spread employee and card first, then override with specific mappings
+          // This ensures all fields are available for dynamic field access
+          const cardData: any = {
+            // First spread all fields from card and employee (for dynamic fields from SQL)
+            ...(card || {}),
+            ...(employee || {}),
+            
+            // Then override with specific mappings (from SQL SELECT)
+            EmployeeID: employee?.EmployeeID || employee?.Id || card?.EmployeeID || '',
+            PictureID: employee?.PictureID || card?.PictureID || employee?.PictureId || card?.PictureId || employee?.Picture || '',
+            Name: employee?.Name || card?.Name || '',
+            SurName: employee?.SurName || card?.SurName || '',
+            FullName: fullName, // SQL: Employee.Name+' '+Employee.SurName as 'FullName'
+            DepartmentName: departmentName, // SQL: STUFF(...) as 'DepartmentName'
+            
+            // Card fields
+            CardID: card?.CardID || card?.CardId || record['CardId'],
+            CardCode: card?.CardCode || card?.CardUID || '',
+            TagCode: card?.TagCode || '',
+            CardUID: card?.CardUID || '',
+            CardDesc: card?.CardDesc || '',
+            
+            // Employee additional fields
+            IdentificationNumber: employee?.IdentificationNumber || employee?.TCKimlikNo || employee?.IdentityNumber || '',
+            TCKimlikNo: employee?.TCKimlikNo || employee?.IdentityNumber || employee?.IdentificationNumber || '',
+            AcademicNumber: employee?.AcademicNumber || employee?.StudentNumber || employee?.StudentNo || '',
+            EmployeeName: fullName,
+            
+            // Department and Faculty
+            Department: departmentName,
+            Faculty: facultyName,
+            FacultyName: facultyName,
+            
+            // PersonInfo fields (from Card)
+            PersonInfo01: card?.PersonInfo01 || '',
+            PersonInfo02: card?.PersonInfo02 || '',
+            PersonInfo03: card?.PersonInfo03 || '',
+            PersonInfo04: card?.PersonInfo04 || '',
+            PersonInfo05: card?.PersonInfo05 || '',
+            PersonInfo06: card?.PersonInfo06 || '',
+            PersonInfo07: card?.PersonInfo07 || '',
+            PersonInfo08: card?.PersonInfo08 || '',
+            PersonInfo09: card?.PersonInfo09 || '',
+            PersonInfo10: card?.PersonInfo10 || ''
+          };
+          
+          // Flatten nested objects (like Employee.EmployeeDepartments[0].Department.DepartmentName -> DepartmentName)
+          // This ensures all nested data is accessible at root level
+          if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
+            employee.EmployeeDepartments.forEach((ed: any, index: number) => {
+              if (ed?.Department) {
+                Object.keys(ed.Department).forEach(key => {
+                  if (!cardData[key] || index === 0) {
+                    cardData[key] = ed.Department[key];
+                  }
+                });
+              }
+            });
+          }
+          
+          // Flatten other nested structures
+          if (employee?.Faculty) {
+            Object.keys(employee.Faculty).forEach(key => {
+              if (!cardData[key]) {
+                cardData[key] = employee.Faculty[key];
+              }
+            });
+          }
+          
+          if (card?.CafeteriaGroup) {
+            Object.keys(card.CafeteriaGroup).forEach(key => {
+              if (!cardData[key]) {
+                cardData[key] = card.CafeteriaGroup[key];
+              }
+            });
+          }
+          
+          // Flatten EmployeeCustomFields (like SQL LEFT JOIN EmployeeCustomFields)
+          // EmployeeCustomFields can be an object or array
+          if (employee?.EmployeeCustomFields) {
+            if (Array.isArray(employee.EmployeeCustomFields) && employee.EmployeeCustomFields.length > 0) {
+              // If it's an array, take the first one (should be only one per employee)
+              const customFields = employee.EmployeeCustomFields[0];
+              Object.keys(customFields).forEach(key => {
+                if (key !== 'EmployeeID' && key !== 'Id') {
+                  cardData[key] = customFields[key];
+                }
+              });
+            } else if (typeof employee.EmployeeCustomFields === 'object') {
+              // If it's an object directly
+              Object.keys(employee.EmployeeCustomFields).forEach(key => {
+                if (key !== 'EmployeeID' && key !== 'Id') {
+                  cardData[key] = employee.EmployeeCustomFields[key];
+                }
+              });
+            }
+          }
+          
+          // Also check for CustomField object (alternative structure)
+          if (employee?.CustomField) {
+            Object.keys(employee.CustomField).forEach(key => {
+              if (key.startsWith('CustomField')) {
+                cardData[key] = employee.CustomField[key];
+              }
+            });
+          }
+          
+          // Debug log - show full CardData structure
+          console.log('CardData for preview:', {
+            EmployeeID: cardData.EmployeeID,
+            PictureID: cardData.PictureID,
+            Name: cardData.Name,
+            SurName: cardData.SurName,
+            FullName: cardData.FullName,
+            DepartmentName: cardData.DepartmentName,
+            TagCode: cardData.TagCode,
+            CardUID: cardData.CardUID,
+            CustomField01: cardData.CustomField01,
+            CustomField02: cardData.CustomField02,
+            CustomField03: cardData.CustomField03,
+            allKeys: Object.keys(cardData).slice(0, 50)
+          });
+          
+          return {
+            ...record,
+            TemplateData: template?.TemplateData ? (typeof template.TemplateData === 'string' ? JSON.parse(template.TemplateData) : template.TemplateData) : null,
+            CardData: cardData
+          };
+        }),
+        catchError(error => {
+          console.error('Error loading preview data:', error);
+          return of(null);
+        })
+      );
+    });
+    
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        this.previewData = results.filter(r => r !== null);
+        console.log('loadPreviewData: Loaded preview data:', {
+          count: this.previewData.length,
+          firstItem: this.previewData[0] ? {
+            hasTemplateData: !!this.previewData[0].TemplateData,
+            hasCardData: !!this.previewData[0].CardData,
+            cardDataKeys: this.previewData[0].CardData ? Object.keys(this.previewData[0].CardData).slice(0, 30) : []
+          } : null
+        });
+        // Generate HTML once when data is loaded
+        this.previewHtml = this.generatePreviewHtml(this.previewData);
+        this.isLoadingPreview = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Error loading preview:', error);
+        this.toastr.error('Önizleme yüklenirken hata oluştu.');
+        this.isLoadingPreview = false;
+        this.showPreviewModal = false;
+        this.previewHtml = '';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  closePreviewModal(): void {
+    this.showPreviewModal = false;
+    this.previewData = [];
+    this.previewHtml = '';
+  }
+
+  /**
+   * Generate preview HTML from preview data
+   * This is called once when data is loaded, not on every change detection
+   */
+  private generatePreviewHtml(previewData: any[]): SafeHtml {
+    if (!previewData || previewData.length === 0) {
+      console.warn('generatePreviewHtml: previewData is empty');
+      return '';
+    }
+    
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    
+    let html = '<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px; font-family: \'Open Sans\', sans-serif;">';
+    
+    previewData.forEach((data, index) => {
+      console.log(`generatePreviewHtml: Processing data ${index}:`, {
+        hasTemplateData: !!data.TemplateData,
+        hasCardData: !!data.CardData,
+        templateDataKeys: data.TemplateData ? Object.keys(data.TemplateData) : [],
+        cardDataKeys: data.CardData ? Object.keys(data.CardData).slice(0, 20) : []
+      });
+      
+      if (!data.TemplateData) {
+        console.warn(`generatePreviewHtml: No TemplateData for index ${index}`);
+        return;
+      }
+      
+      if (!data.CardData) {
+        console.warn(`generatePreviewHtml: No CardData for index ${index}`);
+      }
+      
+      html += '<div class="preview-row" style="display: flex; flex-direction: row; justify-content: space-around; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; gap: 20px;">';
+      
+      // FRONT
+      if (data.TemplateData.FRONT) {
+        const front = data.TemplateData.FRONT;
+        const bgStyle = front.background && front.background !== 'transparent' ? `background: url('${front.background}'); background-repeat: no-repeat; background-size: cover;` : 'background: white;';
+        html += `<div class="preview-card-front" data-type="FRONT" style="position: relative; width: ${front.width}; height: ${front.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
+        
+        const frontItems = front.items ? (Array.isArray(front.items) ? front.items : Object.values(front.items)) : [];
+        console.log(`generatePreviewHtml: FRONT has ${frontItems.length} items`);
+        
+        if (frontItems.length > 0) {
+          frontItems.forEach((item: any, itemIndex: number) => {
+            console.log(`generatePreviewHtml: Processing FRONT item ${itemIndex}:`, {
+              type: item.type,
+              field: item.field,
+              hasCardData: !!data.CardData
+            });
+            
+            if (item.type === 'fix') {
+              // PHP: textTransform($item->field, $item->textTransform)
+              const fixText = this.textTransform(item.field || '', item.textTransform);
+              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fixText}</label>`;
+            } else if (item.type === 'label' && item.field) {
+              // PHP: $field = explode("-", $item->field)[0]; textTransform($data->{$field}, $item->textTransform)
+              const field = item.field.split('-')[0];
+              // Try direct access first (like PHP $data->{$field})
+              let value = '';
+              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
+                value = String(data.CardData[field]);
+              } else {
+                value = this.getFieldValue(data.CardData, field);
+              }
+              console.log(`generatePreviewHtml: label field="${field}", value="${value}", item.field="${item.field}", CardData keys:`, data.CardData ? Object.keys(data.CardData).slice(0, 20) : 'no CardData');
+              // Always render label, even if value is empty (PHP doesn't check)
+              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
+            } else if (item.type === 'image' && item.field) {
+              // PHP: $field = explode("-", $item->field)[0]; $data->PictureID == null ? "avatar.png" : $data->PictureID
+              const field = item.field.split('-')[0];
+              // Try direct access first, then fallback to PictureID
+              let pictureId = '';
+              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
+                pictureId = String(data.CardData[field]);
+              } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
+                pictureId = String(data.CardData.PictureID);
+              } else {
+                pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
+              }
+              console.log(`generatePreviewHtml: image field="${field}", pictureId="${pictureId}"`);
+              // PHP: $_ENV['app.apiURL'] ?>images/<?= $data->PictureID == null ? "avatar.png" : $data->PictureID . '?v=' . microtime()
+              const avatarUrl = '/assets/images/profile/avaatar.png';
+              const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
+              html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
+            } else if (item.type === 'imagefix' && item.src) {
+              // Fixed image from template (like logo)
+              console.log(`generatePreviewHtml: imagefix src="${item.src}"`);
+              html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
+            } else if (item.type === 'barcode' && item.field) {
+              const field = item.field.split('-')[0];
+              const value = this.getFieldValue(data.CardData, field);
+              console.log(`generatePreviewHtml: barcode field="${field}", value="${value}"`);
+              if (value) {
+                html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
+              }
+            }
+          });
+        } else {
+          console.warn('generatePreviewHtml: FRONT has no items');
+        }
+        
+        html += '</div>';
+      }
+      
+      // BACK
+      if (data.TemplateData.BACK) {
+        const back = data.TemplateData.BACK;
+        const bgStyle = back.background && back.background !== 'transparent' ? `background: url('${back.background}'); background-repeat: no-repeat; background-size: cover;` : 'background: white;';
+        html += `<div class="preview-card-back" data-type="BACK" style="position: relative; width: ${back.width}; height: ${back.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
+        
+        const backItems = back.items ? (Array.isArray(back.items) ? back.items : Object.values(back.items)) : [];
+        if (backItems.length > 0) {
+          backItems.forEach((item: any) => {
+            if (item.type === 'fix') {
+              // PHP: textTransform($item->field, $item->textTransform)
+              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(item.field || '', item.textTransform)}</label>`;
+            } else if (item.type === 'label' && item.field) {
+              // PHP: $field = explode("-", $item->field)[0]; textTransform($data->{$field}, $item->textTransform)
+              const field = item.field.split('-')[0];
+              // Try direct access first (like PHP $data->{$field})
+              let value = '';
+              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
+                value = String(data.CardData[field]);
+              } else {
+                value = this.getFieldValue(data.CardData, field);
+              }
+              // Always render label, even if value is empty (PHP doesn't check)
+              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
+            } else if (item.type === 'image' && item.field) {
+              // PHP: $field = explode("-", $item->field)[0]; $data->PictureID == null ? "avatar.png" : $data->PictureID
+              const field = item.field.split('-')[0];
+              const pictureId = this.getFieldValue(data.CardData, field) || this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
+              const avatarUrl = '/assets/images/profile/avaatar.png';
+              const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
+              html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
+            } else if (item.type === 'imagefix' && item.src) {
+              // Fixed image from template (like logo)
+              html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
+            } else if (item.type === 'barcode' && item.field) {
+              // PHP: $field = explode("-", $item->field)[0]; if ($data->{$field} == null || $data->{$field} == '') continue;
+              const field = item.field.split('-')[0];
+              const value = this.getFieldValue(data.CardData, field);
+              if (value) {
+                html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
+              }
+            }
+          });
+        }
+        
+        html += '</div>';
+      }
+      
+      html += '</div>';
+    });
+    
+    html += '</div>';
+    
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
+  /**
+   * Get field value from CardData, supporting nested fields
+   * Matches PHP: $data->{$field}
+   */
+  getFieldValue(cardData: any, field: string): string {
+    if (!cardData || !field) {
+      console.warn(`getFieldValue: Missing cardData or field. cardData: ${!!cardData}, field: ${field}`);
+      return '';
+    }
+    
+    // Direct field access (like PHP $data->{$field})
+    if (cardData[field] !== undefined && cardData[field] !== null) {
+      const value = String(cardData[field]);
+      console.log(`getFieldValue: Found direct field "${field}" = "${value}"`);
+      return value;
+    }
+    
+    // Special handling for FullName (SQL computed field)
+    if (field === 'FullName') {
+      const fullName = cardData.FullName || 
+                      (cardData.Name && cardData.SurName ? `${cardData.Name} ${cardData.SurName}`.trim() : '') ||
+                      cardData.EmployeeName || '';
+      if (fullName) return fullName;
+    }
+    
+    // Nested field access (e.g., Employee.Name)
+    if (field.includes('.')) {
+      const parts = field.split('.');
+      let value = cardData;
+      for (const part of parts) {
+        if (value && typeof value === 'object') {
+          value = value[part];
+        } else {
+          return '';
+        }
+      }
+      return value !== undefined && value !== null ? String(value) : '';
+    }
+    
+    // Try common field name variations
+    const variations = [
+      field,
+      field.charAt(0).toUpperCase() + field.slice(1),
+      field.toLowerCase(),
+      field.toUpperCase()
+    ];
+    
+    for (const variant of variations) {
+      if (cardData[variant] !== undefined && cardData[variant] !== null) {
+        return String(cardData[variant]);
+      }
+    }
+    
+    // Try nested Employee fields
+    if (cardData.Employee) {
+      for (const variant of variations) {
+        if (cardData.Employee[variant] !== undefined && cardData.Employee[variant] !== null) {
+          return String(cardData.Employee[variant]);
+        }
+      }
+    }
+    
+    // Try Department nested field
+    if (field === 'Department' || field === 'DepartmentName') {
+      // Already flattened in cardData
+      if (cardData.Department) return cardData.Department;
+      if (cardData.DepartmentName) return cardData.DepartmentName;
+      // Try nested Employee structure
+      if (cardData.Employee?.EmployeeDepartments && Array.isArray(cardData.Employee.EmployeeDepartments) && cardData.Employee.EmployeeDepartments.length > 0) {
+        const dept = cardData.Employee.EmployeeDepartments[0]?.Department;
+        if (dept?.DepartmentName) return dept.DepartmentName;
+        if (dept?.Name) return dept.Name;
+      }
+      if (cardData.Employee?.Department?.Name) return cardData.Employee.Department.Name;
+      if (cardData.Employee?.Department?.DepartmentName) return cardData.Employee.Department.DepartmentName;
+    }
+    
+    // Try Faculty nested field
+    if (field === 'Faculty' || field === 'FacultyName') {
+      // Already flattened in cardData
+      if (cardData.Faculty) return cardData.Faculty;
+      if (cardData.FacultyName) return cardData.FacultyName;
+      // Try nested Employee structure
+      if (cardData.Employee?.Faculty?.Name) return cardData.Employee.Faculty.Name;
+      if (cardData.Employee?.Faculty?.FacultyName) return cardData.Employee.Faculty.FacultyName;
+    }
+    
+    // Try AcademicNumber/StudentNumber
+    if (field === 'AcademicNumber' || field === 'StudentNumber' || field === 'StudentNo') {
+      if (cardData.AcademicNumber) return cardData.AcademicNumber;
+      if (cardData.StudentNumber) return cardData.StudentNumber;
+      if (cardData.StudentNo) return cardData.StudentNo;
+    }
+    
+    // Try TCKimlikNo/IdentityNumber/IdentificationNumber
+    if (field === 'TCKimlikNo' || field === 'IdentityNumber' || field === 'IdentificationNumber') {
+      if (cardData.TCKimlikNo) return cardData.TCKimlikNo;
+      if (cardData.IdentityNumber) return cardData.IdentityNumber;
+      if (cardData.IdentificationNumber) return cardData.IdentificationNumber;
+    }
+    
+    return '';
+  }
+
+  textTransform(value: any, transform?: string): string {
+    if (!value) return '';
+    const str = String(value);
+    
+    if (!transform) return str;
+    
+    switch (transform.toLowerCase()) {
+      case 'uppercase':
+        return str.toUpperCase();
+      case 'lowercase':
+        return str.toLowerCase();
+      case 'capitalize':
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      default:
+        return str;
+    }
   }
 }

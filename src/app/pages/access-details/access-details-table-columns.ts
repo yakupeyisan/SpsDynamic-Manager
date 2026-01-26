@@ -132,6 +132,36 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'cardOwnerName', 
+    label: 'Kart Sahibi', 
+    text: 'Kart Sahibi',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      // Try to get card owner name from Cards array
+      if (record['Cards'] && Array.isArray(record['Cards']) && record['Cards'].length > 0) {
+        const firstCard = record['Cards'][0];
+        // Try different possible field names for card owner
+        return firstCard['OwnerName'] || 
+               firstCard['CardOwnerName'] || 
+               firstCard['Owner']?.Name || 
+               firstCard['CardOwner']?.Name ||
+               (firstCard['Owner'] && typeof firstCard['Owner'] === 'string' ? firstCard['Owner'] : '') ||
+               '';
+      }
+      // Fallback: try direct field access
+      return record['cardOwnerName'] || 
+             record['CardOwnerName'] || 
+             record['OwnerName'] || 
+             '';
+    }
+  },
+  { 
     field: 'AccessGroup', 
     searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupName',
     label: 'Yetki Adı', 

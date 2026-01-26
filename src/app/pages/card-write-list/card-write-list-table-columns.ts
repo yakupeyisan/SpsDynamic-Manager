@@ -8,145 +8,223 @@ export const tableColumns: TableColumn[] = [
     text: 'ID',
     type: 'int' as ColumnType, 
     sortable: true, 
-    width: '80px', 
-    size: '80px',
+    width: '40px', 
+    size: '40px',
     searchable: 'int',
-    resizable: true
+    resizable: true,
+    min: 20
   },
   { 
     field: 'TemplateName', 
     label: 'Şablon Adı', 
     text: 'Şablon Adı',
     type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '200px', 
-    size: '200px',
-    searchable: false,
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text',
     resizable: true,
-    render: (record: any) => record.CardTemplate?.Name || record.CardTemplate?.TemplateName || '',
+    min: 20,
+    render: (record: any) => record.CardTemplate?.Name || record.CardTemplate?.TemplateName || record.TemplateName || '',
     joinTable: 'CardTemplate'
   },
   { 
-    field: 'CardCode', 
-    label: 'Kart Kodu', 
-    text: 'Kart Kodu',
+    field: 'DepartmentName', 
+    label: 'Bölüm', 
+    text: 'Bölüm',
     type: 'text' as ColumnType, 
-    sortable: false, 
+    sortable: true, 
     width: '150px', 
     size: '150px',
-    searchable: false,
+    searchable: 'text',
     resizable: true,
-    render: (record: any) => record.Card?.CardCode || record.Card?.CardUID || '',
-    joinTable: 'Card'
-  },
-  { 
-    field: 'CardUID', 
-    label: 'Kart UID', 
-    text: 'Kart UID',
-    type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '150px', 
-    size: '150px',
-    searchable: false,
-    resizable: true,
-    render: (record: any) => record.Card?.CardUID || '',
-    joinTable: 'Card'
-  },
-  { 
-    field: 'EmployeeName', 
-    label: 'Kişi Adı', 
-    text: 'Kişi Adı',
-    type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '200px', 
-    size: '200px',
-    searchable: false,
-    resizable: true,
+    min: 20,
     render: (record: any) => {
-      if (record.Card?.Employee) {
-        return `${record.Card.Employee.Name || ''} ${record.Card.Employee.SurName || ''}`.trim() || record.Card.Employee.Name || record.Card.Employee.SurName || '';
+      if (record.Card?.Employee?.EmployeeDepartments && Array.isArray(record.Card.Employee.EmployeeDepartments) && record.Card.Employee.EmployeeDepartments.length > 0) {
+        const dept = record.Card.Employee.EmployeeDepartments[0]?.Department;
+        return dept?.DepartmentName || dept?.Name || '';
       }
-      return '';
+      if (record.Card?.Employee?.Department) {
+        return record.Card.Employee.Department.DepartmentName || record.Card.Employee.Department.Name || '';
+      }
+      return record.DepartmentName || '';
     },
     joinTable: 'Card'
   },
   { 
-    field: 'WritedAt', 
-    label: 'Yazdırma Tarihi', 
-    text: 'Yazdırma Tarihi',
-    type: 'datetime' as ColumnType, 
-    sortable: true, 
-    width: '180px', 
-    size: '180px',
-    searchable: 'datetime',
-    resizable: true
-  },
-  { 
-    field: 'WritedUser', 
-    label: 'Yazdıran Kullanıcı', 
-    text: 'Yazdıran Kullanıcı',
+    field: 'EmployeeID', 
+    label: 'Kişi No', 
+    text: 'Kişi No',
     type: 'int' as ColumnType, 
     sortable: true, 
-    width: '150px', 
-    size: '150px',
-    searchable: 'int',
-    resizable: true
-  },
-  { 
-    field: 'WritedData', 
-    label: 'Yazdırılan Veri', 
-    text: 'Yazdırılan Veri',
-    type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '300px', 
-    size: '300px',
-    searchable: 'text',
-    resizable: true
-  },
-  { 
-    field: 'TemplateId', 
-    label: 'Şablon ID', 
-    text: 'Şablon ID',
-    type: 'int' as ColumnType, 
-    sortable: true, 
-    width: '120px', 
-    size: '120px',
+    width: '60px', 
+    size: '60px',
     searchable: 'int',
     resizable: true,
-    joinTable: 'CardTemplate'
-  },
-  { 
-    field: 'CardId', 
-    label: 'Kart ID', 
-    text: 'Kart ID',
-    type: 'int' as ColumnType, 
-    sortable: true, 
-    width: '100px', 
-    size: '100px',
-    searchable: 'int',
-    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.Employee?.EmployeeID || record.Card?.EmployeeID || record.EmployeeID || '',
     joinTable: 'Card'
   },
   { 
-    field: 'CreatedAt', 
-    label: 'Oluşturma Tarihi', 
-    text: 'Oluşturma Tarihi',
-    type: 'datetime' as ColumnType, 
+    field: 'IdentificationNumber', 
+    label: 'Kimlik Numarası', 
+    text: 'Kimlik Numarası',
+    type: 'text' as ColumnType, 
     sortable: true, 
-    width: '180px', 
-    size: '180px',
-    searchable: 'datetime',
-    resizable: true
+    width: '150px', 
+    size: '150px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.Employee?.IdentificationNumber || record.Card?.Employee?.TCKimlikNo || record.Card?.Employee?.IdentityNumber || record.IdentificationNumber || '',
+    joinTable: 'Card'
   },
   { 
-    field: 'UpdatedAt', 
-    label: 'Güncelleme Tarihi', 
-    text: 'Güncelleme Tarihi',
+    field: 'Name', 
+    label: 'Adı', 
+    text: 'Adı',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.Employee?.Name || record.Name || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'SurName', 
+    label: 'Soyad', 
+    text: 'Soyad',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.Employee?.SurName || record.SurName || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'TagCode', 
+    label: 'Kart No', 
+    text: 'Kart No',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '150px', 
+    size: '150px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.TagCode || record.TagCode || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'CardUID', 
+    label: 'CardUID', 
+    text: 'CardUID',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '150px', 
+    size: '150px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.CardUID || record.CardUID || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'CardDesc', 
+    label: 'Kart Açıklaması', 
+    text: 'Kart Açıklaması',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '150px', 
+    size: '150px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.CardDesc || record.CardDesc || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'CafeteriaGroupName', 
+    label: 'Kafeterya Grup Adı', 
+    text: 'Kafeterya Grup Adı',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '150px', 
+    size: '150px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.CafeteriaGroup?.CafeteriaGroupName || record.Card?.CafeteriaGroup?.Name || record.CafeteriaGroupName || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'CardUpdatedAt', 
+    label: 'Kart Güncelleme Tarihi', 
+    text: 'Kart Güncelleme Tarihi',
     type: 'datetime' as ColumnType, 
     sortable: true, 
-    width: '180px', 
-    size: '180px',
+    width: '150px', 
+    size: '150px',
     searchable: 'datetime',
-    resizable: true
+    resizable: true,
+    min: 20,
+    render: (record: any) => record.Card?.UpdatedAt || record.Card?.CardUpdatedAt || record.CardUpdatedAt || '',
+    joinTable: 'Card'
+  },
+  { 
+    field: 'WritedAt', 
+    label: 'Yazdirma Tarihi', 
+    text: 'Yazdirma Tarihi',
+    type: 'datetime' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'datetime',
+    resizable: true,
+    min: 20
+  },
+  { 
+    field: 'WritedUserName', 
+    label: 'Yazdıran Kişi', 
+    text: 'Yazdıran Kişi',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '100px', 
+    size: '100px',
+    searchable: 'text',
+    resizable: true,
+    min: 20,
+    render: (record: any) => {
+      // Try to get user name from nested structure
+      if (record.WritedUser) {
+        // If it's an object with Name property
+        if (typeof record.WritedUser === 'object' && record.WritedUser.Name) {
+          return record.WritedUser.Name;
+        }
+        // If there's a User join
+        if (record.User?.Name) {
+          return record.User.Name;
+        }
+      }
+      return record.WritedUserName || '';
+    }
+  },
+  { 
+    field: 'WritedData', 
+    label: 'Yazdirilan Veri', 
+    text: 'Yazdirilan Veri',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    min: 20
   }
 ];

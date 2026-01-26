@@ -56,3 +56,33 @@
     </div>
   </div>
 </div>
+
+<!-- Preview Modal -->
+<ui-modal
+  [show]="showPreviewModal"
+  [title]="'Kart Yazdırma Önizlemesi'"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="showPreviewModal = $event"
+  (closed)="closePreviewModal()">
+  
+  <div *ngIf="isLoadingPreview" style="text-align: center; padding: 40px;">
+    <div class="spinner-border" role="status">
+      <span class="sr-only">Yükleniyor...</span>
+    </div>
+    <p style="margin-top: 20px;">Önizleme hazırlanıyor...</p>
+  </div>
+  
+  <div *ngIf="!isLoadingPreview" [innerHTML]="previewHtml"></div>
+  
+  <div slot="footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+    <button 
+      type="button" 
+      class="btn btn-secondary" 
+      (click)="closePreviewModal()">
+      <i class="ti ti-x me-1"></i>
+      Kapat
+    </button>
+  </div>
+</ui-modal>

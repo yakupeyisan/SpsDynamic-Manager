@@ -70,8 +70,19 @@
     "deleteTooltip": "Seçili kayıtları sil",
     "save": "Kaydet",
     "saveTooltip": "Değişiklikleri kaydet",
+    "export": "Dışarı Aktar",
+    "exportTooltip": "Verileri dışa aktar",
     "operations": "İşlemler",
     "operationsTooltip": "İşlemler Menüsü"
+  },
+  "export": {
+    "title": "Dışarı Aktar",
+    "reportName": "Rapor Adı",
+    "enterReportName": "Rapor adı giriniz...",
+    "reportType": "Rapor Tipi",
+    "selectReportType": "Rapor tipi seçiniz...",
+    "export": "Dışarı Aktar",
+    "info": "Mevcut filtreler, kolonlar ve arama verileri rapor olarak dışa aktarılacaktır."
   },
   "operations": {
     "bulkAccessPermission": "Toplu Geçiş Yetkisi Tanımlama",

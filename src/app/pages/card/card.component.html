@@ -151,3 +151,102 @@
     </button>
   </div>
 </ui-modal>
+
+<!-- Card Write Modal -->
+<ui-modal
+  [show]="showCardWriteModal"
+  [title]="'Kart Yazdırma'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCardWriteModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili kartlar yazdırılacaktır. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Yazdırılacak Kartlar</span>
+        <span class="cancel-section-badge">{{ selectedCardsForWrite.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let card of selectedCardsForWrite; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Kart ID:</span>
+              <span class="selected-event-value">{{ card['CardID'] || card['recid'] || card['id'] }}</span>
+            </div>
+            <div *ngIf="card['TagCode']" class="selected-event-row">
+              <span class="selected-event-label">Tag Kodu:</span>
+              <span class="selected-event-value">{{ card['TagCode'] }}</span>
+            </div>
+            <div *ngIf="card['CardCode']" class="selected-event-row">
+              <span class="selected-event-label">Kart Kodu:</span>
+              <span class="selected-event-value">{{ card['CardCode'] }}</span>
+            </div>
+            <div *ngIf="card['Employee']?.Name || card['Employee']?.SurName" class="selected-event-row">
+              <span class="selected-event-label">Kişi:</span>
+              <span class="selected-event-value">{{ card['Employee']?.Name || '' }} {{ card['Employee']?.SurName || '' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Card Template Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-file-text me-2"></i>
+        <span class="cancel-section-title">Kart Şablonu</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedCardTemplateId"
+        [options]="getCardTemplateOptions()"
+        [placeholder]="'Kart şablonu seçiniz...'"
+        [disabled]="isWritingCards || isLoadingCardTemplates"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint" *ngIf="isLoadingCardTemplates">
+        <i class="ti ti-loader"></i>
+        <span>Kart şablonları yükleniyor...</span>
+      </div>
+      <div class="cancel-description-hint" *ngIf="!isLoadingCardTemplates">
+        <i class="ti ti-info-circle"></i>
+        <span>Yazdırılacak kartlar için kullanılacak şablonu seçiniz.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeCardWriteModal()"
+      [disabled]="isWritingCards">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmCardWrite()"
+      [disabled]="isWritingCards || selectedCardsForWrite.length === 0 || !selectedCardTemplateId">
+      <span *ngIf="isWritingCards" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isWritingCards" class="ti ti-printer me-1"></i>
+      Onayla ve Yazdır
+    </button>
+  </div>
+</ui-modal>

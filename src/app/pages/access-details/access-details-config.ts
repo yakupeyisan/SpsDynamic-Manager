@@ -9,4 +9,5 @@ export const joinOptions: JoinOption[] = [
   { key: 'AccessGroup', label: 'Geçiş Yetki Grubu', nested: true, parent: 'EmployeeAccessGroups' },
   { key: 'AccessGroupReaders', label: 'Okuyucular', nested: true, parent: 'EmployeeAccessGroups' },
   { key: 'CustomField', label: 'Özel Alanlar', nested: false, default: true },
+  { key: 'Cards', label: 'Kartlar', nested: true, default: true },
 ];

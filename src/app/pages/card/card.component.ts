@@ -64,6 +64,14 @@ export class CardComponent implements OnInit {
   selectedCafeteriaGroupId: number | null = null;
   isUpdatingCafeteriaGroup: boolean = false;
   
+  // Card Write modal state
+  showCardWriteModal = false;
+  selectedCardsForWrite: any[] = [];
+  selectedCardTemplateId: number | null = null;
+  cardTemplateOptions: any[] = [];
+  isLoadingCardTemplates: boolean = false;
+  isWritingCards: boolean = false;
+  
   // Data source function for table
   tableDataSource = (params: any) => {
     return this.http.post<GridResponse>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards`, {
@@ -116,15 +124,6 @@ export class CardComponent implements OnInit {
               id: 'changeStatus',
               text: 'Kullanima Kapat',
               onClick: (event: MouseEvent, item: any) => this.onChangeStatus(event, item)
-            },
-            {
-              id: 'separator-1',
-              text: '--'
-            },
-            {
-              id: 'getAllCards',
-              text: 'Bütün Kartlar',
-              onClick: (event: MouseEvent, item: any) => this.onGetAllCards(event, item)
             },
             {
               id: 'cardWrite',
@@ -420,7 +419,149 @@ export class CardComponent implements OnInit {
   }
 
   onCardWrite(event: MouseEvent, item: any): void {
-    // Handle card write
-    console.log('Card write:', event, item);
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir kart seçiniz.');
+      return;
+    }
+    
+    // Get selected card records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedCardsForWrite = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['CardID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    // Reset template selection
+    this.selectedCardTemplateId = null;
+    
+    // Load card templates if not loaded
+    this.loadCardTemplateOptionsIfNeeded();
+    
+    // Open modal
+    this.showCardWriteModal = true;
+  }
+  
+  // Card Write Modal Methods
+  onCardWriteModalChange(show: boolean) {
+    this.showCardWriteModal = show;
+    if (!show) {
+      this.closeCardWriteModal();
+    }
+  }
+  
+  closeCardWriteModal() {
+    this.showCardWriteModal = false;
+    this.selectedCardsForWrite = [];
+    this.selectedCardTemplateId = null;
+  }
+  
+  onConfirmCardWrite() {
+    if (this.selectedCardsForWrite.length === 0) {
+      this.toastr.warning('Seçili kart bulunamadı.');
+      return;
+    }
+    
+    if (!this.selectedCardTemplateId) {
+      this.toastr.warning('Lütfen bir kart şablonu seçiniz.');
+      return;
+    }
+    
+    this.isWritingCards = true;
+    
+    // Get card IDs
+    const cardIds = this.selectedCardsForWrite.map(card => 
+      card['recid'] ?? card['CardID'] ?? card['id']
+    );
+    
+    // API call to write cards
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/Write`, {
+      CardIDs: cardIds,
+      TemplateId: this.selectedCardTemplateId
+    }).pipe(
+      catchError(error => {
+        this.isWritingCards = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Kart yazdırma sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error writing cards:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isWritingCards = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Kartlar başarıyla yazdırıldı.');
+        this.closeCardWriteModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  /**
+   * Load card template options if not already loaded
+   */
+  private loadCardTemplateOptionsIfNeeded(): void {
+    // If already loaded, return
+    if (this.cardTemplateOptions.length > 0) {
+      return;
+    }
+    
+    // If already loading, return
+    if (this.isLoadingCardTemplates) {
+      return;
+    }
+    
+    this.isLoadingCardTemplates = true;
+    
+    // Load card templates from API
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardTemplates`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((response: any) => {
+        if (response && response.records && Array.isArray(response.records)) {
+          return response.records.map((item: any) => ({
+            label: item.Name || item.TemplateName || `ID: ${item.Id}`,
+            value: item.Id || item.id
+          }));
+        } else if (Array.isArray(response)) {
+          return response.map((item: any) => ({
+            label: item.Name || item.TemplateName || `ID: ${item.Id}`,
+            value: item.Id || item.id
+          }));
+        }
+        return [];
+      }),
+      catchError(error => {
+        console.error('Error loading card template options:', error);
+        this.isLoadingCardTemplates = false;
+        this.cdr.markForCheck();
+        return of([]);
+      })
+    ).subscribe(options => {
+      this.cardTemplateOptions = options;
+      this.isLoadingCardTemplates = false;
+      this.cdr.markForCheck();
+    });
+  }
+  
+  /**
+   * Get card template options for card write modal
+   */
+  getCardTemplateOptions(): any[] {
+    return this.cardTemplateOptions.map(opt => ({
+      label: opt.label,
+      value: opt.value
+    }));
   }
 }
