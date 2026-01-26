@@ -87,6 +87,13 @@ export class VisitorCardComponent implements OnInit {
     const recid = data.CardID || data.recid || null;
     const { CardID, recid: _, ...record } = data;
 
+    // Validation: CardDesc is required (both add & edit)
+    const cardDesc = String((record as any).CardDesc ?? '').trim();
+    if (!cardDesc) {
+      this.toastr.warning('Kart açıklaması zorunludur.', this.translate.instant('common.warning') || 'Uyarı');
+      return of({ error: true, message: 'Kart açıklaması zorunludur.' });
+    }
+
     // Force visitor flag for this screen
     (record as any).isVisitor = true;
 

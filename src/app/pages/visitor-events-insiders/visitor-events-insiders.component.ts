@@ -451,7 +451,8 @@ export class VisitorEventsInsidersComponent {
         map((records) =>
           records.map((x: AnyRecord) => ({
             value: x['CardID'] ?? x['id'] ?? x['Id'] ?? x['value'],
-            label: `CardID: ${x['CardID'] ?? x['id'] ?? x['Id'] ?? x['value']} | CardUID: ${String(x['CardUID'] ?? '').trim() || '-'} | CardDesc: ${String(x['CardDesc'] ?? '').trim() || '-'}`
+            // UI request: only show CardDesc in the select list
+            label: String(x['CardDesc'] ?? '').trim() || '-'
           }))
         ),
         catchError((error) => {

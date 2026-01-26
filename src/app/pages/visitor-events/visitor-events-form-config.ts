@@ -10,19 +10,8 @@ export const formFields: TableColumn[] = [
     field: 'VisitorEmployeeID', 
     label: 'Ziyaretçi', 
     text: 'Ziyaretçi', 
-    type: 'list' as ColumnType,
-    load: {
-      url: `${apiUrl}/api/Employees`,
-      injectAuth: true,
-      method: 'POST' as const,
-      data: { limit: -1, offset: 0 },
-      map: (data: any) => {
-        return data.records.map((item: any) => ({
-          id: item.EmployeeID || item.Id || item.id,
-          text: `${item.Name || ''} ${item.SurName || ''}`.trim() || `ID: ${item.EmployeeID || item.Id || item.id}`
-        }));
-      }
-    },
+    // NOTE: prevent /api/Employees request on page load (form options are loaded eagerly by DataTable)
+    type: 'int' as ColumnType,
     fullWidth: false
   },
   { 
@@ -50,19 +39,8 @@ export const formFields: TableColumn[] = [
     field: 'VisitedEmployeeID', 
     label: 'Ziyaret Edilen Kişi', 
     text: 'Ziyaret Edilen Kişi', 
-    type: 'list' as ColumnType,
-    load: {
-      url: `${apiUrl}/api/Employees`,
-      injectAuth: true,
-      method: 'POST' as const,
-      data: { limit: -1, offset: 0 },
-      map: (data: any) => {
-        return data.records.map((item: any) => ({
-          id: item.EmployeeID || item.Id || item.id,
-          text: `${item.Name || ''} ${item.SurName || ''}`.trim() || `ID: ${item.EmployeeID || item.Id || item.id}`
-        }));
-      }
-    },
+    // NOTE: prevent /api/Employees request on page load (form options are loaded eagerly by DataTable)
+    type: 'int' as ColumnType,
     fullWidth: false
   },
   { 

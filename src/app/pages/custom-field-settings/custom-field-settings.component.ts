@@ -91,9 +91,9 @@ export class CustomFieldSettingsComponent implements OnInit {
         reload: true,
         columns: true,
         search: true,
-        add: true,
+        add: false,
         edit: true,
-        delete: true,
+        delete: false,
         save: false
       }
     };

@@ -11,6 +11,7 @@ export const formFields: TableColumn[] = [
     label: 'Alan', 
     text: 'Alan', 
     type: 'text' as ColumnType,
+    disabled: true,
     fullWidth: true
   },
   { 

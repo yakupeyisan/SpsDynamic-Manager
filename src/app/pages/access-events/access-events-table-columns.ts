@@ -1,5 +1,8 @@
 // AccessEvents table columns configuration
 import { TableColumn, ColumnType, TableRow, TableColumnOption } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // Helper function to render inOUT field (Giriş/Çıkış)
 function renderInOut(record: TableRow): string {
@@ -38,8 +41,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Employee.Name', 
-    label: 'Personel', 
-    text: 'Personel',
+    label: 'Kişi Adı', 
+    text: 'Kişi Adı',
     type: 'text' as ColumnType, 
     sortable: false, 
     width: '150px', 
@@ -50,9 +53,25 @@ export const tableColumns: TableColumn[] = [
     render: (record: TableRow) => {
       const employee = record['Employee'];
       if (employee) {
-        return `${employee['Name'] || ''} ${employee['SurName'] || ''}`.trim();
+        return `${employee['Name'] || ''}`.trim();
       }
       return '';
+    }
+  },
+  { 
+    field: 'Employee.SurName', 
+    label: 'Kişi Soyadı', 
+    text: 'Kişi Soyadı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const employee = record['Employee'];
+      return employee?.['SurName'] || '';
     }
   },
   { 
@@ -82,15 +101,29 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Location', 
-    label: 'Konum', 
-    text: 'Konum',
-    type: 'text' as ColumnType, 
+    label: 'Lokasyon', 
+    text: 'Lokasyon',
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'DeviceSerial',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return (data?.records || []).map((item: any) => ({
+          id: item?.SerialNumber ?? item?.DeviceSerial ?? item?.ReaderID ?? item?.Id ?? item?.id,
+          text: item?.ReaderName ?? item?.Name ?? String(item?.SerialNumber ?? item?.ReaderID ?? '')
+        }));
+      }
+    },
+    render: (record: TableRow) => String(record['Location'] ?? '')
   },
   { 
     field: 'DeviceSerial', 

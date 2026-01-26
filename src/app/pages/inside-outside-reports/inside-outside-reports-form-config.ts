@@ -47,7 +47,7 @@ export const formFields: TableColumn[] = [
       if (!lastEvent) return '';
       const inOut = lastEvent['inOUT'];
       if (inOut === '0' || inOut === 0) {
-        return 'İçeride';
+        return 'İçerde';
       } else if (inOut === '1' || inOut === 1) {
         return 'Dışarıda';
       }

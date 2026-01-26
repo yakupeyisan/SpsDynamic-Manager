@@ -18,23 +18,6 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'PictureID', 
-    label: 'Resim', 
-    text: 'Resim',
-    type: 'picture' as ColumnType, 
-    sortable: false, 
-    width: '80px', 
-    size: '80px',
-    min: 20,
-    searchable: false,
-    resizable: true,
-    align: 'center',
-    prependUrl: `${apiUrl}/images/{0}`,
-    render: (record: TableRow) => {
-      return record['PictureID'] || '';
-    }
-  },
-  { 
     field: 'IdentificationNumber', 
     label: 'TC Kimlik', 
     text: 'TC Kimlik',
@@ -96,20 +79,24 @@ export const tableColumns: TableColumn[] = [
     field: 'EmployeeLastAccessEvent.inOUT', 
     label: 'Durum', 
     text: 'Durum',
-    type: 'text' as ColumnType, 
+    type: 'list' as ColumnType, 
     sortable: true, 
     width: '120px', 
     size: '120px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'list' as ColumnType,
     resizable: true,
+    options: [
+      { label: 'İçerde', value: 0 },
+      { label: 'Dışarıda', value: 1 }
+    ],
     render: (record: TableRow) => {
       const lastEvent = record['EmployeeLastAccessEvent'];
       if (!lastEvent) return '';
       const inOut = lastEvent['inOUT'];
       // "0" = Giriş (İçeride), "1" = Çıkış (Dışarıda)
       if (inOut === '0' || inOut === 0) {
-        return 'İçeride';
+        return 'İçerde';
       } else if (inOut === '1' || inOut === 1) {
         return 'Dışarıda';
       }

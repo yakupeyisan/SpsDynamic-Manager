@@ -91,9 +91,9 @@ export class VisitorEventsComponent implements OnInit {
         reload: true,
         columns: true,
         search: true,
-        add: true,
-        edit: true,
-        delete: true,
+        add: false,
+        edit: false,
+        delete: false,
         save: false
       }
     };
