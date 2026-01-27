@@ -517,7 +517,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         const newLeftMm = Math.max(0, this.pxToMm(newXInContainer));
         const newTopMm = Math.max(0, this.pxToMm(newYInContainer));
         
-        console.log('mousemove - clientX:', e.clientX, 'clientY:', e.clientY, 'offsetX:', offsetX, 'offsetY:', offsetY, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'newXInContainer:', newXInContainer, 'newYInContainer:', newYInContainer, 'newLeftMm:', newLeftMm, 'newTopMm:', newTopMm, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top);
+        //console.log('mousemove - clientX:', e.clientX, 'clientY:', e.clientY, 'offsetX:', offsetX, 'offsetY:', offsetY, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'newXInContainer:', newXInContainer, 'newYInContainer:', newYInContainer, 'newLeftMm:', newLeftMm, 'newTopMm:', newTopMm, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top);
         
         // Update element position
         element.style.left = `${newLeftMm}mm`;
@@ -574,7 +574,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         const mouseYInContainer = e.clientY - containerRect.top;
         offsetX = mouseXInContainer - elementLeftPx;
         offsetY = mouseYInContainer - elementTopPx;
-        console.log('mousedown - offsetX:', offsetX, 'offsetY:', offsetY, 'clientX:', e.clientX, 'clientY:', e.clientY, 'elementRect.left:', elementRect.left, 'elementRect.top:', elementRect.top, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'elementLeftPx:', elementLeftPx, 'elementTopPx:', elementTopPx, 'item.left:', item?.left, 'item.top:', item?.top);
+        //console.log('mousedown - offsetX:', offsetX, 'offsetY:', offsetY, 'clientX:', e.clientX, 'clientY:', e.clientY, 'elementRect.left:', elementRect.left, 'elementRect.top:', elementRect.top, 'containerRect.left:', containerRect.left, 'containerRect.top:', containerRect.top, 'mouseXInContainer:', mouseXInContainer, 'mouseYInContainer:', mouseYInContainer, 'elementLeftPx:', elementLeftPx, 'elementTopPx:', elementTopPx, 'item.left:', item?.left, 'item.top:', item?.top);
       }
       
       e.preventDefault();

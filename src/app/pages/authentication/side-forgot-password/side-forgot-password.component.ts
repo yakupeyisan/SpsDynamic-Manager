@@ -126,7 +126,7 @@ export class AppSideForgotPasswordComponent implements AfterViewInit {
       console.error('Ordu image script yüklenemedi');
     };
     orduImage.onload = () => {
-      console.log('Ordu image script yüklendi');
+      //console.log('Ordu image script yüklendi');
     };
     document.head.appendChild(orduImage);
   }

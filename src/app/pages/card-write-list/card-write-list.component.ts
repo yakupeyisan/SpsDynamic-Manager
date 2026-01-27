@@ -404,20 +404,20 @@ export class CardWriteListComponent implements OnInit {
           }
           
           // Debug log - show full CardData structure
-          console.log('CardData for preview:', {
-            EmployeeID: cardData.EmployeeID,
-            PictureID: cardData.PictureID,
-            Name: cardData.Name,
-            SurName: cardData.SurName,
-            FullName: cardData.FullName,
-            DepartmentName: cardData.DepartmentName,
-            TagCode: cardData.TagCode,
-            CardUID: cardData.CardUID,
-            CustomField01: cardData.CustomField01,
-            CustomField02: cardData.CustomField02,
-            CustomField03: cardData.CustomField03,
-            allKeys: Object.keys(cardData).slice(0, 50)
-          });
+          // console.log('CardData for preview:', {
+          //   EmployeeID: cardData.EmployeeID,
+          //   PictureID: cardData.PictureID,
+          //   Name: cardData.Name,
+          //   SurName: cardData.SurName,
+          //   FullName: cardData.FullName,
+          //   DepartmentName: cardData.DepartmentName,
+          //   TagCode: cardData.TagCode,
+          //   CardUID: cardData.CardUID,
+          //   CustomField01: cardData.CustomField01,
+          //   CustomField02: cardData.CustomField02,
+          //   CustomField03: cardData.CustomField03,
+          //   allKeys: Object.keys(cardData).slice(0, 50)
+          // });
           
           return {
             ...record,
@@ -435,14 +435,14 @@ export class CardWriteListComponent implements OnInit {
     forkJoin(requests).subscribe({
       next: (results) => {
         this.previewData = results.filter(r => r !== null);
-        console.log('loadPreviewData: Loaded preview data:', {
-          count: this.previewData.length,
-          firstItem: this.previewData[0] ? {
-            hasTemplateData: !!this.previewData[0].TemplateData,
-            hasCardData: !!this.previewData[0].CardData,
-            cardDataKeys: this.previewData[0].CardData ? Object.keys(this.previewData[0].CardData).slice(0, 30) : []
-          } : null
-        });
+        // console.log('loadPreviewData: Loaded preview data:', {
+        //   count: this.previewData.length,
+        //   firstItem: this.previewData[0] ? {
+        //     hasTemplateData: !!this.previewData[0].TemplateData,
+        //     hasCardData: !!this.previewData[0].CardData,
+        //     cardDataKeys: this.previewData[0].CardData ? Object.keys(this.previewData[0].CardData).slice(0, 30) : []
+        //   } : null
+        // });
         // Generate HTML once when data is loaded
         this.previewHtml = this.generatePreviewHtml(this.previewData);
         this.isLoadingPreview = false;
@@ -480,12 +480,12 @@ export class CardWriteListComponent implements OnInit {
     let html = '<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px; font-family: \'Open Sans\', sans-serif;">';
     
     previewData.forEach((data, index) => {
-      console.log(`generatePreviewHtml: Processing data ${index}:`, {
-        hasTemplateData: !!data.TemplateData,
-        hasCardData: !!data.CardData,
-        templateDataKeys: data.TemplateData ? Object.keys(data.TemplateData) : [],
-        cardDataKeys: data.CardData ? Object.keys(data.CardData).slice(0, 20) : []
-      });
+      // console.log(`generatePreviewHtml: Processing data ${index}:`, {
+      //   hasTemplateData: !!data.TemplateData,
+      //   hasCardData: !!data.CardData,
+      //   templateDataKeys: data.TemplateData ? Object.keys(data.TemplateData) : [],
+      //   cardDataKeys: data.CardData ? Object.keys(data.CardData).slice(0, 20) : []
+      // });
       
       if (!data.TemplateData) {
         console.warn(`generatePreviewHtml: No TemplateData for index ${index}`);
@@ -505,15 +505,15 @@ export class CardWriteListComponent implements OnInit {
         html += `<div class="preview-card-front" data-type="FRONT" style="position: relative; width: ${front.width}; height: ${front.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
         
         const frontItems = front.items ? (Array.isArray(front.items) ? front.items : Object.values(front.items)) : [];
-        console.log(`generatePreviewHtml: FRONT has ${frontItems.length} items`);
+        //console.log(`generatePreviewHtml: FRONT has ${frontItems.length} items`);
         
         if (frontItems.length > 0) {
           frontItems.forEach((item: any, itemIndex: number) => {
-            console.log(`generatePreviewHtml: Processing FRONT item ${itemIndex}:`, {
-              type: item.type,
-              field: item.field,
-              hasCardData: !!data.CardData
-            });
+            //console.log(`generatePreviewHtml: Processing FRONT item ${itemIndex}:`, {
+            //  type: item.type,
+            //  field: item.field,
+            //  hasCardData: !!data.CardData
+            //});
             
             if (item.type === 'fix') {
               // PHP: textTransform($item->field, $item->textTransform)
@@ -529,7 +529,7 @@ export class CardWriteListComponent implements OnInit {
               } else {
                 value = this.getFieldValue(data.CardData, field);
               }
-              console.log(`generatePreviewHtml: label field="${field}", value="${value}", item.field="${item.field}", CardData keys:`, data.CardData ? Object.keys(data.CardData).slice(0, 20) : 'no CardData');
+              //console.log(`generatePreviewHtml: label field="${field}", value="${value}", item.field="${item.field}", CardData keys:`, data.CardData ? Object.keys(data.CardData).slice(0, 20) : 'no CardData');
               // Always render label, even if value is empty (PHP doesn't check)
               html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
             } else if (item.type === 'image' && item.field) {
@@ -544,19 +544,19 @@ export class CardWriteListComponent implements OnInit {
               } else {
                 pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
               }
-              console.log(`generatePreviewHtml: image field="${field}", pictureId="${pictureId}"`);
+              //console.log(`generatePreviewHtml: image field="${field}", pictureId="${pictureId}"`);
               // PHP: $_ENV['app.apiURL'] ?>images/<?= $data->PictureID == null ? "avatar.png" : $data->PictureID . '?v=' . microtime()
               const avatarUrl = '/assets/images/profile/avaatar.png';
               const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
               html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
             } else if (item.type === 'imagefix' && item.src) {
               // Fixed image from template (like logo)
-              console.log(`generatePreviewHtml: imagefix src="${item.src}"`);
+              //console.log(`generatePreviewHtml: imagefix src="${item.src}"`);
               html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
             } else if (item.type === 'barcode' && item.field) {
               const field = item.field.split('-')[0];
               const value = this.getFieldValue(data.CardData, field);
-              console.log(`generatePreviewHtml: barcode field="${field}", value="${value}"`);
+              //console.log(`generatePreviewHtml: barcode field="${field}", value="${value}"`);
               if (value) {
                 html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
               }
@@ -638,7 +638,7 @@ export class CardWriteListComponent implements OnInit {
     // Direct field access (like PHP $data->{$field})
     if (cardData[field] !== undefined && cardData[field] !== null) {
       const value = String(cardData[field]);
-      console.log(`getFieldValue: Found direct field "${field}" = "${value}"`);
+      //console.log(`getFieldValue: Found direct field "${field}" = "${value}"`);
       return value;
     }
     

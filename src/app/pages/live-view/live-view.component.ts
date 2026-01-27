@@ -221,7 +221,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
    * Connect to WebSocket
    */
   private connectWebSocket(readerList: number[]): void {
-    console.log('Connecting WebSocket with readerList:', readerList);
+    //console.log('Connecting WebSocket with readerList:', readerList);
     
     // Send clientconnect message to WebSocket
     this.wsService.sendMessage({
@@ -444,7 +444,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
       // Store readerList
       this.currentReaderList = readerList || [];
       
-      console.log('ReaderList loaded and sending to WebSocket:', this.currentReaderList);
+      //console.log('ReaderList loaded and sending to WebSocket:', this.currentReaderList);
       
       // Close modal
       this.showFilterModal = false;

@@ -146,11 +146,11 @@ export class WebSocketService {
     }
 
     // Start reconnect loop - try every second
-    console.log('WebSocket: Starting reconnect loop (1 attempt per second)');
+    //console.log('WebSocket: Starting reconnect loop (1 attempt per second)');
     this.reconnectIntervalId = setInterval(() => {
       // Check if already connected
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        console.log('WebSocket: Connection established, stopping reconnect loop');
+        //console.log('WebSocket: Connection established, stopping reconnect loop');
         this.stopReconnectLoop();
         this.reconnectAttempts = 0;
         return;
@@ -172,7 +172,7 @@ export class WebSocketService {
       }
 
       this.reconnectAttempts++;
-      console.log(`WebSocket: Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+      //console.log(`WebSocket: Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
       
       // Try to connect
       this.connect();
@@ -252,12 +252,12 @@ export class WebSocketService {
   async sendMessage(message: any): Promise<void> {
     // Check if connection is open
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.log('WebSocket is not connected. Attempting to reconnect...');
+      //console.log('WebSocket is not connected. Attempting to reconnect...');
       
       try {
         // Wait for connection (with 5 second timeout)
         await this.waitForConnection(5000);
-        console.log('WebSocket reconnected successfully');
+        //console.log('WebSocket reconnected successfully');
       } catch (error) {
         console.error('Failed to reconnect WebSocket:', error);
         console.warn('Message not sent due to connection failure:', message);

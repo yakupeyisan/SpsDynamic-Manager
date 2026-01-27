@@ -42,7 +42,7 @@ editProduct = new BehaviorSubject<any>(null);
     this.productAdded.next(null);
   }
   updateProduct(data: any) {
-    console.log('Updated product data in service', data);
+    //console.log('Updated product data in service', data);
     this.productUpdated.next(data);
   }
 }

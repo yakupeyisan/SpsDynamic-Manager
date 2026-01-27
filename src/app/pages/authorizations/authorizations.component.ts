@@ -299,7 +299,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
         this.loadPageVisibilityData();
       }, 100);
     } else {
-      console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
+      //console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
       this.toastr.info(`${settingsType} ayarları açılıyor...`, 'Bilgi');
     }
   }

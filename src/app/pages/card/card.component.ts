@@ -385,37 +385,37 @@ export class CardComponent implements OnInit {
 
   onChangeStatus(event: MouseEvent, item: any): void {
     // Handle change status
-    console.log('Change status:', event, item);
+    //console.log('Change status:', event, item);
   }
 
   onGetAllCards(event: MouseEvent, item: any): void {
     // Handle get all cards
-    console.log('Get all cards:', event, item);
+    //console.log('Get all cards:', event, item);
   }
 
   onGetFreeCard(event: MouseEvent, item: any): void {
     // Handle get free card
-    console.log('Get free card:', event, item);
+    //console.log('Get free card:', event, item);
   }
 
   onGetAvailableCard(event: MouseEvent, item: any): void {
     // Handle get available card
-    console.log('Get available card:', event, item);
+    //console.log('Get available card:', event, item);
   }
 
   onGetUsedAvailableCard(event: MouseEvent, item: any): void {
     // Handle get used available card
-    console.log('Get used available card:', event, item);
+    //console.log('Get used available card:', event, item);
   }
 
   onSetAvailable(event: MouseEvent, item: any): void {
     // Handle set available
-    console.log('Set available:', event, item);
+    //console.log('Set available:', event, item);
   }
 
   onFreeAvailable(event: MouseEvent, item: any): void {
     // Handle free available
-    console.log('Free available:', event, item);
+    //console.log('Free available:', event, item);
   }
 
   onCardWrite(event: MouseEvent, item: any): void {

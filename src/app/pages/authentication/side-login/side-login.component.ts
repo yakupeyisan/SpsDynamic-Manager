@@ -104,8 +104,10 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
       this.loadOrduImageScript();
     } else {
       //değilse environment.settings[environment.setting as keyof typeof environment.settings].loginImage url'sini kullanarak logo scriptini yükle
-      this.loadLoginImageScript(loginImage);
-
+      // loginImage boş değilse ve varsa yükle
+      if (loginImage && loginImage !== '') {
+        this.loadLoginImageScript(loginImage);
+      }
     }
     
     // View render edildikten sonra Turnstile scriptini yükle (sadece cloudflare enabled ise)
@@ -114,6 +116,11 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
   loadLoginImageScript(loginImage: string) {
+    // loginImage boş değilse devam et
+    if (!loginImage || loginImage === '') {
+      return;
+    }
+    
     // loginImage elementinin hazır olduğundan emin ol
     const loginImageElement = document.getElementById('randomImage');
     if (!loginImageElement) {
@@ -152,7 +159,7 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
       console.error('Ordu image script yüklenemedi');
     };
     orduImage.onload = () => {
-      console.log('Ordu image script yüklendi');
+      //console.log('Ordu image script yüklendi');
     };
     document.head.appendChild(orduImage);
   }
@@ -231,7 +238,7 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
 
   signInWithGoogle() {
     // Google ile giriş işlemi burada yapılacak
-    console.log('Google ile giriş yapılıyor...');
+    //console.log('Google ile giriş yapılıyor...');
     // TODO: Google OAuth entegrasyonu
   }
 

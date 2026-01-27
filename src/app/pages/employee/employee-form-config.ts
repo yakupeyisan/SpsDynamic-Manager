@@ -231,7 +231,7 @@ export const formTabs: FormTab[] = [
           method: 'POST',
           data: { limit: -1, offset: 0 },
           map: (data: any) => {
-            console.log('CardStatuses map - received data:', data);
+            //console.log('CardStatuses map - received data:', data);
             
             // Handle different response formats
             let records: any[] = [];
@@ -243,14 +243,14 @@ export const formTabs: FormTab[] = [
               records = data.data;
             }
             
-            console.log('CardStatuses map - extracted records:', records);
+            //console.log('CardStatuses map - extracted records:', records);
             
             const mapped = records.map((item: any) => ({
               id: item.Id || item.id || item.CardStatusId,
               text: item.Name || item.name || item.Text || item.text || String(item.Id || item.id || '')
             }));
             
-            console.log('CardStatuses map - mapped result:', mapped);
+            //console.log('CardStatuses map - mapped result:', mapped);
             
             return mapped;
           }
@@ -266,7 +266,7 @@ export const formTabs: FormTab[] = [
       formLoadRequest: (recid: any, parentFormData?: any) => {
         // Get EmployeeID from parent form data
         const employeeId = parentFormData?.['EmployeeID'] || null;
-        console.log('Card formLoadRequest - recid:', recid, 'employeeId:', employeeId, 'parentFormData:', parentFormData);
+        //console.log('Card formLoadRequest - recid:', recid, 'employeeId:', employeeId, 'parentFormData:', parentFormData);
         return {
           action: 'get',
           recid: recid,
@@ -397,9 +397,9 @@ export const formTabs: FormTab[] = [
           }
         }
         
-        console.log('EmployeeAccessGroupReaders data function - formData:', formData);
-        console.log('EmployeeAccessGroupReaders data function - AccessGroup:', formData?.AccessGroup);
-        console.log('EmployeeAccessGroupReaders data function - accessGroups:', accessGroups);
+        //console.log('EmployeeAccessGroupReaders data function - formData:', formData);
+        //console.log('EmployeeAccessGroupReaders data function - AccessGroup:', formData?.AccessGroup);
+        //console.log('EmployeeAccessGroupReaders data function - accessGroups:', accessGroups);
         
         if (!accessGroups || accessGroups.length === 0) {
           return {
@@ -487,8 +487,8 @@ export const formTabs: FormTab[] = [
       data: (formData: any) => {
         const tagCode = formData?.SubscriptionCard || null;
         
-        console.log('SubscriptionEvents data function - formData:', formData);
-        console.log('SubscriptionEvents data function - TagCode:', tagCode);
+        //console.log('SubscriptionEvents data function - formData:', formData);
+        //console.log('SubscriptionEvents data function - TagCode:', tagCode);
         
         if (!tagCode) {
           return { __skipRequest: true, limit: 100, offset: 0 };

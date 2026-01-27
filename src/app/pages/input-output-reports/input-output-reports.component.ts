@@ -103,7 +103,7 @@ export class InputOutputReportsComponent implements OnInit {
             records.push(rec);
           });
           
-          console.log('Records:', records);
+          //console.log('Records:', records);
           return {
             status: 'success' as const,
             total: records.length,

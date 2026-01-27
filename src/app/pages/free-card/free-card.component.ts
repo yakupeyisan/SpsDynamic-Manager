@@ -203,7 +203,7 @@ export class FreeCardComponent implements OnInit {
           offset: 0
         }).pipe(
           map((response: any) => {
-            console.log('Employee search response:', response);
+            //console.log('Employee search response:', response);
             
             // Handle different response formats
             let records: any[] = [];
@@ -215,7 +215,7 @@ export class FreeCardComponent implements OnInit {
               records = response;
             }
             
-            console.log('Extracted records:', records);
+            //console.log('Extracted records:', records);
             
             // Map to select options format
             const mapped = records.map((item: any) => {
@@ -236,7 +236,7 @@ export class FreeCardComponent implements OnInit {
               };
             });
             
-            console.log('Mapped employees:', mapped);
+            //console.log('Mapped employees:', mapped);
             return mapped;
           }),
           catchError(error => {
@@ -249,8 +249,8 @@ export class FreeCardComponent implements OnInit {
     ).subscribe(employees => {
       this.isLoadingEmployees = false;
       this.employees = employees;
-      console.log('Final employees array:', this.employees);
-      console.log('Employees count:', this.employees.length);
+      //console.log('Final employees array:', this.employees);
+      //console.log('Employees count:', this.employees.length);
       this.cdr.detectChanges();
     });
   }
@@ -301,7 +301,7 @@ export class FreeCardComponent implements OnInit {
     // Store selected card for display (only one card)
     this.selectedCardsForAssignment = [selectedCard];
     
-    console.log('Selected card for assignment:', this.selectedCardsForAssignment[0]);
+    //console.log('Selected card for assignment:', this.selectedCardsForAssignment[0]);
 
     // Reset selection and employees list
     this.selectedEmployeeId = null;
@@ -417,8 +417,8 @@ export class FreeCardComponent implements OnInit {
   onTableRowSelect(event: any): void {
     // Store selected rows from event (event is array of selected row objects)
     this.currentSelectedCards = Array.isArray(event) ? event : [event];
-    console.log('Row select event:', event);
-    console.log('Current selected cards:', this.currentSelectedCards);
+    //console.log('Row select event:', event);
+    //console.log('Current selected cards:', this.currentSelectedCards);
   }
 
   onTableRefresh(): void {

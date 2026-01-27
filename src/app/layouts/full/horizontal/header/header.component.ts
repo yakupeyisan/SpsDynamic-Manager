@@ -112,7 +112,7 @@ export class AppHorizontalHeaderComponent {
     const dialogRef = this.dialog.open(AppHorizontalSearchDialogComponent);
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log(`Dialog result: ${result}`);
+      //console.log(`Dialog result: ${result}`);
     });
   }
 

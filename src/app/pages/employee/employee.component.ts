@@ -416,10 +416,10 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         const currentStr = JSON.stringify(currentAccessGroup);
         
         if (previousStr !== currentStr) {
-          console.log('AccessGroup changed:', {
-            previous: this.previousAccessGroup,
-            current: currentAccessGroup
-          });
+          // console.log('AccessGroup changed:', {
+          //   previous: this.previousAccessGroup,
+          //   current: currentAccessGroup
+          // });
           this.previousAccessGroup = currentAccessGroup;
           this.reloadNestedGrid('EmployeeAccessGroupReaders');
         }
@@ -430,10 +430,10 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         const previousSubscriptionCard = this.previousSubscriptionCard;
         
         if (previousSubscriptionCard !== currentSubscriptionCard) {
-          console.log('SubscriptionCard changed:', {
-            previous: previousSubscriptionCard,
-            current: currentSubscriptionCard
-          });
+          // console.log('SubscriptionCard changed:', {
+          //   previous: previousSubscriptionCard,
+          //   current: currentSubscriptionCard
+          // });
           this.previousSubscriptionCard = currentSubscriptionCard;
           this.reloadNestedGrid('SubscriptionEvents');
         }
@@ -442,10 +442,10 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       if (formData.hasOwnProperty('CafeteriaAccount')) {
         const currentCafeteriaAccount = formData['CafeteriaAccount'];
         if (this.previousCafeteriaAccount !== currentCafeteriaAccount && currentCafeteriaAccount != null) {
-          console.log('CafeteriaAccount changed:', {
-            previous: this.previousCafeteriaAccount,
-            current: currentCafeteriaAccount
-          });
+          // console.log('CafeteriaAccount changed:', {
+          //   previous: this.previousCafeteriaAccount,
+          //   current: currentCafeteriaAccount
+          // });
           this.previousCafeteriaAccount = currentCafeteriaAccount;
           this.loadTotalPrice(currentCafeteriaAccount);
         }
@@ -2270,7 +2270,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onCardTransfer(event: MouseEvent, item: any) {
-    console.log('Transfer clicked', event, item);
+    //console.log('Transfer clicked', event, item);
     
     const selectedCardIds = this.getSelectedCardIds();
     
@@ -2279,13 +2279,13 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Transfer edilecek kart ID\'leri:', selectedCardIds);
+    //console.log('Transfer edilecek kart ID\'leri:', selectedCardIds);
     // TODO: Transfer API'sine gönder
     // Örnek: this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/Transfer`, { CardIDs: selectedCardIds })
   }
 
   onCardReset(event: MouseEvent, item: any) {
-    console.log('Sıfırla clicked', event, item);
+    //console.log('Sıfırla clicked', event, item);
     
     const selectedCardIds = this.getSelectedCardIds();
     
@@ -2294,7 +2294,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Sıfırlanacak kart ID\'leri:', selectedCardIds);
+    //console.log('Sıfırlanacak kart ID\'leri:', selectedCardIds);
     // TODO: Sıfırla API'sine gönder
     // Örnek: this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/Reset`, { CardIDs: selectedCardIds })
   }
@@ -2458,7 +2458,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       AccountId: accountId
     };
     
-    console.log('Loading total price from:', url, 'with payload:', payload);
+    //console.log('Loading total price from:', url, 'with payload:', payload);
 
     this.http.post<any>(url, payload).pipe(
       finalize(() => {
@@ -2466,7 +2466,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       })
     ).subscribe({
       next: (response) => {
-        console.log('Total price response:', response);
+        //console.log('Total price response:', response);
         if (response && response.status === 'success' && response.totalBalance != null) {
           // Update formData with totalBalance using onFormDataChange to trigger change detection
           if (this.dataTableComponent) {

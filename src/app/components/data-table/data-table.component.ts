@@ -3262,7 +3262,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         requestBody = { request: requestBody };
       }
       
-      console.log('Form load request:', { url: this.formLoadUrl, body: requestBody, recid: this.editingRecordId });
+      //console.log('Form load request:', { url: this.formLoadUrl, body: requestBody, recid: this.editingRecordId });
       
       // Unsubscribe from previous subscription if exists
       if (this.formLoadSubscription) {
@@ -3767,7 +3767,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Get onSave callback with http client for nested grids
    */
   getOnSaveWithHttp(grid: FormTabGrid): ((data: any, isEdit: boolean, http?: any) => Observable<any>) | undefined {
-    console.log('getOnSaveWithHttp called:', { gridId: grid.id, hasOnSave: !!grid.onSave, grid });
+    //console.log('getOnSaveWithHttp called:', { gridId: grid.id, hasOnSave: !!grid.onSave, grid });
     
     if (!grid.onSave) {
       console.warn('getOnSaveWithHttp: grid.onSave is undefined for grid:', grid.id);
@@ -3776,14 +3776,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // Wrap the original onSave to pass http client and add EmployeeID from parent formData
     return (data: any, isEdit: boolean, http?: any) => {
-      console.log('Wrapped onSave called:', { data, isEdit, hasHttp: !!this.http, gridId: grid.id });
+      //console.log('Wrapped onSave called:', { data, isEdit, hasHttp: !!this.http, gridId: grid.id });
       
       // For EmployeeCardGrid, add EmployeeID from parent formData if not present
       if (grid.id === 'EmployeeCardGrid' && this.formData) {
         const employeeId = this.formData['EmployeeID'] || this.formData['recid'];
         if (employeeId && !data.EmployeeID) {
           data.EmployeeID = employeeId;
-          console.log('Added EmployeeID to submitData:', employeeId);
+          //console.log('Added EmployeeID to submitData:', employeeId);
         }
       }
       
@@ -3796,7 +3796,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Handle form submit
    */
   onFormSubmit(formValues: any) {
-    console.log('onFormSubmit called:', { formValues, isEditMode: this.isEditMode, editingRecordId: this.editingRecordId, recid: this.recid, hasOnSave: !!this.onSave, id: this.id });
+    //console.log('onFormSubmit called:', { formValues, isEditMode: this.isEditMode, editingRecordId: this.editingRecordId, recid: this.recid, hasOnSave: !!this.onSave, id: this.id });
     
     // Prepare data for API
     const submitData = { ...formValues };
@@ -3816,7 +3816,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const employeeId = this.formData['EmployeeID'] || this.formData['recid'];
       if (employeeId && !submitData.EmployeeID) {
         submitData.EmployeeID = employeeId;
-        console.log('Added EmployeeID to submitData from parent formData:', employeeId);
+        //console.log('Added EmployeeID to submitData from parent formData:', employeeId);
       }
     }
     
@@ -3879,7 +3879,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Save form data
    */
   private saveFormData(submitData: any) {
-    console.log('saveFormData called:', { hasOnSave: !!this.onSave, submitData, isEditMode: this.isEditMode });
+    //console.log('saveFormData called:', { hasOnSave: !!this.onSave, submitData, isEditMode: this.isEditMode });
     
     if (this.onSave) {
       // Unsubscribe from previous subscription if exists
@@ -3903,7 +3903,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           return;
         }
         
-        console.log('Calling onSave with:', { submitData, isEditMode: this.isEditMode, hasHttp: !!this.http });
+        //console.log('Calling onSave with:', { submitData, isEditMode: this.isEditMode, hasHttp: !!this.http });
         
         this.formSaveSubscription = saveObservable.subscribe({
         next: (response) => {
@@ -5442,19 +5442,19 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         
         // Check if already loading for this field - prevent duplicate requests
         if (this.formFieldOptionsLoading.has(column.field)) {
-          console.log(`[loadFormFieldOptions] ${column.field} - Already loading (field), skipping`);
+          //console.log(`[loadFormFieldOptions] ${column.field} - Already loading (field), skipping`);
           return;
         }
         
         // Check if already loading globally - prevent duplicate requests
         if (this.columnOptionsLoading.get(cacheKey)) {
-          console.log(`[loadFormFieldOptions] ${column.field} - Already loading (global), skipping`);
+          //console.log(`[loadFormFieldOptions] ${column.field} - Already loading (global), skipping`);
           return;
         }
         
         // Check if already cached - use cached data instead of reloading
         if (this.columnOptionsCache.has(cacheKey)) {
-          console.log(`[loadFormFieldOptions] ${column.field} - Already cached, using cached options`);
+          //console.log(`[loadFormFieldOptions] ${column.field} - Already cached, using cached options`);
           // Set column.options from cache
           const cachedOptions = this.columnOptionsCache.get(cacheKey);
           if (cachedOptions && Array.isArray(cachedOptions)) {
@@ -5495,7 +5495,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // If the original form field has a map function but the column doesn't, restore it
     if (originalFormField?.load?.map && typeof originalFormField.load.map === 'function' && !column.load.map) {
-      console.log(`[loadColumnOption] ${column.field} - Restoring map function from original form field`);
+      //console.log(`[loadColumnOption] ${column.field} - Restoring map function from original form field`);
       column.load = { ...column.load, map: originalFormField.load.map };
     }
     
@@ -5521,8 +5521,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Pass formData to the function - it should return the request payload
       const dynamicData = load.data(this.formData);
       
-      console.log(`[loadColumnOption] ${column.field} - formData:`, this.formData);
-      console.log(`[loadColumnOption] ${column.field} - dynamicData:`, dynamicData);
+      //console.log(`[loadColumnOption] ${column.field} - formData:`, this.formData);
+      //console.log(`[loadColumnOption] ${column.field} - dynamicData:`, dynamicData);
       
       // Check if EmployeeID is in the returned data (for GetCardsByEmployeeID, etc.)
       const employeeId = dynamicData?.EmployeeID;
@@ -5539,7 +5539,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         }
         // Use sourceFromFormData for cache key
         cacheKey = `${column.field}_${actualUrl}_${sourceFromFormData}`;
-        console.log(`[loadColumnOption] ${column.field} - Loading with Source: ${sourceFromFormData}, cacheKey: ${cacheKey}`);
+        //console.log(`[loadColumnOption] ${column.field} - Loading with Source: ${sourceFromFormData}, cacheKey: ${cacheKey}`);
       } else if (employeeId != null && employeeId !== undefined) {
         // For other fields that require EmployeeID
         cacheKey = `${column.field}_${actualUrl}_${employeeId}`;
@@ -5552,7 +5552,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Static data - use existing logic
       cacheKey = `${column.field}_${actualUrl}`;
       data = load.data || {};
-      console.log(`[loadColumnOption] ${column.field} - Static data:`, data);
+      //console.log(`[loadColumnOption] ${column.field} - Static data:`, data);
     }
 
     // Check if already loaded (has cached options, even if empty)
@@ -5580,7 +5580,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Use the data returned from the function (or static data)
       const body: any = { ...data };
       
-      //console.log(`loadColumnOption for ${column.field} - sending request body:`, body);
+      ////console.log(`loadColumnOption for ${column.field} - sending request body:`, body);
       
       // Add bypass_token if injectAuth is true (will be handled by interceptor)
       request = this.http.request(method, url, { body });
@@ -5661,7 +5661,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         if (formFieldColumn) {
           // Create new array reference to trigger change detection
           formFieldColumn.options = [...validOptions];
-          console.log(`Updated options for ${column.field} in formFields:`, validOptions.length, 'options');
+          //console.log(`Updated options for ${column.field} in formFields:`, validOptions.length, 'options');
         }
         // Also update the column directly (in case it's not in formFields)
         column.options = [...validOptions]; // Create new array reference
@@ -5837,7 +5837,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // If Source field changed, immediately reload Field options
     if (fieldName === 'Source' && previousValue !== value && value != null && value !== undefined && value !== '') {
-      console.log(`[onFormFieldChange] Source changed from ${previousValue} to ${value}, reloading Field options`);
+      //console.log(`[onFormFieldChange] Source changed from ${previousValue} to ${value}, reloading Field options`);
       
       // Find Field column
       let fieldColumn = this.formFields?.find(col => col.field === 'Field');
@@ -5914,7 +5914,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // If Source changed, reload Field field options
     if (previousSource !== newSource && newSource != null && newSource !== undefined) {
-      console.log(`[onFormDataChange] Source changed from ${previousSource} to ${newSource}, reloading Field options`);
+      //console.log(`[onFormDataChange] Source changed from ${previousSource} to ${newSource}, reloading Field options`);
       
       // Check in formFields first
       let fieldColumn = this.formFields?.find(col => col.field === 'Field');
