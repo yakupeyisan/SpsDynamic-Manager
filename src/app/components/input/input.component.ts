@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -39,6 +39,8 @@ export class InputComponent implements ControlValueAccessor {
   private onChange = (value: string | number) => {};
   private onTouched = () => {};
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   onInput(event: Event) {
     const target = event.target as HTMLInputElement;
     this.value = this.type === 'number' ? parseFloat(target.value) || 0 : target.value;
@@ -61,6 +63,8 @@ export class InputComponent implements ControlValueAccessor {
 
   writeValue(value: string | number): void {
     this.value = value ?? '';
+    // Trigger change detection for OnPush strategy
+    this.cdr.markForCheck();
   }
 
   registerOnChange(fn: (value: string | number) => void): void {
@@ -73,6 +77,8 @@ export class InputComponent implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+    // Trigger change detection for OnPush strategy
+    this.cdr.markForCheck();
   }
 
   get inputClasses(): string {

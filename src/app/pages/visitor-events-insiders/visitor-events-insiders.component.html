@@ -57,7 +57,7 @@
   (onSave)="submitEntry()">
   <div class="entry-modal">
     <div class="entry-modal-left">
-      <div class="entry-modal-title">Ziyaretçi Listesi (Çift tık ile seç)</div>
+      <div class="entry-modal-title">Ziyaretçi Listesi</div>
       <ui-data-table
         #visitorTable
         [id]="'visitor-grid'"
@@ -89,8 +89,7 @@
         [expandColumn]="false"
         [nestedFields]="true"
         [columnTooltip]="'top'"
-        [toolbar]="{ items: [], show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false } }"
-        (rowDblClick)="onVisitorRowDblClick($event)">
+        [toolbar]="visitorTableToolbarConfig">
       </ui-data-table>
     </div>
 
@@ -99,7 +98,7 @@
 
       <form class="entry-form" [formGroup]="entryForm" (ngSubmit)="submitEntry()">
         <div class="entry-form-grid">
-          <ui-input label="Kişi No" [disabled]="true" formControlName="EmployeeID"></ui-input>
+          <ui-input label="Kişi No" formControlName="EmployeeID"></ui-input>
 
           <ui-input label="Adı" [required]="true" formControlName="Name"></ui-input>
           <ui-input label="Soyad" [required]="true" formControlName="SurName"></ui-input>

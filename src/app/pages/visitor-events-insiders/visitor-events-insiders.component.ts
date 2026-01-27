@@ -40,6 +40,7 @@ type AnyRecord = Record<string, any>;
 export class VisitorEventsInsidersComponent {
   @ViewChild('insidersTable') insidersTable?: DataTableComponent;
   @ViewChild('visitorTable') visitorTable?: DataTableComponent;
+  @ViewChild('movementDetailsTable') movementDetailsTable?: DataTableComponent;
 
   private apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
   private isReloading = false;
@@ -56,9 +57,18 @@ export class VisitorEventsInsidersComponent {
     { field: 'InDate', label: 'Giriş', text: 'Giriş', type: 'datetime', sortable: true, width: '180px', size: '180px', searchable: 'datetime', resizable: true }
   ];
 
+  // Movement details modal grid columns
+  movementDetailsColumns: TableColumn[] = [
+    { field: 'LocationName', label: 'Lokasyon', text: 'Lokasyon', type: 'text', sortable: true, width: '200px', size: '200px', searchable: 'text', resizable: true },
+    { field: 'EventDate', label: 'Tarih/Saat', text: 'Tarih/Saat', type: 'datetime', sortable: true, width: '180px', size: '180px', searchable: 'datetime', resizable: true },
+    { field: 'EventType', label: 'Giriş/Çıkış', text: 'Giriş/Çıkış', type: 'text', sortable: true, width: '120px', size: '120px', searchable: 'text', resizable: true }
+  ];
+
   // Modal state
   showEntryModal = false;
+  showMovementDetailsModal = false;
   isSubmitting = false;
+  selectedVisitId: number | null = null;
 
   // Select options
   companyOptions: SelectOption[] = [];
@@ -246,7 +256,8 @@ export class VisitorEventsInsidersComponent {
     return {
       items: [
         { id: 'entryVisitor', type: 'button', text: 'Ziyaretçi Giriş', icon: 'plus', onClick: () => this.openEntryModal() },
-        { id: 'exitVisitor', type: 'button', text: 'Ziyaretçi Çıkış', onClick: () => this.exitSelectedVisitor() }
+        { id: 'exitVisitor', type: 'button', text: 'Ziyaretçi Çıkış', onClick: () => this.exitSelectedVisitor() },
+        { id: 'movementDetails', type: 'button', text: 'Hareket Detayları', icon: 'info-circle', onClick: () => this.openMovementDetailsModal() }
       ],
       show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false }
     };
@@ -270,7 +281,16 @@ export class VisitorEventsInsidersComponent {
     this.resetEntryForm();
     // load dropdown options lazily
     this.loadCompaniesIfNeeded();
-    this.loadVisitorCardsIfNeeded();
+    // Always reload visitor cards when modal opens
+    this.loadVisitorCards();
+    
+    // Reload visitor grid after modal is rendered
+    setTimeout(() => {
+      if (this.visitorTable) {
+        this.visitorTable.reload();
+      }
+    }, 100);
+    
     this.cdr.markForCheck();
   }
 
@@ -291,19 +311,119 @@ export class VisitorEventsInsidersComponent {
   }
 
   onVisitorRowDblClick(row: TableRow): void {
-    // Prefill form from selected visitor record (old behavior)
-    const employeeId = row['EmployeeID'] ?? row['Id'] ?? row['id'] ?? null;
+    // Double-click functionality removed - use Select button instead
+  }
+
+  onVisitorSelectClick(): void {
+    // Get selected row from visitor table
+    if (!this.visitorTable) {
+      this.toastr.warning('Ziyaretçi tablosu bulunamadı.');
+      return;
+    }
+
+    const selectedRows = this.visitorTable.selectedRows;
+    if (!selectedRows || selectedRows.size === 0) {
+      this.toastr.warning('Lütfen 1 adet ziyaretçi seçiniz.');
+      return;
+    }
+
+    if (selectedRows.size !== 1) {
+      this.toastr.warning('Lütfen 1 adet ziyaretçi seçiniz.');
+      return;
+    }
+
+    // Get selected ID
+    const selectedIds = Array.from(selectedRows);
+    const selectedId = selectedIds[0];
+
+    // Get data source - use filteredData (getter) which handles dataSource vs data input
+    // This matches how DataTableComponent finds selected rows internally
+    const dataSource = this.visitorTable.filteredData || this.visitorTable.data || [];
+
+    if (!dataSource || dataSource.length === 0) {
+      console.warn('onVisitorSelectClick: No data source available', {
+        filteredData: this.visitorTable.filteredData?.length,
+        data: this.visitorTable.data?.length,
+        internalData: this.visitorTable.internalData?.length
+      });
+      this.toastr.warning('Veri bulunamadı. Lütfen sayfayı yenileyin ve tekrar deneyin.');
+      return;
+    }
+
+    // Get recid field name (same logic as DataTableComponent.getRowId)
+    const recidField = this.visitorTable.recid || 'id';
+
+    // Find the selected row using the same logic as DataTableComponent.getRowId
+    // This ensures we match the ID format used in selectedRows Set
+    const row = dataSource.find((r: any) => {
+      // Same logic as getRowId: row['recid'] ?? row[recidField] ?? row['id'] ?? row['_id'] ?? JSON.stringify(row)
+      const rowId = r['recid'] ?? r[recidField] ?? r['id'] ?? r['_id'] ?? JSON.stringify(r);
+      // Compare both as-is and as strings to handle type mismatches
+      return rowId === selectedId || String(rowId) === String(selectedId);
+    });
+
+    if (!row) {
+      console.warn('onVisitorSelectClick: row not found', {
+        selectedId,
+        selectedIdType: typeof selectedId,
+        recidField,
+        dataSourceLength: dataSource.length,
+        sampleRowIds: dataSource.slice(0, 3).map((r: any) => ({
+          recid: r['recid'],
+          [recidField]: r[recidField],
+          id: r['id'],
+          _id: r['_id']
+        }))
+      });
+      this.toastr.warning('Seçili ziyaretçi bulunamadı.');
+      return;
+    }
+
+    // Extract employee data
+    const employeeId = row['EmployeeID'] ?? row['Id'] ?? row['id'] ?? row['recid'] ?? null;
+    //entryform clear and load visitor data
+    this.entryForm.reset();
+    
+    // Enable EmployeeID control temporarily to set its value
+    const employeeIdControl = this.entryForm.get('EmployeeID');
+    if (employeeIdControl) {
+      employeeIdControl.enable({ emitEvent: false });
+      // Use setValue for disabled controls to ensure UI updates
+      employeeIdControl.setValue(employeeId, { emitEvent: false });
+      // Disable again after setting value
+      employeeIdControl.disable({ emitEvent: false });
+    }
+    
+    // Patch form values with visitor data
     this.entryForm.patchValue(
       {
-        EmployeeID: employeeId,
         Name: row['Name'] ?? '',
         SurName: row['SurName'] ?? '',
         IdentificationNumber: row['IdentificationNumber'] ?? '',
-        Company: row['VisitorCompany'] ?? row['Company'] ?? ''
+        Company: row['VisitorCompany'] ?? ''
       },
-      { emitEvent: true }
+      { emitEvent: false } // Don't emit events to avoid triggering validations prematurely
     );
+
+    // Update form validity and trigger change detection
+    this.entryForm.updateValueAndValidity({ emitEvent: false });
+    
+    // Force change detection to refresh the form and UI components (OnPush strategy)
     this.cdr.markForCheck();
+    setTimeout(() => {
+      this.cdr.detectChanges();
+      this.cdr.markForCheck();
+    }, 0);
+  }
+
+  // Visitor table toolbar configuration
+  get visitorTableToolbarConfig(): ToolbarConfig {
+    return {
+      items: [
+        { id: 'selectVisitor', type: 'button', text: 'Seç', icon: 'check', onClick: () => this.onVisitorSelectClick() }
+      ],
+      show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false }
+    };
   }
 
   submitEntry(): void {
@@ -374,12 +494,28 @@ export class VisitorEventsInsidersComponent {
       this.toastr.warning('Lütfen 1 adet kayıt seçiniz.');
       return;
     }
-    const id = selectedIds[0];
+    
+    // Get selected row to get the record ID
+    const selectedId = selectedIds[0];
+    const dataSource = this.insidersTable.filteredData || this.insidersTable.data || [];
+    const selectedRow = dataSource.find((row: any) => {
+      const rowId = row['ID'] ?? row['recid'] ?? row['id'];
+      return rowId === selectedId;
+    });
+    
+    // Use record['ID'] as requested
+    const recordId = selectedRow?.['ID'] ?? selectedId;
+    
+    if (!recordId) {
+      this.toastr.warning('Seçili kayıtta ID bulunamadı.');
+      return;
+    }
+    
     const confirmed = window.confirm('Seçili olan ziyaretçi çıkışı yapılacaktır. Onaylıyor musunuz?');
     if (!confirmed) return;
 
     this.http
-      .post<any>(`${this.apiUrl}/api/VisitorEvents/ExitVisitor`, { id })
+      .post<any>(`${this.apiUrl}/api/VisitorEvents/ExitVisitor`, { id: recordId })
       .pipe(
         catchError((error) => {
           console.error('ExitVisitor error:', error);
@@ -444,6 +580,10 @@ export class VisitorEventsInsidersComponent {
 
   private loadVisitorCardsIfNeeded(): void {
     if (this.visitorCardOptions.length > 0) return;
+    this.loadVisitorCards();
+  }
+
+  private loadVisitorCards(): void {
     this.http
       .post<any>(`${this.apiUrl}/api/Cards/NonUsedVisitorCards`, { limit: -1, offset: 0 })
       .pipe(
@@ -474,5 +614,115 @@ export class VisitorEventsInsidersComponent {
     if (res.data && Array.isArray(res.data.data)) return res.data.data as AnyRecord[];
     return [];
   }
+
+  // ===== Movement Details Modal =====
+  openMovementDetailsModal(): void {
+    if (!this.insidersTable) {
+      this.toastr.warning('Tablo bulunamadı.');
+      return;
+    }
+    const selectedIds = Array.from(this.insidersTable.selectedRows || []);
+    if (selectedIds.length !== 1) {
+      this.toastr.warning('Lütfen 1 adet kayıt seçiniz.');
+      return;
+    }
+    
+    // Get selected row to get the record ID
+    const selectedId = selectedIds[0];
+    const dataSource = this.insidersTable.filteredData || this.insidersTable.data || [];
+    const selectedRow = dataSource.find((row: any) => {
+      const rowId = row['ID'] ?? row['recid'] ?? row['id'];
+      return rowId === selectedId;
+    });
+    
+    // Use record['ID'] as requested (not EmployeeID)
+    const recordId = selectedRow?.['ID'] ?? selectedId;
+    
+    if (!recordId) {
+      this.toastr.warning('Seçili kayıtta ID bulunamadı.');
+      return;
+    }
+
+    this.selectedVisitId = recordId;
+    this.showMovementDetailsModal = true;
+    this.cdr.markForCheck();
+    
+    // Reload movement details grid after a short delay to ensure modal is rendered
+    setTimeout(() => {
+      if (this.movementDetailsTable) {
+        this.movementDetailsTable.reload();
+      }
+    }, 100);
+  }
+
+  onMovementDetailsModalShowChange(show: boolean): void {
+    if (!show) {
+      this.closeMovementDetailsModal();
+      return;
+    }
+    this.showMovementDetailsModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeMovementDetailsModal(): void {
+    this.showMovementDetailsModal = false;
+    this.selectedVisitId = null;
+    this.cdr.markForCheck();
+  }
+
+  // Movement details grid datasource
+  movementDetailsDataSource = (params: any) => {
+    if (!this.selectedVisitId) {
+      return of({ status: 'success' as const, total: 0, records: [] } as GridResponse);
+    }
+
+    return this.http.get<any>(`${this.apiUrl}/api/VisitorEvents/Moments/${this.selectedVisitId}`).pipe(
+      map((response: any) => {
+        // API response'u grid formatına çevir
+        let records: AnyRecord[] = [];
+        
+        if (Array.isArray(response)) {
+          records = response;
+        } else if (Array.isArray(response.records)) {
+          records = response.records;
+        } else if (Array.isArray(response.data)) {
+          records = response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          records = response.data.data;
+        }
+
+        // EventType'ı Türkçe'ye çevir (eğer gerekirse)
+        records = records.map((rec: AnyRecord) => {
+          const eventType = String(rec['EventType'] ?? rec['eventType'] ?? '').toLowerCase();
+          let eventTypeText = rec['EventType'] ?? rec['eventType'] ?? '';
+          
+          if (eventType === 'in' || eventType === 'entry' || eventType === 'giriş') {
+            eventTypeText = 'Giriş';
+          } else if (eventType === 'out' || eventType === 'exit' || eventType === 'çıkış') {
+            eventTypeText = 'Çıkış';
+          }
+          
+          return {
+            ...rec,
+            EventType: eventTypeText,
+            LocationName: rec['LocationName'] ?? rec['locationName'] ?? rec['Location'] ?? rec['location'] ?? '',
+            EventDate: rec['EventDate'] ?? rec['eventDate'] ?? rec['Date'] ?? rec['date'] ?? rec['DateTime'] ?? rec['dateTime'] ?? ''
+          };
+        });
+
+        return {
+          status: 'success' as const,
+          total: records.length,
+          records: records
+        } as GridResponse;
+      }),
+      catchError((error) => {
+        console.error('Error loading movement details:', error);
+        const msg = error?.error?.message || error?.message || 'Hareket detayları yüklenirken hata oluştu.';
+        this.toastr.error(msg, this.translate.instant('common.error'));
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
 }
 
