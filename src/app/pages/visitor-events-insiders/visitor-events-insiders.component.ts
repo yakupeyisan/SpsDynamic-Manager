@@ -41,6 +41,7 @@ export class VisitorEventsInsidersComponent {
   @ViewChild('insidersTable') insidersTable?: DataTableComponent;
   @ViewChild('visitorTable') visitorTable?: DataTableComponent;
   @ViewChild('movementDetailsTable') movementDetailsTable?: DataTableComponent;
+  @ViewChild('visitedEmployeeSelect') visitedEmployeeSelect?: SelectComponent;
 
   private apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
   private isReloading = false;
@@ -125,16 +126,23 @@ export class VisitorEventsInsidersComponent {
     this.entryForm.get('CompanyId')?.valueChanges.subscribe((companyId) => {
       this.visitedEmployeeOptions = [];
       this.entryForm.patchValue({ VisitedEmployeeID: null }, { emitEvent: false });
+      // Clear search term when company changes to force fresh search
+      this.visitedEmployeeSearchTerm$.next('');
       this.cdr.markForCheck();
     });
   }
 
   ngOnInit(): void {
     // Setup "Visited Employee" search with debounce (like card assignment)
+    this.setupVisitedEmployeeSearch();
+  }
+
+  private setupVisitedEmployeeSearch(): void {
     this.visitedEmployeeSearchTerm$
       .pipe(
         debounceTime(300),
-        distinctUntilChanged(),
+        // Remove distinctUntilChanged to allow same search term to trigger again
+        // This ensures search works even when company doesn't change
         switchMap((searchTerm) => {
           const companyId = this.entryForm.get('CompanyId')?.value;
 
@@ -279,6 +287,22 @@ export class VisitorEventsInsidersComponent {
   openEntryModal(): void {
     this.showEntryModal = true;
     this.resetEntryForm();
+    // Explicitly set CompanyId to null/empty when modal opens
+    const companyIdControl = this.entryForm.get('CompanyId');
+    if (companyIdControl) {
+      companyIdControl.setValue(null, { emitEvent: false });
+    }
+    // Clear visited employee options to force fresh search
+    this.visitedEmployeeOptions = [];
+    this.isLoadingVisitedEmployees = false;
+    // Clear search term to reset search state
+    this.visitedEmployeeSearchTerm$.next('');
+    // Clear select component's search input
+    setTimeout(() => {
+      if (this.visitedEmployeeSelect) {
+        this.visitedEmployeeSelect.clearSearch();
+      }
+    }, 50);
     // load dropdown options lazily
     this.loadCompaniesIfNeeded();
     // Always reload visitor cards when modal opens
@@ -463,6 +487,12 @@ export class VisitorEventsInsidersComponent {
   }
 
   private resetEntryForm(): void {
+    // Clear visited employee options first
+    this.visitedEmployeeOptions = [];
+    this.isLoadingVisitedEmployees = false;
+    // Clear search term to reset search state
+    this.visitedEmployeeSearchTerm$.next('');
+    // Reset form with explicit null values
     this.entryForm.reset({
       EmployeeID: null,
       Name: '',
@@ -474,13 +504,19 @@ export class VisitorEventsInsidersComponent {
       Description: '',
       AccessGroupID: null,
       VisitorCard: null
-    });
-    this.visitedEmployeeOptions = [];
-    this.isLoadingVisitedEmployees = false;
+    }, { emitEvent: false });
+    
+    // Explicitly set CompanyId to null to ensure it's empty
+    const companyIdControl = this.entryForm.get('CompanyId');
+    if (companyIdControl) {
+      companyIdControl.setValue(null, { emitEvent: false });
+    }
   }
 
   onVisitedEmployeeSearchChange(searchTerm: string): void {
-    this.visitedEmployeeSearchTerm$.next(searchTerm);
+    // Always emit search term to observable, even if it's the same value
+    // This ensures search works even when company doesn't change
+    this.visitedEmployeeSearchTerm$.next(searchTerm || '');
   }
 
   // ===== Exit visitor =====

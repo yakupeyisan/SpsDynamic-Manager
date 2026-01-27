@@ -264,6 +264,18 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
   }
 
   /**
+   * Clear search term (public method for external use)
+   */
+  clearSearch(): void {
+    this.searchTerm = '';
+    if (this.searchInput?.nativeElement) {
+      this.searchInput.nativeElement.value = '';
+    }
+    this.searchChange.emit('');
+    this.cdr.markForCheck();
+  }
+
+  /**
    * Handle search input keydown (prevent dropdown from closing on Escape)
    */
   onSearchKeyDown(event: KeyboardEvent) {

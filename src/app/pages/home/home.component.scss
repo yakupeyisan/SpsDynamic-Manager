@@ -8,20 +8,33 @@
   min-width: 0; // Prevents flex item from overflowing
 }
 
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  
+  > div {
+    display: flex;
+  }
+}
+
 .summary-card {
-  border-radius: 16px;
+  border-radius: 12px;
   transition: all 0.3s ease;
   height: 100%;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   }
 
   .summary-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,10 +43,10 @@
 
   h4 {
     color: #1a202c;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
-    line-height: 1.3;
-    letter-spacing: -0.02em;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
     word-break: break-word;
     overflow-wrap: break-word;
     margin: 0;
@@ -49,43 +62,98 @@
     &.text-success {
       color: #28a745;
     }
+
+    &.text-warning {
+      color: #ffc107;
+    }
+  }
+
+  h5 {
+    color: #1a202c;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0;
+
+    &.text-error {
+      color: #dc3545;
+    }
+
+    &.text-success {
+      color: #28a745;
+    }
+
+    &.text-warning {
+      color: #ffc107;
+    }
   }
 
   h6 {
     color: #718096;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.4;
     letter-spacing: 0;
     word-break: break-word;
     overflow-wrap: break-word;
     white-space: normal;
     margin: 0;
+
+    &.text-muted {
+      color: #9ca3af;
+      font-size: 12px;
+    }
   }
 
   mat-card-content {
     height: 100%;
     display: flex;
     align-items: center;
+    padding: 18px !important;
+    flex: 1;
+  }
+
+  &.summary-card-double {
+    min-height: 110px;
+    
+    mat-card-content {
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+    }
   }
 }
 
 // Tablet ve küçük ekranlar için responsive düzenlemeler
 @media (max-width: 1024px) {
   .summary-card {
+    min-height: 100px;
+    
     .summary-icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
     }
 
     h4 {
-      font-size: 24px !important;
-      line-height: 1.3;
+      font-size: 22px !important;
+      line-height: 1.2;
+    }
+
+    h5 {
+      font-size: 16px !important;
     }
 
     h6 {
-      font-size: 14px !important;
-      line-height: 1.5;
+      font-size: 12px !important;
+      line-height: 1.4;
+    }
+
+    mat-card-content {
+      padding: 16px !important;
+    }
+
+    &.summary-card-double {
+      min-height: 100px;
     }
   }
 
@@ -108,31 +176,8 @@
   }
 
   .summary-card {
-    .summary-icon {
-      width: 44px;
-      height: 44px;
-    }
-
-    h4 {
-      font-size: 22px !important;
-      line-height: 1.35;
-      letter-spacing: -0.01em;
-    }
-
-    h6 {
-      font-size: 13px !important;
-      line-height: 1.5;
-    }
-
-    mat-card-content {
-      padding: 16px !important;
-    }
-  }
-}
-
-// Küçük mobil cihazlar için
-@media (max-width: 480px) {
-  .summary-card {
+    min-height: 95px;
+    
     .summary-icon {
       width: 40px;
       height: 40px;
@@ -140,17 +185,58 @@
 
     h4 {
       font-size: 20px !important;
-      line-height: 1.4;
-      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    h5 {
+      font-size: 15px !important;
     }
 
     h6 {
       font-size: 12px !important;
-      line-height: 1.5;
+      line-height: 1.4;
+    }
+
+    mat-card-content {
+      padding: 14px !important;
+    }
+
+    &.summary-card-double {
+      min-height: 95px;
+    }
+  }
+}
+
+// Küçük mobil cihazlar için
+@media (max-width: 480px) {
+  .summary-card {
+    min-height: 90px;
+    
+    .summary-icon {
+      width: 36px;
+      height: 36px;
+    }
+
+    h4 {
+      font-size: 18px !important;
+      line-height: 1.2;
+    }
+
+    h5 {
+      font-size: 14px !important;
+    }
+
+    h6 {
+      font-size: 11px !important;
+      line-height: 1.3;
     }
 
     mat-card-content {
       padding: 12px !important;
+    }
+
+    &.summary-card-double {
+      min-height: 90px;
     }
 
     .m-l-16 {
@@ -159,17 +245,30 @@
   }
 }
 
+// Additional background color classes
+.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+}
+
 // Orta boy ekranlar (768px - 1024px arası)
 @media (min-width: 769px) and (max-width: 1024px) {
   .summary-card {
     h4 {
-      font-size: 26px !important;
-      line-height: 1.3;
+      font-size: 22px !important;
+      line-height: 1.2;
+    }
+
+    h5 {
+      font-size: 17px !important;
     }
 
     h6 {
-      font-size: 14px !important;
-      line-height: 1.5;
+      font-size: 13px !important;
+      line-height: 1.4;
     }
   }
 }
@@ -177,20 +276,33 @@
 // Büyük ekranlar için ek düzenlemeler
 @media (min-width: 1400px) {
   .summary-card {
+    min-height: 120px;
+    
     .summary-icon {
-      width: 64px;
-      height: 64px;
+      width: 52px;
+      height: 52px;
     }
 
     h4 {
-      font-size: 32px !important;
-      line-height: 1.25;
-      letter-spacing: -0.03em;
+      font-size: 26px !important;
+      line-height: 1.2;
+    }
+
+    h5 {
+      font-size: 20px !important;
     }
 
     h6 {
-      font-size: 16px !important;
-      line-height: 1.5;
+      font-size: 14px !important;
+      line-height: 1.4;
+    }
+
+    mat-card-content {
+      padding: 20px !important;
+    }
+
+    &.summary-card-double {
+      min-height: 120px;
     }
   }
 }

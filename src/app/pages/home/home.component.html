@@ -1,90 +1,77 @@
-<!-- Özet Bilgiler -->
-<div class="row m-b-24">
-  <div class="col-12">
-    <!-- Account Seçici - Sağ Üst -->
-    <div class="d-flex justify-content-end justify-content-sm-center m-b-16">
-      <mat-form-field appearance="outline" class="account-selector">
-        <mat-label>Kafeterya Hesabı</mat-label>
-        <mat-select [(ngModel)]="selectedAccountId" (selectionChange)="onAccountChange()">
-          <mat-option [value]="0">Tümü</mat-option>
-          @for(account of accounts; track account.ID) {
-          <mat-option [value]="account.ID">{{ account.AccountName || 'Hesap ' + account.ID }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-    <div class="row">
-      <div class="col-md-3 col-sm-6 m-b-16">
-        <mat-card class="cardWithShadow summary-card">
-          <mat-card-content class="p-24">
-            <div class="d-flex align-items-center">
-              <div class="summary-icon bg-light-primary">
-                <i-tabler name="credit-card" class="icon-24 text-primary"></i-tabler>
-              </div>
-              <div class="m-l-16 flex-1">
-                <h6 class="text-muted">Kart Sayısı</h6>
-                @if(isLoading) {
-                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
-                } @else {
-                <h4 class="m-t-4">{{ cardCount }}</h4>
-                }
-              </div>
+<div class="container-fluid p-24">
+  <div class="d-flex justify-content-between align-items-center m-b-24">
+    <h2 class="m-0">Anasayfa İstatistikleri</h2>
+    <button mat-raised-button color="primary" (click)="loadStatistics()" [disabled]="isLoading">
+      <i-tabler name="refresh" class="m-r-8" style="width: 18px; height: 18px;"></i-tabler>
+      Yenile
+    </button>
+  </div>
+
+  <!-- Kişi İstatistikleri -->
+  <div class="m-b-32">
+    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Kişi İstatistikleri</h3>
+    <div class="row stats-grid">
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="users" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Toplam Kişi</h6>
+              <h4 class="m-0 f-s-24">{{ totalPersonCount | number }}</h4>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
-      <div class="col-md-3 col-sm-6 m-b-16">
-        <mat-card class="cardWithShadow summary-card">
-          <mat-card-content class="p-24">
-            <div class="d-flex align-items-center">
-              <div class="summary-icon bg-light-success">
-                <i-tabler name="wallet" class="icon-24 text-success"></i-tabler>
-              </div>
-              <div class="m-l-16 flex-1">
-                <h6 class="text-muted">Toplam Bakiye</h6>
-                @if(isLoading) {
-                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
-                } @else {
-                <h4 class="m-t-4">{{ formatPrice(totalBalance) }} ₺</h4>
-                }
-              </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="user-check" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Yasaklı Olmayan</h6>
+              <h4 class="m-0 f-s-24 text-success">{{ notBannedPersonCount | number }}</h4>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
-      <div class="col-md-3 col-sm-6 m-b-16">
-        <mat-card class="cardWithShadow summary-card">
-          <mat-card-content class="p-24">
-            <div class="d-flex align-items-center">
-              <div class="summary-icon bg-light-warning">
-                <i-tabler name="shopping-cart" class="icon-24 text-warning"></i-tabler>
-              </div>
-              <div class="m-l-16 flex-1">
-                <h6 class="text-muted">Son 1 Aylık Harcama</h6>
-                @if(isLoading) {
-                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
-                } @else {
-                <h4 class="m-t-4 text-error">{{ formatPrice(monthlyExpense) }} ₺</h4>
-                }
-              </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="user-x" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Yasaklı</h6>
+              <h4 class="m-0 f-s-24 text-error">{{ bannedPersonCount | number }}</h4>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
-      <div class="col-md-3 col-sm-6 m-b-16">
-        <mat-card class="cardWithShadow summary-card">
-          <mat-card-content class="p-24">
-            <div class="d-flex align-items-center">
-              <div class="summary-icon bg-light-info">
-                <i-tabler name="arrow-down-circle" class="icon-24 text-info"></i-tabler>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="coffee" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
               </div>
-              <div class="m-l-16 flex-1">
-                <h6 class="text-muted">Son 1 Aylık Yükleme</h6>
-                @if(isLoading) {
-                <mat-spinner diameter="24" class="m-t-8"></mat-spinner>
-                } @else {
-                <h4 class="m-t-4 text-success">{{ formatPrice(monthlyLoad) }} ₺</h4>
-                }
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Kafeterya Aktif</h6>
+                <h5 class="m-0 f-s-18 text-success f-w-600">{{ activeCafeteriaStatusCount | number }}</h5>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-warning d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="coffee-off" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Kafeterya Pasif</h6>
+                <h5 class="m-0 f-s-18 text-warning f-w-600">{{ inactiveCafeteriaStatusCount | number }}</h5>
               </div>
             </div>
           </mat-card-content>
@@ -92,15 +79,217 @@
       </div>
     </div>
   </div>
-</div>
 
+  <!-- Sistem İstatistikleri -->
+  <div class="m-b-32">
+    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Sistem İstatistikleri</h3>
+    <div class="row stats-grid">
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-secondary d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="credit-card" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Toplam Kart</h6>
+              <h4 class="m-0 f-s-24">{{ totalCardCount | number }}</h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="door-enter" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Bugün Geçiş</h6>
+              <h4 class="m-0 f-s-24">{{ todayPassageCount | number }}</h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
-<!-- Yıllık Finansal Özet -->
-<div class="row">
-  <div class="col-12">
-    <app-yearly-financial-summary [accountId]="selectedAccountId" [accounts]="accounts"></app-yearly-financial-summary>
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="router" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Online Terminal</h6>
+                <h5 class="m-0 f-s-18 text-success f-w-600">{{ onlineTerminalCount | number }}</h5>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="router-off" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Offline Terminal</h6>
+                <h5 class="m-0 f-s-18 text-error f-w-600">{{ offlineTerminalCount | number }}</h5>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-info d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="user-check" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">İçerdeki Ziyaretçi</h6>
+                <h5 class="m-0 f-s-18 f-w-600">{{ currentVisitorCount | number }}</h5>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-info d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="users" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Bugün Toplam Ziyaret</h6>
+                <h5 class="m-0 f-s-18 f-w-600">{{ todayTotalVisitorCount | number }}</h5>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kafeterya İstatistikleri -->
+  <div class="m-b-32">
+    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Kafeterya İstatistikleri</h3>
+    <div class="row stats-grid">
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="ticket" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Abonelik Alan Kişi</h6>
+              <h4 class="m-0 f-s-24">{{ subscriptionPersonCount | number }}</h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="bowl" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Toplam İlk Yemek</h6>
+              <h4 class="m-0 f-s-24 text-success">{{ totalFirstMealCount | number }}</h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-warning d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="bowl" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Toplam İkinci Yemek</h6>
+              <h4 class="m-0 f-s-24 text-warning">{{ totalSecondMealCount | number }}</h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diğer İstatistikler -->
+  <div class="m-b-32">
+    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Diğer İstatistikler</h3>
+    <div class="row stats-grid">
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="printer" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Basımı Bekleyen Kart</h6>
+              <h4 class="m-0 f-s-24" [class.text-error]="cardsWaitingForPrinting > 0">
+                {{ cardsWaitingForPrinting | number }}
+              </h4>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="mail" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Bekleyen Mail</h6>
+                <h5 class="m-0 f-s-18 f-w-600">{{ pendingMailCount | number }}</h5>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="message" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Bekleyen SMS</h6>
+                <h5 class="m-0 f-s-18 f-w-600">{{ pendingSmsCount | number }}</h5>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="currency-lira" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Başarılı Yükleme</h6>
+                <h5 class="m-0 f-s-18 text-success f-w-600">{{ last7DaysSuccessfulLoad | number:'1.2-2' }} ₺</h5>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="currency-lira" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Başarısız Yükleme</h6>
+                <h5 class="m-0 f-s-18 text-error f-w-600">{{ last7DaysFailedLoad | number:'1.2-2' }} ₺</h5>
+              </div>
+            </div>
+            <div class="m-t-10 p-t-8" style="border-top: 1px solid #e5e7eb;">
+              <h6 class="m-0 f-s-11 text-muted">Son 7 Gün</h6>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="text-center p-24">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="m-t-16 text-muted">İstatistikler yükleniyor...</p>
   </div>
 </div>
-
-
