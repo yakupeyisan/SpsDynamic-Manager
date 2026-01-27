@@ -90,6 +90,8 @@
     "bulkPosition": "Toplu Kadro Tanımlama",
     "bulkScoring": "Toplu Puantaj Tanımlama",
     "bulkDepartment": "Toplu Bölüm Tanımlama",
+    "bulkQrCardCreate": "Toplu Qr Kart Oluşturma",
+    "bulkQrCardClose": "Toplu Qr Kart Kapatma",
     "bulkSms": "Toplu Sms Gönderme",
     "bulkMail": "Toplu Mail Gönderme",
     "importFromExcel": "Excelden Kişi Aktarma",

@@ -691,6 +691,148 @@
   </div>
 </ui-modal>
 
+<!-- Bulk QR Card Create Modal -->
+<ui-modal
+  [show]="showBulkQrCardCreateModal"
+  [title]="'Toplu Qr Kart Oluşturma'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkQrCardCreateModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanlar için QR kartlar oluşturulacaktır. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForQrCardCreate.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForQrCardCreate; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkQrCardCreateModal()"
+      [disabled]="isCreatingQrCards">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkQrCardCreate()"
+      [disabled]="isCreatingQrCards || selectedEmployeesForQrCardCreate.length === 0">
+      <span *ngIf="isCreatingQrCards" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isCreatingQrCards" class="ti ti-check me-1"></i>
+      Onayla ve Oluştur
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk QR Card Close Modal -->
+<ui-modal
+  [show]="showBulkQrCardCloseModal"
+  [title]="'Toplu Qr Kart Kapatma'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkQrCardCloseModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların QR kartları kapatılacaktır. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForQrCardClose.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForQrCardClose; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkQrCardCloseModal()"
+      [disabled]="isClosingQrCards">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkQrCardClose()"
+      [disabled]="isClosingQrCards || selectedEmployeesForQrCardClose.length === 0">
+      <span *ngIf="isClosingQrCards" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isClosingQrCards" class="ti ti-check me-1"></i>
+      Onayla ve Kapat
+    </button>
+  </div>
+</ui-modal>
+
 <!-- Bulk Web Client Access Modal -->
 <ui-modal
   [show]="showBulkWebClientModal"

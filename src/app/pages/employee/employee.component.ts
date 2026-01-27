@@ -95,6 +95,16 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   selectedDepartmentIds: number[] = [];
   isUpdatingDepartment: boolean = false;
   
+  // Bulk QR Card Create modal state
+  showBulkQrCardCreateModal = false;
+  selectedEmployeesForQrCardCreate: any[] = [];
+  isCreatingQrCards: boolean = false;
+  
+  // Bulk QR Card Close modal state
+  showBulkQrCardCloseModal = false;
+  selectedEmployeesForQrCardClose: any[] = [];
+  isClosingQrCards: boolean = false;
+  
   // Bulk Scoring modal state
   showBulkScoringModal = false;
   selectedEmployeesForScoring: any[] = [];
@@ -216,6 +226,16 @@ export class EmployeeComponent implements OnInit, OnDestroy {
               id: 'bulk-department',
               text: this.translate.instant('operations.bulkDepartment'),
               onClick: (event: MouseEvent, item: any) => this.onBulkDepartment(event, item)
+            },
+            {
+              id: 'bulk-qr-card-create',
+              text: this.translate.instant('operations.bulkQrCardCreate') || 'Toplu Qr Kart Oluşturma',
+              onClick: (event: MouseEvent, item: any) => this.onBulkQrCardCreate(event, item)
+            },
+            {
+              id: 'bulk-qr-card-close',
+              text: this.translate.instant('operations.bulkQrCardClose') || 'Toplu Qr Kart Kapatma',
+              onClick: (event: MouseEvent, item: any) => this.onBulkQrCardClose(event, item)
             },
             {
               id: 'bulk-sms',
@@ -713,6 +733,56 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.showBulkDepartmentModal = true;
   }
   
+  onBulkQrCardCreate(event: MouseEvent, item: any) {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForQrCardCreate = dataSource.filter((row: any) => {
+      const rowId = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(rowId);
+    });
+    
+    // Open modal
+    this.showBulkQrCardCreateModal = true;
+  }
+  
+  onBulkQrCardClose(event: MouseEvent, item: any) {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    // Get selected rows
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+    
+    // Get selected employee records
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForQrCardClose = dataSource.filter((row: any) => {
+      const rowId = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(rowId);
+    });
+    
+    // Open modal
+    this.showBulkQrCardCloseModal = true;
+  }
+  
   // Bulk Department Modal Methods
   onBulkDepartmentModalChange(show: boolean) {
     this.showBulkDepartmentModal = show;
@@ -739,6 +809,108 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.selectedEmployeesForScoring = [];
     this.scoringEnabled = true;
     this.isUpdatingScoring = false;
+  }
+  
+  // Bulk QR Card Create Modal Methods
+  onBulkQrCardCreateModalChange(show: boolean) {
+    this.showBulkQrCardCreateModal = show;
+    if (!show) {
+      this.closeBulkQrCardCreateModal();
+    }
+  }
+  
+  closeBulkQrCardCreateModal() {
+    this.showBulkQrCardCreateModal = false;
+    this.selectedEmployeesForQrCardCreate = [];
+  }
+  
+  onConfirmBulkQrCardCreate() {
+    if (this.selectedEmployeesForQrCardCreate.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isCreatingQrCards = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForQrCardCreate.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to create QR cards
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkCreateQrCards`, {
+      EmployeeIDs: employeeIds
+    }).pipe(
+      catchError(error => {
+        this.isCreatingQrCards = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'QR kart oluşturma sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error creating QR cards:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isCreatingQrCards = false;
+        this.cdr.markForCheck();
+        this.toastr.success('QR kartlar başarıyla oluşturuldu.');
+        this.closeBulkQrCardCreateModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+  
+  // Bulk QR Card Close Modal Methods
+  onBulkQrCardCloseModalChange(show: boolean) {
+    this.showBulkQrCardCloseModal = show;
+    if (!show) {
+      this.closeBulkQrCardCloseModal();
+    }
+  }
+  
+  closeBulkQrCardCloseModal() {
+    this.showBulkQrCardCloseModal = false;
+    this.selectedEmployeesForQrCardClose = [];
+  }
+  
+  onConfirmBulkQrCardClose() {
+    if (this.selectedEmployeesForQrCardClose.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+    
+    this.isClosingQrCards = true;
+    
+    // Get employee IDs
+    const employeeIds = this.selectedEmployeesForQrCardClose.map(emp => 
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+    
+    // API call to close QR cards
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkCloseQrCards`, {
+      EmployeeIDs: employeeIds
+    }).pipe(
+      catchError(error => {
+        this.isClosingQrCards = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'QR kart kapatma sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error closing QR cards:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isClosingQrCards = false;
+        this.cdr.markForCheck();
+        this.toastr.success('QR kartlar başarıyla kapatıldı.');
+        this.closeBulkQrCardCloseModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
   }
   
   onConfirmBulkDepartment() {
