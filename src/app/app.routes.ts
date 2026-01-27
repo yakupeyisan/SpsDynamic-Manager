@@ -705,6 +705,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'ManualDoorTrigger',
+        loadComponent: () =>
+          import('./pages/manual-door-trigger/manual-door-trigger.component').then(
+            (m) => m.ManualDoorTriggerComponent
+          ),
+        data: {
+          title: 'Manuel Kapı Tetikleme',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'PayStations',
         loadComponent: () =>
           import('./pages/pay-stations/pay-stations.component').then(

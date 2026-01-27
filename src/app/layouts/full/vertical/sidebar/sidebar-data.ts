@@ -101,6 +101,10 @@ export const navItems: NavItem[] = [
         route: '/AccessZones',
       },
       {
+        displayName: 'Manuel Kapı Tetikleme',
+        route: '/ManualDoorTrigger',
+      },
+      {
         displayName: 'Alarm Tanımları',
         disabled: true,
       },
@@ -415,10 +419,6 @@ export const navItems: NavItem[] = [
       {
         displayName: 'Pos Teminalleri',
         route: '/PosDevices',
-      },
-      {
-        displayName: 'Manuel Kapı Tetikleme',
-        disabled: true,
       },
     ],
   },

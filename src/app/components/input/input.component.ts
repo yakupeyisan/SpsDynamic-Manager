@@ -29,6 +29,9 @@ export class InputComponent implements ControlValueAccessor {
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   @Input() icon?: string;
   @Input() iconPosition: 'left' | 'right' = 'left';
+  @Input() min?: number;
+  @Input() max?: number;
+  @Input() step?: number;
   
   @Output() valueChange = new EventEmitter<string | number>();
   @Output() focusEvent = new EventEmitter<FocusEvent>();

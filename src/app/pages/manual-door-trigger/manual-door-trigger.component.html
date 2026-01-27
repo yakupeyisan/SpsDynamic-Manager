@@ -1,0 +1,145 @@
+<div class="manual-door-trigger-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header">
+          <h1>Manuel Kapı Tetikleme</h1>
+          <p class="page-description">Kapıları manuel olarak tetiklemek için bu sayfayı kullanabilirsiniz.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-12">
+        <div class="door-trigger-container" [style.height]="gridHeight">
+          <!-- Left Panel: Doors Grid -->
+          <div class="door-trigger-panel">
+            <div class="door-trigger-panel-header">
+              <h4 class="door-trigger-panel-title">Kapılar</h4>
+            </div>
+            <div class="door-trigger-panel-body">
+              <ui-data-table
+                #doorsGrid
+                [id]="'doors-grid'"
+                [columns]="doorsTableColumns"
+                [dataSource]="doorsDataSource"
+                [selectable]="true"
+                [pagination]="true"
+                [pageSize]="100"
+                [limit]="-1"
+                [height]="gridHeight"
+                [recid]="'SerialNumber'"
+                [selectType]="'row'"
+                [multiSelect]="true"
+                [showRefresh]="true"
+                [searchable]="true"
+                [advancedFilter]="true"
+                [showFooter]="true"
+                [toolbar]="doorsTableToolbarConfig"
+                [searchPlaceholder]="'Ara Tüm Alanlar'"
+                (rowSelect)="onDoorSelect($event)">
+              </ui-data-table>
+            </div>
+          </div>
+
+          <!-- Right Panel: Form -->
+          <div class="door-trigger-panel">
+            <div class="door-trigger-panel-header">
+              <h4 class="door-trigger-panel-title">İşlem Ayarları</h4>
+            </div>
+            <div class="door-trigger-panel-body">
+              <ui-form 
+                [title]="''"
+                layout="vertical"
+                [showJsonOutput]="false">
+                
+                <div class="form-content">
+                  <!-- Process Type Field -->
+                  <ui-form-field 
+                    label="İşlem Tipi"
+                    [required]="true">
+                    <ui-select
+                      [(ngModel)]="formData.processType"
+                      [options]="processTypeOptions"
+                      [placeholder]="'İşlem tipi seçiniz...'"
+                      (ngModelChange)="onProcessTypeChange($event)">
+                    </ui-select>
+                  </ui-form-field>
+
+                  <!-- Process Duration (Minutes) Field -->
+                  <ui-form-field 
+                    label="İşlem Süresi (dk)"
+                    [required]="formData.processType === '**'">
+                    <ui-input
+                      type="number"
+                      [(ngModel)]="formData.processTickM"
+                      [placeholder]="'Dakika'"
+                      [disabled]="formData.processType !== '**'"
+                      [min]="0">
+                    </ui-input>
+                  </ui-form-field>
+
+                  <!-- Process Duration (Seconds) Field -->
+                  <ui-form-field 
+                    label="İşlem Süresi (sn)"
+                    [required]="formData.processType === '**'">
+                    <ui-input
+                      type="number"
+                      [(ngModel)]="formData.processTick"
+                      [placeholder]="'Saniye'"
+                      [disabled]="formData.processType !== '**'"
+                      [min]="0">
+                    </ui-input>
+                  </ui-form-field>
+
+                  <!-- Info Message -->
+                  <div class="form-info">
+                    <div class="alert alert-info">
+                      <i class="ti ti-info-circle me-2"></i>
+                      <div>
+                        <strong>İşlem Tipleri:</strong>
+                        <ul>
+                          <li><strong>Sınırsız:</strong> Kapı süresiz olarak açık kalır</li>
+                          <li><strong>Kapat:</strong> Kapı kapatılır</li>
+                          <li><strong>Süreli:</strong> Belirtilen süre kadar açık kalır</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Selected Doors Count -->
+                  <div class="selected-info" *ngIf="selectedDoors.length > 0">
+                    <div class="alert alert-success">
+                      <i class="ti ti-check me-2"></i>
+                      <strong>{{ selectedDoors.length }}</strong> kapı seçildi
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="form-actions">
+                    <ui-button 
+                      variant="secondary" 
+                      size="md"
+                      (clicked)="resetForm()">
+                      <i class="ti ti-refresh me-2"></i>
+                      Sıfırla
+                    </ui-button>
+                    
+                    <ui-button 
+                      variant="primary" 
+                      size="md"
+                      (clicked)="onSave()"
+                      [disabled]="selectedDoors.length === 0">
+                      <i class="ti ti-check me-2"></i>
+                      Kaydet
+                    </ui-button>
+                  </div>
+                </div>
+              </ui-form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

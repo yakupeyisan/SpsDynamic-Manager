@@ -11,7 +11,7 @@ import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // Import configurations
-import { joinOptions } from './visitor-events-config';
+import { joinOptions, columnGroups } from './visitor-events-config';
 import { tableColumns } from './visitor-events-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './visitor-events-form-config';
 
@@ -22,7 +22,8 @@ import {
   ToolbarConfig, 
   GridResponse, 
   JoinOption,
-  FormTab
+  FormTab,
+  TableColumnGroup
 } from 'src/app/components/data-table/data-table.component';
 
 @Component({
@@ -46,6 +47,7 @@ export class VisitorEventsComponent implements OnInit {
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
+  columnGroups: TableColumnGroup[] = columnGroups;
   
   // Form configuration
   formFields: TableColumn[] = formFields;

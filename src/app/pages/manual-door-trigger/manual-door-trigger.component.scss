@@ -1,0 +1,191 @@
+// Manual Door Trigger Component Styles
+.manual-door-trigger-page {
+  padding: 20px;
+  
+  .container-fluid {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .page-header {
+    margin-bottom: 24px;
+    
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ui-gray-900, #111827);
+      margin: 0 0 8px 0;
+    }
+
+    .page-description {
+      color: var(--ui-gray-600, #6b7280);
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+}
+
+// Door Trigger Container Styles
+.door-trigger-container {
+  display: flex;
+  gap: 20px;
+  min-height: 600px;
+  margin-top: 20px;
+  
+  .door-trigger-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ui-border-color, #e0e0e0);
+    border-radius: var(--ui-border-radius, 4px);
+    overflow: hidden;
+    min-width: 0; // Allow flex shrinking
+    
+    .door-trigger-panel-header {
+      padding: 12px 16px;
+      background-color: var(--ui-gray-50, #f9fafb);
+      border-bottom: 1px solid var(--ui-border-color, #e0e0e0);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      .door-trigger-panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ui-gray-900, #111827);
+      }
+    }
+    
+    .door-trigger-panel-body {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 16px;
+      
+      // Grid panel specific styles
+      &:has(ui-data-table) {
+        padding: 0;
+        
+        ::ng-deep ui-data-table {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          position: relative !important;
+          overflow: visible !important;
+          
+          .ui-data-table {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            position: relative !important;
+            overflow: visible !important;
+            border: none !important;
+          }
+          
+          .ui-table-wrapper {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+            min-height: 0 !important;
+            position: relative !important;
+            margin-bottom: 32px !important;
+          }
+          
+          .ui-table-footer {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            flex-shrink: 0 !important;
+            z-index: 100 !important;
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: 32px !important;
+            background-color: #f8f8f8 !important;
+          }
+        }
+      }
+
+      // Form panel specific styles
+      .form-content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: 100%;
+        overflow-y: auto;
+        padding-right: 8px;
+
+        ui-form-field {
+          display: block;
+        }
+
+        .form-info {
+          margin-top: auto;
+          
+          .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            
+            &.alert-info {
+              background-color: #e7f3ff;
+              border: 1px solid #b3d9ff;
+              color: #004085;
+              
+              ul {
+                margin: 8px 0 0 20px;
+                padding: 0;
+                
+                li {
+                  margin: 4px 0;
+                }
+              }
+            }
+          }
+        }
+
+        .selected-info {
+          .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            
+            &.alert-success {
+              background-color: #d4edda;
+              border: 1px solid #c3e6cb;
+              color: #155724;
+            }
+          }
+        }
+
+        .form-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 24px;
+          padding-top: 16px;
+          border-top: 1px solid var(--ui-border-color, #e0e0e0);
+          
+          ui-button {
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 1200px) {
+  .door-trigger-container {
+    flex-direction: column;
+    
+    .door-trigger-panel {
+      min-height: 400px;
+    }
+  }
+}
