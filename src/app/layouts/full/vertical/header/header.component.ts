@@ -21,6 +21,10 @@ import { AppSettings } from 'src/app/config';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService, User } from 'src/app/services/auth.service';
 import { environment } from 'src/environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { ToastrService } from 'ngx-toastr';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 interface notifications {
   id: number;
@@ -103,13 +107,17 @@ export class HeaderComponent implements OnInit {
 
   @Output() optionsChange = new EventEmitter<AppSettings>();
 
+  isDownloading: boolean = false;
+
   constructor(
     private settings: CoreService,
     private vsidenav: CoreService,
     public dialog: MatDialog,
     private translate: TranslateService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient,
+    private toastr: ToastrService
   ) {
     translate.setDefaultLang('tr');
     // Set initial language based on current translate service
@@ -231,6 +239,61 @@ export class HeaderComponent implements OnInit {
 
   apps: apps[] = [
   ];
+
+  downloadGridSettings(): void {
+    if (this.isDownloading) {
+      return;
+    }
+
+    // Uyarı mesajı göster
+    if (!confirm('Sunucudan ayarlar yüklenecektir. Özelleştirdiğiniz ayarlar kaybolacaktır. Emin misiniz?')) {
+      return;
+    }
+
+    this.isDownloading = true;
+
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/GridSettings/download`;
+    
+    this.http.get<{ settings?: { key: string; value: string }[]; error?: boolean; message?: string }>(url).pipe(
+      catchError(error => {
+        this.isDownloading = false;
+        this.toastr.error('Sunucudan indirme başarısız oldu: ' + (error.error?.message || error.message || 'Bilinmeyen hata'), 'Hata');
+        return of({ error: true, message: error.message });
+      })
+    ).subscribe((response: any) => {
+      this.isDownloading = false;
+      
+      if (response.error === false || (response.settings && Array.isArray(response.settings))) {
+        const settings = response.settings || [];
+        
+        // Önce tüm grid_ ile başlayan localStorage key'lerini sil
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('grid_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Sonra sunucudan indirilen ayarları localStorage'a kaydet
+        settings.forEach((setting: { key: string; value: string }) => {
+          if (setting.key && setting.key.startsWith('grid_')) {
+            localStorage.setItem(setting.key, setting.value);
+          }
+        });
+
+        this.toastr.success(`${settings.length} grid ayarı sunucudan başarıyla indirildi ve localStorage'a kaydedildi`, 'Başarılı');
+        
+        // Eğer GridSettings sayfasındaysak, sayfayı yenile
+        if (this.router.url === '/GridSettings') {
+          window.location.reload();
+        }
+      } else {
+        this.toastr.error(response.message || 'Sunucudan indirme başarısız oldu', 'Hata');
+      }
+    });
+  }
 }
 
 @Component({

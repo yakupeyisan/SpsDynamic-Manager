@@ -15,6 +15,16 @@ import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } fr
 import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { navItems } from 'src/app/layouts/full/vertical/sidebar/sidebar-data';
+import { NavItem } from 'src/app/layouts/full/vertical/sidebar/nav-item/nav-item';
+
+interface PageVisibilityItem {
+  route: string;
+  displayName: string;
+  isVisible: boolean;
+  children?: PageVisibilityItem[];
+  level?: number;
+}
 
 @Component({
   selector: 'app-authorizations',
@@ -50,6 +60,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
   showAccessPermissionsModal: boolean = false;
   showTerminalPermissionsModal: boolean = false;
   showSecureFieldsPermissionsModal: boolean = false;
+  showPageVisibilityModal: boolean = false;
   authorizationIdForPermissions: number | null = null;
   gridHeight: string = '500px';
   selectedUnselectedClaims: any[] = [];
@@ -66,6 +77,7 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
   selectedSelectedAccessGroups: any[] = [];
   selectedUnselectedTerminals: any[] = [];
   selectedSelectedTerminals: any[] = [];
+  pageVisibilityItems: PageVisibilityItem[] = [];
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
@@ -157,6 +169,11 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
               id: 'secure-fields-permissions',
               text: 'Güvenli Girdi Yetkileri',
               onClick: (event) => this.openSettingsModal('secure-fields-permissions')
+            },
+            {
+              id: 'page-visibility',
+              text: 'Sayfa Görünürlük',
+              onClick: (event) => this.openSettingsModal('page-visibility')
             }
           ]
         }
@@ -273,6 +290,13 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
         }
         // Re-attach checkbox listeners after reload
         setTimeout(() => this.attachSecureFieldsCheckboxListeners(), 200);
+      }, 100);
+    } else if (settingsType === 'page-visibility') {
+      this.authorizationIdForPermissions = authorizationId;
+      this.showPageVisibilityModal = true;
+      // Load page visibility data
+      setTimeout(() => {
+        this.loadPageVisibilityData();
       }, 100);
     } else {
       console.log(`Opening ${settingsType} modal for authorization ID: ${authorizationId}`);
@@ -728,6 +752,225 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     this.showSecureFieldsPermissionsModal = false;
     this.authorizationIdForPermissions = null;
     this.secureFieldForm.reset();
+  }
+
+  closePageVisibilityModal(): void {
+    this.showPageVisibilityModal = false;
+    this.authorizationIdForPermissions = null;
+    this.pageVisibilityItems = [];
+  }
+
+  // Extract all routes from navItems recursively
+  private extractRoutesFromNavItems(items: NavItem[], level: number = 0): PageVisibilityItem[] {
+    const result: PageVisibilityItem[] = [];
+    
+    for (const item of items) {
+      // Skip items without routes and children (dividers, captions, etc.)
+      if (!item.route && (!item.children || item.children.length === 0)) {
+        continue;
+      }
+
+      // Skip navCap and divider items
+      if (item.navCap || item.divider) {
+        // But process their children if they exist
+        if (item.children && item.children.length > 0) {
+          result.push(...this.extractRoutesFromNavItems(item.children, level));
+        }
+        continue;
+      }
+
+      const pageItem: PageVisibilityItem = {
+        route: item.route || '',
+        displayName: item.displayName || '',
+        isVisible: false,
+        level: level
+      };
+
+      // Process children recursively
+      if (item.children && item.children.length > 0) {
+        pageItem.children = this.extractRoutesFromNavItems(item.children, level + 1);
+      }
+
+      // Only add items that have routes or children
+      if (pageItem.route || (pageItem.children && pageItem.children.length > 0)) {
+        result.push(pageItem);
+      }
+    }
+
+    return result;
+  }
+
+  // Load page visibility data
+  loadPageVisibilityData(): void {
+    if (!this.authorizationIdForPermissions) {
+      return;
+    }
+
+    // Extract all routes from sidebar
+    const allRoutes = this.extractRoutesFromNavItems(navItems);
+
+    // Load saved visibility settings from API
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations/GetPageVisibility`, {
+      AuthorizationId: this.authorizationIdForPermissions
+    }).subscribe({
+      next: (response: any) => {
+        let visibleRoutes: string[] = [];
+        
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          visibleRoutes = response;
+        } else if (response && response.data) {
+          // Handle format: { status: "success", data: { VisibleRoutes: [] } }
+          if (Array.isArray(response.data.VisibleRoutes)) {
+            visibleRoutes = response.data.VisibleRoutes;
+          } else if (Array.isArray(response.data)) {
+            visibleRoutes = response.data;
+          } else if (response.data.visibleRoutes && Array.isArray(response.data.visibleRoutes)) {
+            visibleRoutes = response.data.visibleRoutes;
+          }
+        } else if (response && Array.isArray(response.records)) {
+          visibleRoutes = response.records;
+        } else if (response && Array.isArray(response.visibleRoutes)) {
+          visibleRoutes = response.visibleRoutes;
+        }
+
+        // Mark routes as visible if they're in the saved list
+        const markVisible = (items: PageVisibilityItem[]) => {
+          items.forEach(item => {
+            if (item.route && visibleRoutes.includes(item.route)) {
+              item.isVisible = true;
+            }
+            if (item.children) {
+              markVisible(item.children);
+            }
+          });
+        };
+
+        markVisible(allRoutes);
+        this.pageVisibilityItems = allRoutes;
+        
+        // Update parent visibility based on children after marking visible routes
+        this.updateAllParentsVisibility();
+      },
+      error: (error: any) => {
+        console.error('Error loading page visibility:', error);
+        // If API fails, just show all routes as unchecked
+        this.pageVisibilityItems = allRoutes;
+      }
+    });
+  }
+
+  // Toggle page visibility
+  togglePageVisibility(item: PageVisibilityItem): void {
+    item.isVisible = !item.isVisible;
+    
+    // If parent is toggled, toggle all children
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(child => {
+        child.isVisible = item.isVisible;
+        if (child.children) {
+          this.toggleChildrenVisibility(child, item.isVisible);
+        }
+      });
+    }
+    
+    // Update all parent visibility based on children
+    this.updateAllParentsVisibility();
+  }
+
+  // Update all parent visibility based on their children
+  private updateAllParentsVisibility(): void {
+    const updateParents = (items: PageVisibilityItem[]): void => {
+      items.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          // First, update children recursively
+          updateParents(item.children);
+          
+          // Then check if any child is visible
+          const hasVisibleChild = item.children.some(child => 
+            child.isVisible || (child.children && this.hasAnyVisibleDescendant(child))
+          );
+          
+          // If item has no route and has visible children, make it visible
+          if (!item.route && hasVisibleChild) {
+            item.isVisible = true;
+          }
+          // If item has no route and no visible children, make it invisible
+          else if (!item.route && !hasVisibleChild) {
+            item.isVisible = false;
+          }
+          // If item has a route, its visibility is independent of children
+        }
+      });
+    };
+    
+    updateParents(this.pageVisibilityItems);
+  }
+
+  // Check if item or any of its descendants are visible
+  private hasAnyVisibleDescendant(item: PageVisibilityItem): boolean {
+    if (item.isVisible) {
+      return true;
+    }
+    if (item.children && item.children.length > 0) {
+      return item.children.some(child => child.isVisible || this.hasAnyVisibleDescendant(child));
+    }
+    return false;
+  }
+
+  // Recursively toggle children visibility
+  private toggleChildrenVisibility(item: PageVisibilityItem, visible: boolean): void {
+    item.isVisible = visible;
+    if (item.children) {
+      item.children.forEach(child => {
+        this.toggleChildrenVisibility(child, visible);
+      });
+    }
+  }
+
+  // Collect all visible routes recursively
+  private collectVisibleRoutes(items: PageVisibilityItem[]): string[] {
+    const routes: string[] = [];
+    
+    items.forEach(item => {
+      if (item.isVisible && item.route) {
+        routes.push(item.route);
+      }
+      if (item.children) {
+        routes.push(...this.collectVisibleRoutes(item.children));
+      }
+    });
+
+    return routes;
+  }
+
+  // Save page visibility settings
+  savePageVisibility(): void {
+    if (!this.authorizationIdForPermissions) {
+      this.toastr.warning('Geçersiz yetki seçimi', 'Uyarı');
+      return;
+    }
+
+    const visibleRoutes = this.collectVisibleRoutes(this.pageVisibilityItems);
+
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations/SavePageVisibility`, {
+      AuthorizationId: this.authorizationIdForPermissions,
+      VisibleRoutes: visibleRoutes
+    }).subscribe({
+      next: (response: any) => {
+        if (response.error === false || response.status === 'success') {
+          this.toastr.success('Sayfa görünürlük ayarları başarıyla kaydedildi', 'Başarılı');
+          this.closePageVisibilityModal();
+        } else {
+          this.toastr.error(response.message || 'Kaydetme başarısız', 'Hata');
+        }
+      },
+      error: (error: any) => {
+        console.error('Error saving page visibility:', error);
+        const errorMessage = error.error?.message || error.message || 'Kaydetme başarısız';
+        this.toastr.error(errorMessage, 'Hata');
+      }
+    });
   }
 
   // Data source for selected claims

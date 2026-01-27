@@ -212,33 +212,138 @@
               [class.active]="showDeleted">
               <span>{{ showDeleted ? translate.instant('options.hideDeleted') : translate.instant('options.showDeleted') }}</span>
             </button>
+            <button 
+              class="ui-options-menu-item" 
+              (click)="openDefaultSearchFieldsPanel()">
+              <span>{{ translate.instant('options.defaultSearchFields') || 'Arama Varsayılan Alanları' }}</span>
+            </button>
+            <button 
+              class="ui-options-menu-item" 
+              (click)="openColumnVisibilityPanel()">
+              <span>{{ translate.instant('options.columnVisibility') || 'Kolon Görünürlüğü' }}</span>
+            </button>
+            <button 
+              class="ui-options-menu-item" 
+              (click)="openSearchableColumnsPanel()">
+              <span>{{ translate.instant('options.searchableColumns') || 'Aramada Görünecek Kolonlar' }}</span>
+            </button>
           </div>
-        </div>
-      </div>
-      
-      <!-- Join Options Panel Overlay -->
-      <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay">
-        <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
-          <div class="ui-join-options-header">
-            <h3>{{ translate.instant('joinOptions.title') }}</h3>
-          </div>
-          <div class="ui-join-options-body">
-            <ng-container *ngFor="let option of joinOptions">
-              <div class="ui-join-option-item" [class.ui-join-option-nested]="option.nested">
-                <label class="ui-checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    [checked]="isJoinSelected(option.key)"
-                    (change)="toggleJoinOption(option.key, $event)"
-                    class="ui-checkbox">
-                  <span>{{ translate.instant('joinOptions.' + option.key) || option.label }}</span>
-                </label>
+
+          <!-- Join Options Panel Overlay -->
+          <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay">
+            <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
+              <div class="ui-join-options-header">
+                <h3>{{ translate.instant('joinOptions.title') }}</h3>
               </div>
-            </ng-container>
+              <div class="ui-join-options-body">
+                <ng-container *ngFor="let option of joinOptions">
+                  <div class="ui-join-option-item" [class.ui-join-option-nested]="option.nested">
+                    <label class="ui-checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        [checked]="isJoinSelected(option.key)"
+                        (change)="toggleJoinOption(option.key, $event)"
+                        class="ui-checkbox">
+                      <span>{{ translate.instant('joinOptions.' + option.key) || option.label }}</span>
+                    </label>
+                  </div>
+                </ng-container>
+              </div>
+              <div class="ui-join-options-footer">
+                <button class="ui-btn ui-btn-primary" (click)="applyJoinOptions()">{{ translate.instant('joinOptions.apply') }}</button>
+                <button class="ui-btn ui-btn-secondary" (click)="closeJoinOptionsPanel()">{{ translate.instant('joinOptions.cancel') }}</button>
+              </div>
+            </div>
           </div>
-          <div class="ui-join-options-footer">
-            <button class="ui-btn ui-btn-primary" (click)="applyJoinOptions()">{{ translate.instant('joinOptions.apply') }}</button>
-            <button class="ui-btn ui-btn-secondary" (click)="closeJoinOptionsPanel()">{{ translate.instant('joinOptions.cancel') }}</button>
+
+          <!-- Default Search Fields Panel Overlay -->
+          <div *ngIf="showDefaultSearchFieldsPanel" class="ui-join-options-overlay">
+            <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
+              <div class="ui-join-options-header">
+                <h3>{{ translate.instant('options.defaultSearchFields') || 'Arama Varsayılan Alanları' }}</h3>
+              </div>
+              <div class="ui-join-options-body">
+                <p style="margin-bottom: 16px; color: var(--ui-gray-600); font-size: 14px;">
+                  {{ translate.instant('options.defaultSearchFieldsDescription') || 'Arama paneli açıldığında varsayılan olarak görünecek alanları seçin.' }}
+                </p>
+                <ng-container *ngFor="let column of getSearchableColumnsForDefaultFields()">
+                  <div class="ui-join-option-item">
+                    <label class="ui-checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        [checked]="isDefaultSearchField(column.field)"
+                        (change)="toggleDefaultSearchField(column.field)"
+                        class="ui-checkbox">
+                      <span>{{ getColumnLabel(column) }}</span>
+                    </label>
+                  </div>
+                </ng-container>
+              </div>
+              <div class="ui-join-options-footer">
+                <button class="ui-btn ui-btn-primary" (click)="saveDefaultSearchFields()">{{ translate.instant('common.save') || 'Kaydet' }}</button>
+                <button class="ui-btn ui-btn-secondary" (click)="closeDefaultSearchFieldsPanel()">{{ translate.instant('common.cancel') || 'İptal' }}</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column Visibility Panel Overlay -->
+          <div *ngIf="showColumnVisibilityPanel" class="ui-join-options-overlay">
+            <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
+              <div class="ui-join-options-header">
+                <h3>{{ translate.instant('options.columnVisibility') || 'Kolon Görünürlüğü' }}</h3>
+              </div>
+              <div class="ui-join-options-body">
+                <p style="margin-bottom: 16px; color: var(--ui-gray-600); font-size: 14px;">
+                  {{ translate.instant('options.columnVisibilityDescription') || 'Gridde görünecek kolonları seçin. Hiçbir şey seçilmezse tüm kolonlar görünür.' }}
+                </p>
+                <ng-container *ngFor="let column of getAllColumnsForVisibility()">
+                  <div class="ui-join-option-item">
+                    <label class="ui-checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        [checked]="isColumnVisible(column.field)"
+                        (change)="toggleVisibleColumn(column.field)"
+                        class="ui-checkbox">
+                      <span>{{ getColumnLabel(column) }}</span>
+                    </label>
+                  </div>
+                </ng-container>
+              </div>
+              <div class="ui-join-options-footer">
+                <button class="ui-btn ui-btn-primary" (click)="saveVisibleColumns()">{{ translate.instant('common.save') || 'Kaydet' }}</button>
+                <button class="ui-btn ui-btn-secondary" (click)="closeColumnVisibilityPanel()">{{ translate.instant('common.cancel') || 'İptal' }}</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Searchable Columns Panel Overlay -->
+          <div *ngIf="showSearchableColumnsPanel" class="ui-join-options-overlay">
+            <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
+              <div class="ui-join-options-header">
+                <h3>{{ translate.instant('options.searchableColumns') || 'Aramada Görünecek Kolonlar' }}</h3>
+              </div>
+              <div class="ui-join-options-body">
+                <p style="margin-bottom: 16px; color: var(--ui-gray-600); font-size: 14px;">
+                  {{ translate.instant('options.searchableColumnsDescription') || 'Arama panelinde görünecek kolonları seçin. Hiçbir şey seçilmezse tüm arama yapılabilir kolonlar görünür.' }}
+                </p>
+                <ng-container *ngFor="let column of getAllSearchableColumnsForPanel()">
+                  <div class="ui-join-option-item">
+                    <label class="ui-checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        [checked]="isSearchableColumn(column.field)"
+                        (change)="toggleSearchableColumn(column.field)"
+                        class="ui-checkbox">
+                      <span>{{ getColumnLabel(column) }}</span>
+                    </label>
+                  </div>
+                </ng-container>
+              </div>
+              <div class="ui-join-options-footer">
+                <button class="ui-btn ui-btn-primary" (click)="saveSearchableColumns()">{{ translate.instant('common.save') || 'Kaydet' }}</button>
+                <button class="ui-btn ui-btn-secondary" (click)="closeSearchableColumnsPanel()">{{ translate.instant('common.cancel') || 'İptal' }}</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -255,6 +360,8 @@
           [limitOptions]="limitOptions"
           [enableReportSave]="enableReportSave"
           [hasActiveFilter]="!!activeFilter"
+          [defaultSearchFields]="defaultSearchFields"
+          [searchableColumns]="searchableColumns"
           (filterChange)="onFilterChange($event)"
           (limitChange)="onLimitChange($event)"
           (clear)="onFilterClear()"

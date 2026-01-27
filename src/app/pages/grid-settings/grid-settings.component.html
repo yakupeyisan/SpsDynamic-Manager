@@ -1,0 +1,121 @@
+<div class="grid-settings-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="main-card">
+          <div class="card-header">
+            <div class="header-content">
+              <h2 class="page-title">
+                <mat-icon>settings</mat-icon>
+                Grid Ayarları
+              </h2>
+              <div class="header-actions">
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="uploadToServer()"
+                  [disabled]="gridSettings.length === 0 || isUploading"
+                  class="upload-btn">
+                  <mat-icon>cloud_upload</mat-icon>
+                  {{ isUploading ? 'Yükleniyor...' : 'Sunucuya Yükle' }}
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="warn" 
+                  (click)="clearAllSettings()"
+                  [disabled]="gridSettings.length === 0"
+                  class="clear-all-btn">
+                  <mat-icon>delete_sweep</mat-icon>
+                  Tümünü Temizle
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-content">
+            @if (gridSettings.length === 0) {
+              <div class="empty-state">
+                <mat-icon class="empty-icon">settings</mat-icon>
+                <p class="empty-text">Henüz grid ayarı bulunmamaktadır.</p>
+              </div>
+            } @else {
+              <div class="settings-grid">
+                @for (setting of gridSettings; track setting.key) {
+                  <mat-card class="setting-card">
+                    <mat-card-header>
+                      <div class="card-header-content">
+                        <div class="setting-title-section">
+                          <h3 class="setting-title">{{ setting.displayName }}</h3>
+                          <span class="setting-key">{{ setting.key }}</span>
+                        </div>
+                        <div class="card-actions">
+                          <button 
+                            mat-icon-button 
+                            matTooltip="Kopyala"
+                            (click)="copyValue(setting.value)"
+                            class="action-btn">
+                            <mat-icon>content_copy</mat-icon>
+                          </button>
+                          <button 
+                            mat-icon-button 
+                            color="warn"
+                            matTooltip="Sil"
+                            (click)="clearSetting(setting.key)"
+                            class="action-btn">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </mat-card-header>
+                    
+                    <mat-card-content>
+                      <div class="value-container">
+                        @if (isLongValue(setting) && !setting.isExpanded) {
+                          <div class="value-preview">
+                            <pre class="value-code">{{ setting.formattedValue.substring(0, 100) }}...</pre>
+                            <button 
+                              mat-button 
+                              color="primary"
+                              (click)="toggleExpand(setting)"
+                              class="expand-btn">
+                              <mat-icon>expand_more</mat-icon>
+                              Devamını Göster
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="value-full">
+                            <pre [class]="'value-code value-' + setting.valueType">{{ setting.formattedValue }}</pre>
+                            @if (isLongValue(setting) && setting.isExpanded) {
+                              <button 
+                                mat-button 
+                                color="primary"
+                                (click)="toggleExpand(setting)"
+                                class="collapse-btn">
+                                <mat-icon>expand_less</mat-icon>
+                                Daha Az Göster
+                              </button>
+                            }
+                          </div>
+                        }
+                        <div class="value-type-badge">
+                          <span [class]="'badge badge-' + setting.valueType">
+                            {{ setting.valueType === 'json' ? 'JSON' : setting.valueType === 'array' ? 'Array' : setting.valueType === 'boolean' ? 'Boolean' : setting.valueType === 'number' ? 'Number' : 'String' }}
+                          </span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                }
+              </div>
+              
+              <div class="footer-info">
+                <mat-icon>info</mat-icon>
+                <span>Toplam <strong>{{ gridSettings.length }}</strong> grid ayarı bulundu.</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

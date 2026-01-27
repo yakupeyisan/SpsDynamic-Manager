@@ -406,8 +406,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   currentLimit: number = 100;
   showOptionsMenu: boolean = false;
   showJoinOptionsPanel: boolean = false;
+  showDefaultSearchFieldsPanel: boolean = false; // Panel for selecting default search fields
+  showColumnVisibilityPanel: boolean = false; // Panel for selecting visible columns
+  showSearchableColumnsPanel: boolean = false; // Panel for selecting searchable columns in filter
   selectedJoins: { [key: string]: boolean | { [key: string]: boolean } } = {};
   showDeleted: boolean = false; // Toggle for showing deleted records
+  defaultSearchFields: string[] = []; // Default search fields to show when filter panel opens
+  visibleColumns: string[] = []; // Visible columns (empty means all visible)
+  searchableColumns: string[] = []; // Searchable columns in filter panel (empty means all searchable)
   isLoading: boolean = false; // Loading state for data source
   internalData: TableRow[] = []; // Internal data storage (from dataSource)
   internalTotal: number = 0; // Internal total count (from dataSource)
@@ -592,6 +598,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (this.id) {
       this.loadJoinOptionsFromStorage();
       this.loadShowDeletedFromStorage();
+      this.loadDefaultSearchFieldsFromStorage();
+      this.loadVisibleColumnsFromStorage();
+      this.loadSearchableColumnsFromStorage();
     }
     
     // Update column visibility based on joins on initialization
@@ -1048,7 +1057,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Use internal columns if available (for resize state), otherwise use input columns
     const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
     // Filter out hidden columns
-    return cols.filter(col => !col.hidden);
+    let visibleCols = cols.filter(col => !col.hidden);
+    
+    // If visibleColumns is set and not empty, filter by visible columns
+    if (this.visibleColumns && this.visibleColumns.length > 0) {
+      visibleCols = visibleCols.filter(col => this.visibleColumns.includes(col.field));
+    }
+    
+    return visibleCols;
   }
 
   get filteredData(): TableRow[] {
@@ -4955,6 +4971,316 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     } catch (error) {
       console.error('Error loading showDeleted from localStorage:', error);
     }
+  }
+
+  /**
+   * Load default search fields from localStorage
+   */
+  private loadDefaultSearchFieldsFromStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_defaultSearchFields`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.defaultSearchFields = parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading default search fields from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save default search fields to localStorage
+   */
+  private saveDefaultSearchFieldsToStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_defaultSearchFields`;
+      localStorage.setItem(storageKey, JSON.stringify(this.defaultSearchFields));
+    } catch (error) {
+      console.error('Error saving default search fields to localStorage:', error);
+    }
+  }
+
+  /**
+   * Open default search fields panel
+   */
+  openDefaultSearchFieldsPanel(): void {
+    this.showOptionsMenu = false;
+    this.showDefaultSearchFieldsPanel = true;
+    this.showFilterPanel = false;
+    this.showJoinOptionsPanel = false;
+    this.preventBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Close default search fields panel
+   */
+  closeDefaultSearchFieldsPanel(): void {
+    this.showDefaultSearchFieldsPanel = false;
+    this.restoreBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Toggle a field in default search fields list
+   */
+  toggleDefaultSearchField(field: string): void {
+    const index = this.defaultSearchFields.indexOf(field);
+    if (index === -1) {
+      // Add field
+      this.defaultSearchFields = [...this.defaultSearchFields, field];
+    } else {
+      // Remove field
+      this.defaultSearchFields = this.defaultSearchFields.filter(f => f !== field);
+    }
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Check if a field is in default search fields
+   */
+  isDefaultSearchField(field: string): boolean {
+    return this.defaultSearchFields.includes(field);
+  }
+
+  /**
+   * Save default search fields and close panel
+   */
+  saveDefaultSearchFields(): void {
+    this.saveDefaultSearchFieldsToStorage();
+    this.closeDefaultSearchFieldsPanel();
+  }
+
+  /**
+   * Get searchable columns for default search fields panel
+   */
+  getSearchableColumnsForDefaultFields(): TableColumn[] {
+    // displayColumns already filters hidden columns, so we just need to filter searchable
+    return this.displayColumns.filter(col => col.searchable !== false);
+  }
+
+  /**
+   * Load visible columns from localStorage
+   */
+  private loadVisibleColumnsFromStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_visibleColumns`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.visibleColumns = parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading visible columns from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save visible columns to localStorage
+   */
+  private saveVisibleColumnsToStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_visibleColumns`;
+      if (this.visibleColumns && this.visibleColumns.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(this.visibleColumns));
+      } else {
+        // If empty, remove from storage (means all columns visible)
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error('Error saving visible columns to localStorage:', error);
+    }
+  }
+
+  /**
+   * Open column visibility panel
+   */
+  openColumnVisibilityPanel(): void {
+    this.showOptionsMenu = false;
+    this.showColumnVisibilityPanel = true;
+    this.showFilterPanel = false;
+    this.showJoinOptionsPanel = false;
+    this.showDefaultSearchFieldsPanel = false;
+    this.preventBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Close column visibility panel
+   */
+  closeColumnVisibilityPanel(): void {
+    this.showColumnVisibilityPanel = false;
+    this.restoreBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Toggle a column in visible columns list
+   */
+  toggleVisibleColumn(field: string): void {
+    const index = this.visibleColumns.indexOf(field);
+    if (index === -1) {
+      // Add column
+      this.visibleColumns = [...this.visibleColumns, field];
+    } else {
+      // Remove column
+      this.visibleColumns = this.visibleColumns.filter(f => f !== field);
+    }
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Check if a column is visible
+   */
+  isColumnVisible(field: string): boolean {
+    // If visibleColumns is empty, all columns are visible
+    if (!this.visibleColumns || this.visibleColumns.length === 0) {
+      return true;
+    }
+    return this.visibleColumns.includes(field);
+  }
+
+  /**
+   * Save visible columns and close panel
+   */
+  saveVisibleColumns(): void {
+    this.saveVisibleColumnsToStorage();
+    this.closeColumnVisibilityPanel();
+    // Trigger change detection to update grid
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Get all columns for column visibility panel (excluding hidden columns)
+   * This returns all available columns, not filtered by visibleColumns
+   */
+  getAllColumnsForVisibility(): TableColumn[] {
+    // Get all columns excluding hidden ones (don't use displayColumns as it filters by visibleColumns)
+    const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+    return cols.filter(col => !col.hidden);
+  }
+
+  /**
+   * Load searchable columns from localStorage
+   */
+  private loadSearchableColumnsFromStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_searchableColumns`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.searchableColumns = parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading searchable columns from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save searchable columns to localStorage
+   */
+  private saveSearchableColumnsToStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_searchableColumns`;
+      if (this.searchableColumns && this.searchableColumns.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(this.searchableColumns));
+      } else {
+        // If empty, remove from storage (means all searchable columns visible)
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error('Error saving searchable columns to localStorage:', error);
+    }
+  }
+
+  /**
+   * Open searchable columns panel
+   */
+  openSearchableColumnsPanel(): void {
+    this.showOptionsMenu = false;
+    this.showSearchableColumnsPanel = true;
+    this.showFilterPanel = false;
+    this.showJoinOptionsPanel = false;
+    this.showDefaultSearchFieldsPanel = false;
+    this.showColumnVisibilityPanel = false;
+    this.preventBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Close searchable columns panel
+   */
+  closeSearchableColumnsPanel(): void {
+    this.showSearchableColumnsPanel = false;
+    this.restoreBodyScroll();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Toggle a column in searchable columns list
+   */
+  toggleSearchableColumn(field: string): void {
+    const index = this.searchableColumns.indexOf(field);
+    if (index === -1) {
+      // Add column
+      this.searchableColumns = [...this.searchableColumns, field];
+    } else {
+      // Remove column
+      this.searchableColumns = this.searchableColumns.filter(f => f !== field);
+    }
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Check if a column is searchable (should appear in filter panel)
+   */
+  isSearchableColumn(field: string): boolean {
+    // If searchableColumns is empty, all searchable columns are visible in filter
+    if (!this.searchableColumns || this.searchableColumns.length === 0) {
+      return true;
+    }
+    return this.searchableColumns.includes(field);
+  }
+
+  /**
+   * Save searchable columns and close panel
+   */
+  saveSearchableColumns(): void {
+    this.saveSearchableColumnsToStorage();
+    this.closeSearchableColumnsPanel();
+    // Trigger change detection to update filter panel
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Get all searchable columns for searchable columns panel
+   */
+  getAllSearchableColumnsForPanel(): TableColumn[] {
+    // Get all columns that are searchable (excluding hidden ones)
+    const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+    return cols.filter(col => !col.hidden && col.searchable !== false);
   }
 
   /**

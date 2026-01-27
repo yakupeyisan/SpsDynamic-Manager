@@ -191,12 +191,22 @@
     "CafeteriaEvent": "Kafeterya Olayı",
     "CafeteriaApplication": "Kafeterya Uygulaması",
     "SubscriptionPackage": "Abone Paketi",
-    "AccessZone": "Erişim Bölgesi"
+    "AccessZone": "Erişim Bölgesi",
+    "EmployeeDepartments": "Personel Departmanları",
+    "EmployeeAccessGroups": "Personel Erişim Grupları",
+    "AccessGroupReaders": "Erişim Grubu Okuyucuları",
+    "Cards": "Kartlar"
   },
   "options": {
     "title": "Seçenekler",
     "showDeleted": "Silinenleri Göster",
-    "hideDeleted": "Silinenleri Gizle"
+    "hideDeleted": "Silinenleri Gizle",
+    "defaultSearchFields": "Arama Varsayılan Alanları",
+    "defaultSearchFieldsDescription": "Arama paneli açıldığında varsayılan olarak görünecek alanları seçin.",
+    "columnVisibility": "Kolon Görünürlüğü",
+    "columnVisibilityDescription": "Gridde görünecek kolonları seçin. Hiçbir şey seçilmezse tüm kolonlar görünür.",
+    "searchableColumns": "Aramada Görünecek Kolonlar",
+    "searchableColumnsDescription": "Arama panelinde görünecek kolonları seçin. Hiçbir şey seçilmezse tüm arama yapılabilir kolonlar görünür."
   },
   "card": {
     "format": "Formatla",

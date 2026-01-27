@@ -421,6 +421,10 @@ export const navItems: NavItem[] = [
         displayName: 'Pos Teminalleri',
         route: '/PosDevices',
       },
+      {
+        displayName: 'Ayarlar',
+        route: '/GridSettings',
+      },
     ],
   },
   {

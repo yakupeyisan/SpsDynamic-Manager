@@ -25,6 +25,10 @@ import { BrandingComponent } from '../full/vertical/sidebar/branding.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ChangePasswordDialogComponent } from './change-password-dialog.component';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
+import { catchError, map } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -69,14 +73,48 @@ interface quicklinks {
   encapsulation: ViewEncapsulation.None,
 })
 export class FullComponent implements OnInit {
-  navItems = this.filterVisibleItems(navItems);
+  navItems: NavItem[] = [];
+  private visibleRoutes: string[] = [];
+  private hasLoadedVisibilitySettings: boolean = false;
   
-  private filterVisibleItems(items: NavItem[]): NavItem[] {
+  private filterVisibleItems(items: NavItem[], visibleRoutes: string[] = [], strictMode: boolean = false): NavItem[] {
     return items.filter(item => {
+      // Always hide items explicitly marked as visible: false
       if (item.visible === false) return false;
-      if (item.children) {
-        item.children = this.filterVisibleItems(item.children);
+      
+      // If strict mode is enabled (visibility settings loaded) and no routes, hide everything
+      if (strictMode && visibleRoutes.length === 0) {
+        return false;
       }
+      
+      // If we have visible routes, filter based on them
+      if (visibleRoutes.length > 0) {
+        // If item has a route, check if it's in visible routes
+        if (item.route) {
+          // If route is not in visible routes, hide it
+          if (!visibleRoutes.includes(item.route)) {
+            return false;
+          }
+        }
+        
+        // If item has children, filter them recursively
+        if (item.children) {
+          item.children = this.filterVisibleItems(item.children, visibleRoutes, strictMode);
+          // If all children are filtered out, hide parent if it has no route
+          if (item.children.length === 0 && !item.route) {
+            return false;
+          }
+        }
+      } else if (strictMode) {
+        // Strict mode but no routes - hide everything
+        return false;
+      } else {
+        // No visible routes restriction, just filter by visible property
+        if (item.children) {
+          item.children = this.filterVisibleItems(item.children, visibleRoutes, strictMode);
+        }
+      }
+      
       return true;
     });
   }
@@ -228,7 +266,8 @@ export class FullComponent implements OnInit {
     private breakpointObserver: BreakpointObserver,
     private navService: NavService,
     private authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private http: HttpClient
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
@@ -255,7 +294,60 @@ export class FullComponent implements OnInit {
       });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Load page visibility settings for current user
+    this.loadPageVisibility();
+  }
+
+  // Load page visibility settings based on current user
+  private loadPageVisibility(): void {
+    // Load visible routes for current user (user can have multiple authorizations)
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/auth/GetPageVisibility`, {})
+      .pipe(
+        map((response: any) => {
+          // Handle different response formats
+          let visibleRoutes: string[] = [];
+          let isSupervisor = false;
+          
+          if (Array.isArray(response)) {
+            visibleRoutes = response;
+          } else if (response && response.data) {
+            // Check if user is supervisor
+            isSupervisor = response.data.isSupervisor === true || response.data.IsSupervisor === true;
+            
+            // Handle format: { status: "success", data: { VisibleRoutes: [], isSupervisor: true } }
+            if (Array.isArray(response.data.VisibleRoutes)) {
+              visibleRoutes = response.data.VisibleRoutes;
+            } else if (Array.isArray(response.data)) {
+              visibleRoutes = response.data;
+            } else if (response.data.visibleRoutes && Array.isArray(response.data.visibleRoutes)) {
+              visibleRoutes = response.data.visibleRoutes;
+            }
+          } else if (response && Array.isArray(response.records)) {
+            visibleRoutes = response.records;
+          } else if (response && Array.isArray(response.visibleRoutes)) {
+            visibleRoutes = response.visibleRoutes;
+          }
+          
+          return { visibleRoutes, isSupervisor };
+        }),
+        catchError(error => {
+          console.error('Error loading page visibility:', error);
+          // If API fails, show all routes (no filtering)
+          return of({ visibleRoutes: [], isSupervisor: false });
+        })
+      ).subscribe({
+        next: (result: { visibleRoutes: string[], isSupervisor: boolean }) => {
+          this.visibleRoutes = result.visibleRoutes;
+          this.hasLoadedVisibilitySettings = true;
+          
+          // If user is supervisor, show all routes (no strict mode)
+          // Otherwise, filter based on visible routes (strict mode)
+          const strictMode = !result.isSupervisor;
+          this.navItems = this.filterVisibleItems(navItems, result.visibleRoutes, strictMode);
+        }
+      });
+  }
 
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();

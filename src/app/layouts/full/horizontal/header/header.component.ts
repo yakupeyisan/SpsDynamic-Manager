@@ -3,12 +3,18 @@ import { CoreService } from 'src/app/services/core.service';
 import { MatDialog } from '@angular/material/dialog';
 import { navItems } from '../../vertical/sidebar/sidebar-data';
 import { TranslateService } from '@ngx-translate/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { MaterialModule } from 'src/app/material.module';
 import { BrandingComponent } from '../../vertical/sidebar/branding.component';
 import { AppSettings } from 'src/app/config';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { ToastrService } from 'ngx-toastr';
+import { environment } from 'src/environments/environment';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 interface notifications {
   id: number;
@@ -37,7 +43,7 @@ interface apps {
 
 @Component({
   selector: 'app-horizontal-header',
-  imports: [RouterModule, TablerIconsModule, MaterialModule, BrandingComponent],
+  imports: [RouterModule, CommonModule, TablerIconsModule, MaterialModule, BrandingComponent],
   templateUrl: './header.component.html',
 })
 export class AppHorizontalHeaderComponent {
@@ -88,11 +94,16 @@ export class AppHorizontalHeaderComponent {
     },
   ];
 
+  isDownloading: boolean = false;
+
   constructor(
     private settings: CoreService,
     private vsidenav: CoreService,
     public dialog: MatDialog,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private http: HttpClient,
+    private toastr: ToastrService,
+    private router: Router
   ) {
     translate.setDefaultLang('en');
   }
@@ -259,6 +270,61 @@ export class AppHorizontalHeaderComponent {
       link: '/',
     },
   ];
+
+  downloadGridSettings(): void {
+    if (this.isDownloading) {
+      return;
+    }
+
+    // Uyarı mesajı göster
+    if (!confirm('Sunucudan ayarlar yüklenecektir. Özelleştirdiğiniz ayarlar kaybolacaktır. Emin misiniz?')) {
+      return;
+    }
+
+    this.isDownloading = true;
+
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/GridSettings/download`;
+    
+    this.http.get<{ settings?: { key: string; value: string }[]; error?: boolean; message?: string }>(url).pipe(
+      catchError(error => {
+        this.isDownloading = false;
+        this.toastr.error('Sunucudan indirme başarısız oldu: ' + (error.error?.message || error.message || 'Bilinmeyen hata'), 'Hata');
+        return of({ error: true, message: error.message });
+      })
+    ).subscribe((response: any) => {
+      this.isDownloading = false;
+      
+      if (response.error === false || (response.settings && Array.isArray(response.settings))) {
+        const settings = response.settings || [];
+        
+        // Önce tüm grid_ ile başlayan localStorage key'lerini sil
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('grid_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Sonra sunucudan indirilen ayarları localStorage'a kaydet
+        settings.forEach((setting: { key: string; value: string }) => {
+          if (setting.key && setting.key.startsWith('grid_')) {
+            localStorage.setItem(setting.key, setting.value);
+          }
+        });
+
+        this.toastr.success(`${settings.length} grid ayarı sunucudan başarıyla indirildi ve localStorage'a kaydedildi`, 'Başarılı');
+        
+        // Eğer GridSettings sayfasındaysak, sayfayı yenile
+        if (this.router.url === '/GridSettings') {
+          window.location.reload();
+        }
+      } else {
+        this.toastr.error(response.message || 'Sunucudan indirme başarısız oldu', 'Hata');
+      }
+    });
+  }
 }
 
 @Component({

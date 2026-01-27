@@ -749,6 +749,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'GridSettings',
+        loadComponent: () =>
+          import('./pages/grid-settings/grid-settings.component').then(
+            (m) => m.GridSettingsComponent
+          ),
+        data: {
+          title: 'Ayarlar',
+          breadcrumb: false,
+        },
+      },
+      {
         path: '404',
         loadComponent: () =>
           import('./pages/not-found/not-found.component').then(

@@ -41,6 +41,8 @@ export class FilterPanelComponent implements OnInit {
   @Input() limitOptions?: number[] = [25, 50, 100, 250, 500, 1000]; // Available limit options
   @Input() enableReportSave?: boolean = true; // Enable report save feature
   @Input() hasActiveFilter?: boolean = false; // Whether there's an active filter applied
+  @Input() defaultSearchFields?: string[] = []; // Default search fields to show when panel opens
+  @Input() searchableColumns?: string[] = []; // Searchable columns to show in filter panel (empty means all searchable)
   
   @Output() filterChange = new EventEmitter<AdvancedFilter>();
   @Output() close = new EventEmitter<void>();
@@ -91,20 +93,45 @@ export class FilterPanelComponent implements OnInit {
     ];
     
     this.fieldOptions = this.columns
-      .filter(col => col.searchable !== false) // Only show searchable columns
+      .filter(col => {
+        // Filter out hidden columns (same logic as displayColumns in data-table)
+        if (col.hidden === true) {
+          return false;
+        }
+        // Only show searchable columns
+        if (col.searchable === false) {
+          return false;
+        }
+        // If searchableColumns is set and not empty, filter by it
+        if (this.searchableColumns && this.searchableColumns.length > 0) {
+          return this.searchableColumns.includes(col.field);
+        }
+        // If searchableColumns is empty, show all searchable columns
+        return true;
+      })
       .map(col => {
-        // Try to get translation for column field
-        const translationKey = `columns.${col.field}`;
-        const translated = this.translate.instant(translationKey);
-        const label = (translated && translated !== translationKey) ? translated : (col.label || col.text || col.field);
+        // First priority: Use explicit label or text property from column definition
+        // This allows CustomField labels to be customized (e.g., "Özel Alan 1" instead of "CustomField01")
+        let label: string;
+        if (col.label || col.text) {
+          label = col.label || col.text || col.field;
+        } else {
+          // Second priority: Try to get translation for column field
+          const translationKey = `columns.${col.field}`;
+          const translated = this.translate.instant(translationKey);
+          label = (translated && translated !== translationKey) ? translated : col.field;
+        }
         return {
           label: label,
           value: col.field
         };
       });
     
-    // Set default selected field for add
-    const searchableColumns = this.columns.filter(col => col.searchable !== false);
+    // Set default selected field for add (exclude hidden columns)
+    const searchableColumns = this.columns.filter(col => {
+      if (col.hidden === true) return false;
+      return col.searchable !== false;
+    });
     this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
 
     if (this.filter) {
@@ -124,10 +151,11 @@ export class FilterPanelComponent implements OnInit {
       });
       
       if (!this.currentFilter.conditions || this.currentFilter.conditions.length === 0) {
-        this.addCondition();
+        this.addDefaultFields();
       }
     } else {
-      this.addCondition();
+      // No existing filter, add default fields if available
+      this.addDefaultFields();
     }
   }
 
@@ -148,7 +176,13 @@ export class FilterPanelComponent implements OnInit {
     const column = this.getColumnForField(field);
     if (!column) return field;
     
-    // Try to get translation for column field
+    // First priority: Use explicit label or text property from column definition
+    // This allows CustomField labels to be customized (e.g., "Özel Alan 1" instead of "CustomField01")
+    if (column.label || column.text) {
+      return column.label || column.text || field;
+    }
+    
+    // Second priority: Try to get translation for column field
     const translationKey = `columns.${column.field}`;
     const translated = this.translate.instant(translationKey);
     
@@ -157,8 +191,8 @@ export class FilterPanelComponent implements OnInit {
       return translated;
     }
     
-    // Fallback to column.label or column.text or column.field
-    return column.label || column.text || column.field;
+    // Fallback to column.field
+    return column.field;
   }
 
   getColumnType(field: string): ColumnType {
@@ -268,9 +302,83 @@ export class FilterPanelComponent implements OnInit {
     this.selectedFieldForAdd = field;
   }
 
+  /**
+   * Add default search fields if available
+   */
+  private addDefaultFields(): void {
+    if (this.defaultSearchFields && this.defaultSearchFields.length > 0) {
+      // Add conditions for each default field
+      const conditions: FilterCondition[] = [];
+      
+      for (const field of this.defaultSearchFields) {
+        const column = this.getColumnForField(field);
+        if (!column) continue; // Skip if column not found
+        
+        // Skip hidden columns (same logic as displayColumns in data-table)
+        if (column.hidden === true) {
+          continue;
+        }
+        
+        // Check if field is enum or list type and has load configuration
+        const columnType = this.getColumnType(field);
+        const isListOrEnum = columnType === 'list' || columnType === 'enum' || columnType === 'select';
+        
+        if (isListOrEnum && column.load && column.load.url) {
+          // Load options for this column
+          this.loadColumnOption(column);
+        }
+        
+        const operatorType = this.getOperatorTypeForField(field);
+        const defaultOperator = getDefaultOperatorForType(operatorType);
+        
+        // Determine initial value based on field type
+        let initialValue: any = '';
+        if (this.isEnumType(field)) {
+          initialValue = []; // Empty array for multi-select enum
+        }
+        
+        conditions.push({
+          field: field,
+          type: columnType,
+          operator: defaultOperator,
+          value: initialValue
+        });
+      }
+      
+      if (conditions.length > 0) {
+        this.currentFilter = {
+          ...this.currentFilter,
+          conditions: conditions
+        };
+        // Set selected field for add to the first default field
+        this.selectedFieldForAdd = this.defaultSearchFields[0];
+      } else {
+        // No valid default fields, add one condition normally
+        this.addCondition();
+      }
+    } else {
+      // No default fields, add one condition normally
+      this.addCondition();
+    }
+  }
+
   addCondition() {
     if (!this.selectedFieldForAdd) {
-      const searchableColumns = this.columns.filter(col => col.searchable !== false);
+      const searchableColumns = this.columns.filter(col => {
+        if (col.hidden === true) return false;
+        return col.searchable !== false;
+      });
+      this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
+    }
+    
+    // Check if selected field is hidden
+    const selectedColumn = this.getColumnForField(this.selectedFieldForAdd);
+    if (selectedColumn && selectedColumn.hidden === true) {
+      // If selected field is hidden, find first non-hidden searchable column
+      const searchableColumns = this.columns.filter(col => {
+        if (col.hidden === true) return false;
+        return col.searchable !== false;
+      });
       this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
     }
     

@@ -28,6 +28,19 @@
       <i class="iconify icon-20 d-flex" data-icon="solar:magnifer-outline"></i>
     </button>
 
+    <!-- --------------------------------------------------------------- -->
+    <!--  Download Grid Settings -->
+    <!-- --------------------------------------------------------------- -->
+    <button 
+      mat-icon-button 
+      (click)="downloadGridSettings()" 
+      [disabled]="isDownloading"
+      matTooltip="Sunucudan Grid Ayarlarını İndir"
+      class="d-flex align-items-center justify-content-center m-x-4">
+      <mat-icon *ngIf="!isDownloading">cloud_download</mat-icon>
+      <mat-icon *ngIf="isDownloading" class="spinning">sync</mat-icon>
+    </button>
+
     <!-- <div class="d-none d-lg-flex">
       <button
         mat-icon-button
