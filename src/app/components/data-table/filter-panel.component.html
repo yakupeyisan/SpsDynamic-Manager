@@ -155,15 +155,6 @@
       </ui-select>
     </div>
     <div class="ui-filter-footer-right">
-      <ui-button 
-        *ngIf="(enableReportSave && hasValidFilters)" 
-        variant="secondary" 
-        size="sm" 
-        (clicked)="requestSaveReport()"
-        class="ui-filter-save-report-btn">
-        <i class="ti ti-file-text me-1"></i>
-        {{ translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet' }}
-      </ui-button>
       <ui-button variant="secondary" size="sm" (clicked)="onClose()">{{ translate.instant('filter.close') }}</ui-button>
       <ui-button variant="secondary" size="sm" (clicked)="clearFilter()">{{ translate.instant('filter.clear') }}</ui-button>
       <ui-button variant="primary" size="sm" (clicked)="applyFilter()">{{ translate.instant('filter.search') }}</ui-button>

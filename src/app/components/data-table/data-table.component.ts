@@ -867,10 +867,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         // Clear filter if search is empty
         this.activeFilter = null;
       }
-    }
-    
-    // w2ui.js style: reload only for remote data (dataSource), local search for static data
-    if (this.dataSource) {
+      // Trigger change detection to update filter tags display
+      this.cdr.markForCheck();
       // Remote data source: reload from server
       this.loadDataSource();
     } else {
@@ -2514,6 +2512,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   onFilterClear() {
     this.activeFilter = null;
+    this.searchTerm = '';
     this.currentPage = 1;
     
     // Reload data if using dataSource
@@ -2527,6 +2526,84 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   get hasActiveFilter(): boolean {
     return this.activeFilter !== null && this.activeFilter.conditions.length > 0;
+  }
+
+  /**
+   * Get active filter conditions as displayable items
+   */
+  getActiveFilterDisplayItems(): Array<{ field: string; label: string; value: any; operator: FilterOperator; index: number }> {
+    if (!this.activeFilter || !this.activeFilter.conditions || this.activeFilter.conditions.length === 0) {
+      return [];
+    }
+
+    return this.activeFilter.conditions.map((condition, index) => {
+      // Find the column for this field
+      const column = this.displayColumns.find(col => {
+        const fieldToMatch = col.searchField || col.field;
+        return fieldToMatch === condition.field;
+      });
+
+      // Get column label
+      const label = column ? this.getColumnLabel(column) : condition.field;
+
+      return {
+        field: condition.field,
+        label: label,
+        value: condition.value,
+        operator: condition.operator,
+        index: index
+      };
+    });
+  }
+
+  /**
+   * Remove a specific filter condition by index
+   */
+  removeFilterCondition(index: number): void {
+    if (!this.activeFilter || !this.activeFilter.conditions || index < 0 || index >= this.activeFilter.conditions.length) {
+      return;
+    }
+
+    // Remove the condition at the specified index
+    const newConditions = this.activeFilter.conditions.filter((_, i) => i !== index);
+
+    if (newConditions.length === 0) {
+      // No conditions left, clear the filter
+      this.onFilterClear();
+    } else {
+      // Update the filter with remaining conditions
+      this.activeFilter = {
+        logic: this.activeFilter.logic,
+        conditions: newConditions
+      };
+
+      // Also clear searchTerm if it was a simple search
+      if (this.searchTerm && this.searchTerm.trim()) {
+        // Check if this was a simple search (all conditions have same value)
+        const allSameValue = this.activeFilter.conditions.every(cond => cond.value === this.searchTerm.trim());
+        if (allSameValue) {
+          this.searchTerm = '';
+        }
+      }
+
+      this.currentPage = 1;
+
+      // Reload data if using dataSource
+      if (this.dataSource) {
+        this.loadDataSource();
+      }
+
+      this.advancedFilterChange.emit(this.activeFilter);
+      this.cdr.markForCheck();
+    }
+  }
+
+  /**
+   * Clear all filters
+   */
+  clearAllFilters(): void {
+    this.onFilterClear();
+    this.cdr.markForCheck();
   }
 
   openReportSaveModal(filter: AdvancedFilter): void {

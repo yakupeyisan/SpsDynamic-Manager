@@ -265,6 +265,48 @@
     </div>
   </div>
   
+  <!-- Active Filters Display Section -->
+  <div *ngIf="hasActiveFilter" class="ui-filter-tags-section">
+    <div class="ui-filter-tags-container">
+      <div class="ui-filter-tags-left">
+        <ng-container *ngFor="let filterItem of getActiveFilterDisplayItems(); let i = index">
+          <div class="ui-filter-tag">
+            <span class="ui-filter-tag-label">{{ filterItem.label }}</span>
+            <span class="ui-filter-tag-separator">:</span>
+            <span class="ui-filter-tag-value">{{ filterItem.value }}</span>
+            <button 
+              class="ui-filter-tag-remove" 
+              (click)="removeFilterCondition(filterItem.index)"
+              [title]="translate.instant('filter.remove') || 'Kaldır'"
+              aria-label="Remove filter">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </ng-container>
+      </div>
+      <div class="ui-filter-tags-right">
+        <button 
+          *ngIf="enableReportSave" 
+          class="ui-filter-tag ui-filter-tag-save" 
+          (click)="openReportSaveModal(activeFilter!)"
+          [title]="translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet'">
+          {{ translate.instant('filter.saveAsReport') || 'Rapor Olarak Kaydet' }}
+        </button>
+        <button 
+          class="ui-filter-tag-clear-all" 
+          (click)="clearAllFilters()"
+          [title]="translate.instant('filter.clearAll') || 'Tümünü Temizle'"
+          aria-label="Clear all filters">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div #tableWrapper class="ui-table-wrapper" 
        [style.height]="height && fixedBody ? height : null"
        [style.padding-bottom]="showFooter ? '24px' : null"
