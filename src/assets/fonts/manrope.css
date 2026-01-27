@@ -1,0 +1,92 @@
+/* Manrope Font - Local */
+/* Variable Font - Supports all weights from 200 to 800 */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('./Manrope-VariableFont_wght.ttf') format('truetype-variations'),
+       url('./Manrope-VariableFont_wght.ttf') format('truetype');
+  font-variation-settings: 'wght' 200 800;
+}
+
+/* Fallback fonts for better browser compatibility */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('./Manrope-ExtraLight.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('./Manrope-Light.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./Manrope-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./Manrope-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./Manrope-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./Manrope-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('./Manrope-ExtraBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('./material-symbols-outlined.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./material-symbols-rounded.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Material Symbols Sharp';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./material-symbols-sharp.woff2') format('woff2');
+}

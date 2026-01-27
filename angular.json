@@ -29,12 +29,16 @@
             "styles": [
               "src/styles.scss",
               "src/assets/scss/style.scss",
+              "src/assets/fonts/manrope.css",
+              "src/assets/fonts/material-icons.css",
               "node_modules/ngx-toastr/toastr.css",
               "node_modules/angular-calendar/css/angular-calendar.css",
               "node_modules/highlight.js/styles/atom-one-dark.min.css",
               "node_modules/dropzone/dist/dropzone.css"
             ],
-            "scripts": [],
+            "scripts": [
+              "src/assets/scripts/iconify.min.js"
+            ],
             "browser": "src/main.ts"
           },
           "configurations": {
