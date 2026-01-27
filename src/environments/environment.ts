@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'development',
+  setting: 'tskb',
   
   
   // Authentication ayarları
@@ -38,6 +38,21 @@ export const environment = {
       // Bildirim tipi: 'mail' veya 'sms'
       notificationType: 'sms', // 'mail' | 'sms'
       loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
+      newAccountEnabled: true,
+    },
+    tskb:{
+      apiUrl: 'http://localhost',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-tskb.png',
+      logoUrlLogin: '/assets/images/logos/logo-tskb.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
+      loginImage: '',
+      newAccountEnabled: false,
     },
     development: {
       apiUrl: 'http://localhost',
@@ -51,6 +66,7 @@ export const environment = {
       signUpEnabled: false,
       notificationType: 'sms',
       loginImage: '',
+      newAccountEnabled: false,
     }
   },
   

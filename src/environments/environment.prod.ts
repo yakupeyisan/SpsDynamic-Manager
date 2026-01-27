@@ -2,45 +2,41 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'development',
+  setting: 'tskb',
   
   
   // Authentication ayarları
   settings: {
     ordu: {
-      // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
-      // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
-      apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
-      // WebSocket URL (otomatik olarak apiUrl'den türetilir, gerekirse manuel ayarlayabilirsiniz)
-      // LiveView için özel WebSocket URL (eski sistem: ws://172.16.1.186:8282)
+      apiUrl: '', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
       wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir, LiveView için 'ws://172.16.1.186:8282' gibi ayarlanabilir
-      
-      // Açılış sayfası ayarı: 'home' veya 'other'
-      // 'login': İlk açılışta giriş yapılmamışsa home sayfasına login yönlendir
-      // '$1' : açılışha hangi sayfaya yönlendirilmesini istiyorson onun route değerini yaz
       landingPage: 'login', // 'login' veya '$1'
-      // Logo URL
       logoUrl: '/assets/images/logos/logo-ordu.png',
-      // Logo URL for Login page
       logoUrlLogin: '/assets/images/logos/logo-ordu-login.png',
-      // Google ile login aktif mi
       googleLoginEnabled: false,
-      
-      // Cloudflare aktif mi
       cloudflareEnabled: false,
-      
-      // Şifremi unuttum aktif mi
       forgotPasswordEnabled: true,
-      
-      // Yeni Üyelik aktif mi
       signUpEnabled: false,
-      
-      // Bildirim tipi: 'mail' veya 'sms'
       notificationType: 'sms', // 'mail' | 'sms'
       loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
+      newAccountEnabled: true,
+    },
+    tskb:{
+      apiUrl: '',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-tskb.png',
+      logoUrlLogin: '/assets/images/logos/logo-tskb.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
+      loginImage: '',
+      newAccountEnabled: false,
     },
     development: {
-      apiUrl: 'http://localhost',
+      apiUrl: '',
       wsUrl: '',
       landingPage: 'login',
       logoUrl: '/assets/images/logos/logo-technolife.png',
@@ -51,6 +47,7 @@ export const environment = {
       signUpEnabled: false,
       notificationType: 'sms',
       loginImage: '',
+      newAccountEnabled: false,
     }
   },
   

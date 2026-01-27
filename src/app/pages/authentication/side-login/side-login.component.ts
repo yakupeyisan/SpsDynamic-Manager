@@ -57,6 +57,7 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
         forgotPasswordEnabled: true,
         signUpEnabled: false,
         notificationType: 'mail' as 'mail' | 'sms',
+        newAccountEnabled: false,
       };
     }
 
@@ -66,6 +67,7 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
       forgotPasswordEnabled: activeSettings.forgotPasswordEnabled,
       signUpEnabled: activeSettings.signUpEnabled,
       notificationType: activeSettings.notificationType as 'mail' | 'sms',
+      newAccountEnabled: activeSettings.newAccountEnabled ?? false,
     };
   }
   
