@@ -23,7 +23,11 @@ export const formFields: TableColumn[] = [
     field: 'inOUT', 
     label: 'Yön', 
     text: 'Yön', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
+    options: [
+      { label: 'Giriş', value: 0 },
+      { label: 'Çıkış', value: 1 }
+    ],
     fullWidth: true,
     disabled: true
   },
@@ -47,7 +51,11 @@ export const formFields: TableColumn[] = [
     field: 'EventType', 
     label: 'Olay Tipi', 
     text: 'Olay Tipi', 
-    type: 'checkbox' as ColumnType,
+    type: 'enum' as ColumnType,
+    options: [
+      { label: 'RED', value: 0 },
+      { label: 'Onaylandı', value: 1 }
+    ],
     fullWidth: true,
     disabled: true
   },
@@ -79,7 +87,12 @@ export const formFields: TableColumn[] = [
     field: 'EventSource', 
     label: 'Olay Kaynağı', 
     text: 'Olay Kaynağı', 
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
+    options: [
+      { label: 'READER', value: 'READER' },
+      { label: 'MANUAL', value: 'MANUAL' },
+      { label: 'SYSTEM', value: 'SYSTEM' }
+    ],
     fullWidth: true,
     disabled: true
   },

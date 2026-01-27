@@ -90,13 +90,17 @@ export const tableColumns: TableColumn[] = [
     field: 'inOUT', 
     label: 'Yön', 
     text: 'Yön',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '100px', 
     size: '100px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
+    options: [
+      { label: 'Giriş', value: 0 },
+      { label: 'Çıkış', value: 1 }
+    ] as TableColumnOption[],
     render: renderInOut
   },
   { 
@@ -141,12 +145,12 @@ export const tableColumns: TableColumn[] = [
     field: 'EventType', 
     label: 'Olay Tipi', 
     text: 'Olay Tipi',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '120px', 
     size: '120px',
     min: 20,
-    searchable: 'checkbox' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
     options: [
       { label: 'RED', value: 0 },
@@ -232,13 +236,18 @@ export const tableColumns: TableColumn[] = [
     field: 'EventSource', 
     label: 'Olay Kaynağı', 
     text: 'Olay Kaynağı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '120px', 
     size: '120px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    resizable: true,
+    options: [
+      { label: 'READER', value: 'READER' },
+      { label: 'MANUAL', value: 'MANUAL' },
+      { label: 'SYSTEM', value: 'SYSTEM' }
+    ] as TableColumnOption[]
   },
   { 
     field: 'isOffline', 
