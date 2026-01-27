@@ -55,6 +55,16 @@
       </div>
     </div>
   </div>
+  <ng-template #timeZoneCell let-row let-column="column">
+    <select
+      class="timezone-cell-select"
+      [ngModel]="getTimeZoneIdForRow(row)"
+      (ngModelChange)="onTimeZoneChange(row, $event)"
+      (click)="$event.stopPropagation()">
+      <option value="">Seçiniz</option>
+      <option *ngFor="let opt of timeZoneOptions" [value]="opt.value != null ? '' + opt.value : ''">{{ opt.label }}</option>
+    </select>
+  </ng-template>
 </div>
 
 <!-- Doors (Terminals) Edit Modal -->
@@ -121,7 +131,7 @@
         <ui-data-table
           #selectedTerminalsTable
           [id]="'selected-terminals-grid'"
-          [columns]="terminalsTableColumns"
+          [columns]="selectedTerminalsTableColumns.length ? selectedTerminalsTableColumns : terminalsTableColumns"
           [dataSource]="selectedTerminalsDataSource"
           [selectable]="true"
           [pagination]="true"

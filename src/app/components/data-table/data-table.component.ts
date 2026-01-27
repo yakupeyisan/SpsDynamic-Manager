@@ -1567,9 +1567,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return;
     }
     
-    // Check if clicking on checkbox, if so let the checkbox handle it
+    // Check if clicking on checkbox, select, or other interactive form control – let them handle it
     const target = event.target as HTMLElement;
     if (target.closest('input[type="checkbox"]') || target.closest('.ui-table-select-cell')) {
+      return;
+    }
+    if (target.closest('select') || target.closest('input') || target.closest('textarea') || target.closest('button')) {
       return;
     }
     

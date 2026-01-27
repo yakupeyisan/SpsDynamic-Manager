@@ -1,7 +1,8 @@
 // AccessGroup Component
-import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -33,6 +34,7 @@ import {
   imports: [
     MaterialModule, 
     CommonModule, 
+    FormsModule,
     TablerIconsModule,
     TranslateModule,
     DataTableComponent,
@@ -41,10 +43,11 @@ import {
   templateUrl: './access-group.component.html',
   styleUrls: ['./access-group.component.scss']
 })
-export class AccessGroupComponent implements OnInit {
+export class AccessGroupComponent implements OnInit, AfterViewInit {
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
   @ViewChild('selectedTerminalsTable') selectedTerminalsTable?: DataTableComponent;
   @ViewChild('unselectedTerminalsTable') unselectedTerminalsTable?: DataTableComponent;
+  @ViewChild('timeZoneCell') timeZoneCellRef?: TemplateRef<any>;
 
   private isReloading: boolean = false;
   
@@ -55,7 +58,14 @@ export class AccessGroupComponent implements OnInit {
   selectedUnselectedTerminals: any[] = [];
   selectedSelectedTerminals: any[] = [];
   
-  // Terminal table columns
+  // Time zone options for selected terminals (from POST /api/TimeZones)
+  timeZoneOptions: { label: string; value: number }[] = [];
+  timeZoneOptionsLoading: boolean = false;
+  
+  // Selected terminals table includes TimeZone column; unselected uses base columns only
+  selectedTerminalsTableColumns: TableColumn[] = [];
+  
+  // Terminal table columns (base; used for unselected panel)
   terminalsTableColumns: TableColumn[] = [
     { 
       field: 'ReaderID', 
@@ -237,6 +247,114 @@ export class AccessGroupComponent implements OnInit {
     // Component initialization
   }
 
+  ngAfterViewInit(): void {
+    this.buildSelectedTerminalsColumns();
+  }
+
+  private buildSelectedTerminalsColumns(): void {
+    if (!this.timeZoneCellRef) return;
+    const timeZoneCol: TableColumn = {
+      field: 'TimeZoneID',
+      label: 'Zaman dilimi',
+      text: 'Zaman dilimi',
+      type: 'text' as ColumnType,
+      sortable: false,
+      width: '220px',
+      size: '220px',
+      searchable: false,
+      resizable: true,
+      template: this.timeZoneCellRef
+    };
+    this.selectedTerminalsTableColumns = [...this.terminalsTableColumns, timeZoneCol];
+    this.cdr.detectChanges();
+  }
+
+  loadTimeZoneOptions(): void {
+    this.timeZoneOptionsLoading = true;
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.http.post<{ records?: any[]; total?: number }>(`${apiUrl}/api/TimeZones`, {
+      page: 1,
+      limit: 2000,
+      offset: 0,
+      columns: [{ field: 'TimeZoneID' }, { field: 'TimeZoneName' }]
+    }).pipe(
+      catchError(() => of({ records: [] }))
+    ).subscribe({
+      next: (res) => {
+        const records = res.records || [];
+        this.timeZoneOptions = records.map((r: any) => ({
+          label: r.TimeZoneName ?? r.Name ?? String(r.TimeZoneID ?? r.Id ?? ''),
+          value: r.TimeZoneID ?? r.Id ?? null
+        })).filter((o: any) => o.value != null);
+        this.timeZoneOptionsLoading = false;
+        this.cdr.detectChanges();
+        // Seçenekler yüklendikten sonra grid'i yenile; select'ler doğru değeri göstersin
+        setTimeout(() => {
+          if (this.selectedTerminalsTable) this.selectedTerminalsTable.reload();
+        }, 0);
+      },
+      error: () => {
+        this.timeZoneOptionsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onTimeZoneChange(row: any, value: string): void {
+    if (!this.accessGroupIdForDoors) return;
+    const readerId = row.ReaderID ?? row.TerminalID ?? row.Id ?? row.recid ?? row.id;
+    if (readerId == null) return;
+    const timeZoneId = value === '' || value === 'null' ? null : Number(value);
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.http.post<{ status?: string; error?: boolean; message?: string }>(`${apiUrl}/api/Terminals/UpdateTimeZone`, {
+      AccessGroupID: this.accessGroupIdForDoors,
+      ReaderID: Number(readerId),
+      TimeZoneID: timeZoneId
+    }).subscribe({
+      next: (res) => {
+        if (res.status === 'success' || res.error === false) {
+          this.toastr.success('Zaman dilimi güncellendi', 'Başarılı');
+          if (this.selectedTerminalsTable) this.selectedTerminalsTable.reload();
+        } else {
+          this.toastr.error(res.message || 'Zaman dilimi güncellenirken hata oluştu', 'Hata');
+        }
+      },
+      error: (err) => {
+        const msg = err.error?.message || err.message || 'Zaman dilimi güncellenirken hata oluştu';
+        this.toastr.error(msg, 'Hata');
+      }
+    });
+  }
+
+  /** Returns TimeZoneID from row as string for select [value] binding (empty = 'Seçiniz'). */
+  getTimeZoneIdForRow(row: any): string {
+    const agId = this.accessGroupIdForDoors;
+    const arr = row.AccessGroupReaders;
+    if (agId != null && Array.isArray(arr)) {
+      const match = arr.find(
+        (r: any) =>
+          Number(r.AccessGroupID ?? r.AccessGroupId ?? r.accessGroupID) === Number(agId)
+      );
+      const v =
+        match?.TimeZoneID ??
+        match?.timezoneId ??
+        match?.TimeZoneId ??
+        match?.TimeZone?.TimeZoneID ??
+        match?.TimeZone?.Id ??
+        null;
+      if (v != null) return String(Number(v));
+    }
+    const v =
+      row.TimeZoneID ??
+      row.timezoneId ??
+      row.TimeZoneId ??
+      row.TimeZone?.TimeZoneID ??
+      row.TimeZone?.Id ??
+      row.TimeZone?.timezoneId ??
+      null;
+    return v != null ? String(Number(v)) : '';
+  }
+
   // Event handlers
   onTableRowClick(event: any): void {
     // Handle row click
@@ -391,6 +509,7 @@ export class AccessGroupComponent implements OnInit {
     
     this.accessGroupIdForDoors = Number(accessGroupId);
     this.showDoorsModal = true;
+    this.loadTimeZoneOptions();
     
     // Reload tables after a short delay to ensure modal is rendered
     setTimeout(() => {

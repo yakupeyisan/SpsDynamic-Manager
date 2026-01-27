@@ -108,6 +108,22 @@
           height: 32px !important;
           background-color: #f8f8f8 !important;
         }
+
+        .timezone-cell-select {
+          width: 100%;
+          min-width: 160px;
+          max-width: 100%;
+          padding: 4px 8px;
+          font-size: 13px;
+          border: 1px solid var(--ui-border-color, #e0e0e0);
+          border-radius: 4px;
+          background: var(--ui-bg, #fff);
+          cursor: pointer;
+        }
+        .timezone-cell-select:focus {
+          outline: none;
+          border-color: var(--ui-primary, #007bff);
+        }
       }
     }
   }
