@@ -18,16 +18,32 @@ export const tableColumns: TableColumn[] = [
   },
   {
     field: 'CardTypeName',
+    searchField: 'CardTypeID',
     label: 'Kart Tipi',
     text: 'Kart Tipi',
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false,
     width: '150px',
     size: '150px',
-    searchable: false,
+    searchable: 'enum',
     resizable: true,
     render: (record: any) => record.CardType?.CardType || record.CardType?.CardTypeName || record.CardType?.Name || '',
     joinTable: 'CardType',
+    load: {
+      url: `${apiUrl}/api/CardTypes`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
+        return data.records.map((item: any) => ({
+          id: item.CardTypeID || item.Id,
+          text: item.CardType || item.CardTypeName || item.Name || ''
+        }));
+      }
+    }
   },
   {
     field: 'CafeteriaGroupName',
@@ -69,16 +85,32 @@ export const tableColumns: TableColumn[] = [
   },
   {
     field: 'CardStatusName',
+    searchField: 'CardStatusId',
     label: 'Kart Statü',
     text: 'Kart Statü',
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false,
     width: '150px',
     size: '150px',
-    searchable: false,
+    searchable: 'enum',
     resizable: true,
     render: (record: any) => record.CardStatus?.Name || '',
     joinTable: 'CardStatus',
+    load: {
+      url: `${apiUrl}/api/CardStatuses`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        if (!data || !data.records || !Array.isArray(data.records)) {
+          return [];
+        }
+        return data.records.map((item: any) => ({
+          id: item.Id || item.CardStatusId,
+          text: item.Name || ''
+        }));
+      }
+    }
   },
   {
     field: 'TagCode',
@@ -99,6 +131,17 @@ export const tableColumns: TableColumn[] = [
     sortable: true,
     width: '150px',
     size: '150px',
+    searchable: 'text',
+    resizable: true,
+  },
+  {
+    field: 'FacilityCode',
+    label: 'Tesis Kodu',
+    text: 'Tesis Kodu',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '120px',
+    size: '120px',
     searchable: 'text',
     resizable: true,
   },

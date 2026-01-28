@@ -61,6 +61,7 @@ export const formFields: TableColumn[] = [
       }));
     }
   }},
+  { field: 'Antipassback', label: 'Antipassback dokunulmazlığı ver. (Her zaman geçerli)', text: 'Antipassback dokunulmazlığı ver. (Her zaman geçerli)', type: 'checkbox' },
   { field: 'Banned', label: 'Tüm sistemde engellenensin mi?', text: 'Tüm sistemde engellenensin mi?', type: 'checkbox', fullWidth: true },
   { field: 'BannedMsg', label: 'Engellenme Mesajı', text: 'Engellenme Mesajı', type: 'textarea', fullWidth: true },
   { field: 'AccessGroup', label: 'Erişim Grubu', text: 'Erişim Grubu', type: 'enum',     load: {
@@ -378,7 +379,7 @@ export const formTabs: FormTab[] = [
   },
   { 
     label: 'Geçiş Kontrol', 
-    fields: ['Banned', 'BannedMsg', 'AccessGroup'],
+    fields: ['Banned', 'Antipassback', 'BannedMsg', 'AccessGroup'],
     grids: [{
       id: 'EmployeeAccessGroupReaders',
       selectable: false,

@@ -253,8 +253,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'FacilityCode', 
-    label: 'Facility Code', 
-    text: 'Facility Code',
+    label: 'Tesis Kodu', 
+    text: 'Tesis Kodu',
     type: 'text' as ColumnType, 
     sortable: true, 
     width: '120px', 

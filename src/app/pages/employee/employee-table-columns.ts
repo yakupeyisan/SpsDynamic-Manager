@@ -375,6 +375,17 @@ export const tableColumns: TableColumn[] = [
     tooltip: 'Is Visitor'
   },
   { 
+    field: 'Antipassback', 
+    label: 'Antipassback', 
+    text: 'Antipassback',
+    type: 'checkbox', 
+    sortable: true, 
+    align: 'center',
+    searchable: 'checkbox',
+    resizable: true,
+    tooltip: 'Antipassback'
+  },
+  { 
     field: 'LastPasswordUpdate', 
     label: 'Son Şifre Güncelleme', 
     text: 'Son Şifre Güncelleme',

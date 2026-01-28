@@ -55,4 +55,60 @@
       </div>
     </div>
   </div>
+
+  <!-- TimeZone Period Modal -->
+  <ui-modal
+    [title]="'Zaman Dilimlerini Düzenle'"
+    [show]="showTimeZonePeriodModal"
+    [size]="'full'"
+    [closable]="true"
+    [backdrop]="true"
+    [backdropClose]="true"
+    [showFooter]="false"
+    [allowFullscreen]="true"
+    (showChange)="onTimeZonePeriodModalShowChange($event)"
+    (opened)="onTimeZonePeriodModalOpened()"
+    (closed)="onTimeZonePeriodModalClose()">
+    <div class="timezone-period-view" style="height: calc(100vh - 80px);">
+      <ui-data-table
+        #timeZonePeriodGrid
+        [id]="'timezone-period-grid'"
+        [showFooter]="true"
+        [page]="1"
+        [columns]="timeZonePeriodColumns"
+        [dataSource]="timeZonePeriodDataSource"
+        [selectable]="true"
+        [pagination]="true"
+        [pageSize]="100"
+        [limit]="100"
+        [height]="'calc(100vh - 120px)'"
+        [recordHeight]="32"
+        [showEmptyRows]="true"
+        [fixedBody]="true"
+        [advancedFilter]="true"
+        [showRefresh]="true"
+        [searchPlaceholder]="'Ara...'"
+        [recid]="'TimeZonePeriodID'"
+        [selectType]="'row'"
+        [multiSelect]="true"
+        [multiSort]="true"
+        [keyboard]="true"
+        [liveSearch]="true"
+        [nestedFields]="true"
+        [columnTooltip]="'top'"
+        [formFields]="timeZonePeriodFormFields"
+        [formTabs]="timeZonePeriodFormTabs"
+        [formLoadUrl]="timeZonePeriodFormLoadUrl"
+        [formFullscreen]="true"
+        [formLoadRequest]="timeZonePeriodFormLoadRequest"
+        [formDataMapper]="timeZonePeriodFormDataMapper"
+        [onSave]="onTimeZonePeriodSave"
+        [onFormChange]="onTimeZonePeriodFormChange"
+        [toolbar]="{ items: [], show: { reload: true, columns: true, search: true, add: true, edit: true, delete: true, save: false } }"
+        (add)="onTimeZonePeriodAdd()"
+        (edit)="onTimeZonePeriodEdit($event)"
+        (delete)="onTimeZonePeriodDelete($event)">
+      </ui-data-table>
+    </div>
+  </ui-modal>
 </div>

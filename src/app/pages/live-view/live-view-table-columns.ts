@@ -25,6 +25,13 @@ export const tableColumns: TableColumn[] = [
     resizable: true,
     render: (record: any) => {
       if (record.PictureID) {
+        // Check if PictureID is already HTML (contains <img tag)
+        if (typeof record.PictureID === 'string' && record.PictureID.includes('<img')) {
+          // Extract src from HTML if needed, or return as-is
+          // For now, return the HTML as-is since it's already formatted
+          return record.PictureID;
+        }
+        // If it's a URL, wrap it in img tag
         return `<img src="${record.PictureID}" style="height: 80px; width: 80px; object-fit: cover; border-radius: 4px;" />`;
       }
       return '';
@@ -107,7 +114,15 @@ export const tableColumns: TableColumn[] = [
     width: '150px', 
     size: '150px',
     searchable: 'text',
-    resizable: true
+    resizable: true,
+    render: (record: any) => {
+      if (record.Message) {
+        // Return Message as-is (may contain HTML like </br>)
+        // The data-table component will detect HTML and render it properly
+        return record.Message;
+      }
+      return '';
+    }
   },
   { 
     field: 'Tarih', 
