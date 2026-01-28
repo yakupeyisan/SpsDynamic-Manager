@@ -229,25 +229,27 @@ export class LiveViewComponent implements OnInit, OnDestroy {
       readerList: readerList
     });
     
-    // Subscribe to messages
+    // Subscribe to messages – new format: { Type: "live", Status, Message, Data }
     this.wsSubscription = this.wsService.getMessages().subscribe((data: any) => {
-      if (data.EmployeeID != undefined) {
-        // New access event - add to grid
-        data['Id'] = this.recordCount++;
-        this.liveViewRecords.unshift(data); // Add to beginning
-        
-        // Limit to 50 records (like old system)
-        if (this.liveViewRecords.length > 50) {
-          this.liveViewRecords = this.liveViewRecords.slice(0, 50);
-        }
-        
-        // Refresh grid
-        if (this.dataTableComponent) {
-          this.dataTableComponent.reload();
-        }
-        
-        this.cdr.detectChanges();
+      if (data?.Type !== 'live' || !data?.Data) return;
+
+      const d = data.Data;
+      const message = data.Status === false ? (data.Message || '') : (d.Message || '');
+      const record: any = {
+        ...d,
+        Id: this.recordCount++,
+        Message: message,
+        LiveStatus: data.Status
+      };
+
+      this.liveViewRecords.unshift(record);
+
+      if (this.liveViewRecords.length > 50) {
+        this.liveViewRecords = this.liveViewRecords.slice(0, 50);
       }
+
+      if (this.dataTableComponent) this.dataTableComponent.reload();
+      this.cdr.detectChanges();
     });
     
     // Subscribe to connection status
