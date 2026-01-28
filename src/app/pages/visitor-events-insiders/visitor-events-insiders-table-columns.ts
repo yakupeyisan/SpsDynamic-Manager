@@ -28,6 +28,10 @@ export const tableColumns: TableColumn[] = [
   { field: 'VisitedFullName', label: 'Ziyaret Edilen Kişi', text: 'Ziyaret Edilen Kişi', type: 'text' as ColumnType, sortable: true, width: '200px', size: '200px', searchable: 'text', resizable: true },
   { field: 'VisitedCompany', label: 'Ziyaret Edilen Firma', text: 'Ziyaret Edilen Firma', type: 'text' as ColumnType, sortable: true, width: '180px', size: '180px', searchable: 'text', resizable: true },
   { field: 'Description', label: 'Açıklama', text: 'Açıklama', type: 'text' as ColumnType, sortable: true, width: '240px', size: '240px', searchable: 'text', resizable: true },
+  { field: 'AccessGroupName', label: 'Yetki Adı', text: 'Yetki Adı', type: 'text' as ColumnType, sortable: true, width: '180px', size: '180px', searchable: 'text', resizable: true },
+  { field: 'EmployeeID', label: 'Ziyaretçi No', text: 'Ziyaretçi No', type: 'int' as ColumnType, sortable: true, width: '120px', size: '120px', searchable: 'int', resizable: true },
+  { field: 'VisitorCardID', label: 'Ziyaretçi Kartı', text: 'Ziyaretçi Kartı', type: 'int' as ColumnType, sortable: true, width: '140px', size: '140px', searchable: 'int', resizable: true },
+  { field: 'VisitedEmployeeID', label: 'Ziyaret Edilen', text: 'Ziyaret Edilen', type: 'int' as ColumnType, sortable: true, width: '140px', size: '140px', searchable: 'int', resizable: true },
   {
     field: 'TerminalDetails',
     label: 'Geçebileceği Kapılar',
@@ -39,10 +43,6 @@ export const tableColumns: TableColumn[] = [
     searchable: false,
     resizable: true,
     render: (rec: TableRow) => safeParseTerminalDetails(rec['TerminalDetails'])
-  },
-  { field: 'AccessGroupName', label: 'Yetki Adı', text: 'Yetki Adı', type: 'text' as ColumnType, sortable: true, width: '180px', size: '180px', searchable: 'text', resizable: true },
-  { field: 'EmployeeID', label: 'Ziyaretçi No', text: 'Ziyaretçi No', type: 'int' as ColumnType, sortable: true, width: '120px', size: '120px', searchable: 'int', resizable: true },
-  { field: 'VisitorCardID', label: 'Ziyaretçi Kartı', text: 'Ziyaretçi Kartı', type: 'int' as ColumnType, sortable: true, width: '140px', size: '140px', searchable: 'int', resizable: true },
-  { field: 'VisitedEmployeeID', label: 'Ziyaret Edilen', text: 'Ziyaret Edilen', type: 'int' as ColumnType, sortable: true, width: '140px', size: '140px', searchable: 'int', resizable: true }
+  }
 ];
 

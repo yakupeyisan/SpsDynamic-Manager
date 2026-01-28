@@ -184,17 +184,6 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'TerminalDetails', 
-    label: 'Terminal Detayları', 
-    text: 'Terminal Detayları',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '200px', 
-    size: '200px',
-    searchable: 'text',
-    resizable: true
-  },
-  { 
     field: 'InDate', 
     label: 'Giriş Tarihi', 
     text: 'Giriş Tarihi',
@@ -215,5 +204,16 @@ export const tableColumns: TableColumn[] = [
     size: '180px',
     searchable: 'datetime',
     resizable: true
-  }
+  },
+  { 
+    field: 'TerminalDetails', 
+    label: 'Terminal Detayları', 
+    text: 'Terminal Detayları',
+    type: 'text' as ColumnType, 
+    sortable: true, 
+    width: '200px', 
+    size: '200px',
+    searchable: 'text',
+    resizable: true
+  },
 ];
