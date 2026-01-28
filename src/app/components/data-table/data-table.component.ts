@@ -1067,6 +1067,62 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return visibleCols;
   }
 
+  /**
+   * Get computed column groups with dynamic span based on visible columns
+   */
+  get computedColumnGroups(): TableColumnGroup[] {
+    if (!this.columnGroups || this.columnGroups.length === 0) {
+      return [];
+    }
+
+    // Get all columns (not filtered) to calculate group boundaries
+    const allCols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+    
+    // Get visible columns
+    const visibleCols = this.displayColumns;
+    
+    // If no visible columns, return empty array
+    if (visibleCols.length === 0) {
+      return [];
+    }
+
+    // Calculate cumulative spans for each group
+    let currentIndex = 0;
+    const computedGroups: TableColumnGroup[] = [];
+    
+    for (let i = 0; i < this.columnGroups.length; i++) {
+      const group = this.columnGroups[i];
+      const groupStartIndex = currentIndex;
+      const groupEndIndex = currentIndex + group.span;
+      
+      // Count visible columns in this group range
+      let visibleCount = 0;
+      for (let j = groupStartIndex; j < groupEndIndex && j < allCols.length; j++) {
+        const col = allCols[j];
+        // Check if this column is visible
+        const isVisible = !col.hidden && 
+          (!this.visibleColumns || this.visibleColumns.length === 0 || this.visibleColumns.includes(col.field));
+        
+        if (isVisible) {
+          visibleCount++;
+        }
+      }
+      
+      // Only add group if it has visible columns
+      if (visibleCount > 0) {
+        computedGroups.push({
+          ...group,
+          span: visibleCount
+        });
+      }
+      
+      // Move to next group
+      currentIndex = groupEndIndex;
+    }
+    
+    return computedGroups;
+  }
+
   get filteredData(): TableRow[] {
     // Use internalData if dataSource is used, otherwise use data input
     const sourceData = this.dataSource ? this.internalData : this.data;

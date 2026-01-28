@@ -425,7 +425,7 @@
     <table class="ui-table" [class.ui-table-striped]="striped" [class.ui-table-hover]="hover" [class.ui-table-fixed-body]="fixedBody && height">
       <thead>
         <!-- Column Groups Row -->
-        <tr *ngIf="columnGroups && columnGroups.length > 0">
+        <tr *ngIf="computedColumnGroups && computedColumnGroups.length > 0">
           <th *ngIf="selectable" class="ui-table-select-header" rowspan="2" style="vertical-align: middle;">
             <input
               type="checkbox"
@@ -435,7 +435,7 @@
             />
           </th>
           <th
-            *ngFor="let group of columnGroups"
+            *ngFor="let group of computedColumnGroups"
             class="ui-table-group-header"
             [attr.colspan]="group.span"
             [class.ui-table-group-main]="group.main"
