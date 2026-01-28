@@ -54,6 +54,72 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'Company', 
+    searchField: 'Company.PdksCompanyName',
+    label: 'Firma', 
+    text: 'Firma',
+    type: 'list' as ColumnType,
+    sortable: false, 
+    width: '180px', 
+    size: '180px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    tooltip: 'Company',
+    joinTable: 'Company',
+    load: {
+      url: `${apiUrl}/api/PdksCompanys`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: {
+        limit: -1,
+        offset: 0
+      },
+      map: (data: any) => {
+        return data.records.map((item: any) => ({
+          id: item.PdksCompanyID,
+          text: item.PdksCompanyName
+        }));
+      }
+    },
+    render: (record: TableRow) => {
+      return record['Company']?.PdksCompanyName || '';
+    }
+  },
+  { 
+    field: 'Kadro', 
+    searchField: 'Kadro.Name',
+    label: 'Kadro', 
+    text: 'Kadro',
+    type: 'list' as ColumnType,
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    tooltip: 'Kadro',
+    joinTable: 'Kadro',
+    load: {
+      url: `${apiUrl}/api/PdksStaffs`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: {
+        limit: -1,
+        offset: 0
+      },
+      map: (data: any) => {
+        return data.records.map((item: any) => ({
+          id: item.ID,
+          text: item.Name
+        }));
+      }
+    },
+    render: (record: TableRow) => {
+      return record['Kadro']?.Name || '';
+    }
+  },
+  { 
     field: 'EmployeeDepartments', 
     searchField: 'EmployeeDepartments.Department.DepartmentName',
     label: 'Departman', 

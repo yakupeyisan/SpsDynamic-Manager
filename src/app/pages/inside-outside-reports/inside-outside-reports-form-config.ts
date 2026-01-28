@@ -36,6 +36,45 @@ export const formFields: TableColumn[] = [
     disabled: true
   },
   { 
+    field: 'Company', 
+    label: 'Firma', 
+    text: 'Firma', 
+    type: 'text' as ColumnType,
+    fullWidth: true,
+    disabled: true,
+    render: (record: any) => {
+      return record['Company']?.PdksCompanyName || '';
+    }
+  },
+  { 
+    field: 'Kadro', 
+    label: 'Kadro', 
+    text: 'Kadro', 
+    type: 'text' as ColumnType,
+    fullWidth: true,
+    disabled: true,
+    render: (record: any) => {
+      return record['Kadro']?.Name || '';
+    }
+  },
+  { 
+    field: 'EmployeeDepartments', 
+    label: 'Departman', 
+    text: 'Departman', 
+    type: 'text' as ColumnType,
+    fullWidth: true,
+    disabled: true,
+    render: (record: any) => {
+      if (record['EmployeeDepartments'] && Array.isArray(record['EmployeeDepartments']) && record['EmployeeDepartments'].length > 0) {
+        return record['EmployeeDepartments']
+          .map((ed: any) => ed['Department']?.DepartmentName)
+          .filter(Boolean)
+          .join(', ') || '';
+      }
+      return '';
+    }
+  },
+  { 
     field: 'EmployeeLastAccessEvent.inOUT', 
     label: 'Durum', 
     text: 'Durum', 
@@ -76,7 +115,7 @@ export const formFields: TableColumn[] = [
 export const formTabs: FormTab[] = [
   { 
     label: 'İçeridekiler/Dışarıdakiler Bilgileri', 
-    fields: ['EmployeeID', 'IdentificationNumber', 'Name', 'SurName', 'EmployeeLastAccessEvent.inOUT', 'EmployeeLastAccessEvent.EventTime', 'EmployeeLastAccessEvent.Location'] 
+    fields: ['EmployeeID', 'IdentificationNumber', 'Name', 'SurName', 'Company', 'Kadro', 'EmployeeDepartments', 'EmployeeLastAccessEvent.inOUT', 'EmployeeLastAccessEvent.EventTime', 'EmployeeLastAccessEvent.Location'] 
   }
 ];
 
