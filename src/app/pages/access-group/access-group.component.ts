@@ -5,10 +5,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 
@@ -591,20 +591,54 @@ export class AccessGroupComponent implements OnInit, AfterViewInit {
     }
 
     // Extract IDs from selected rows
-    const selectedIds = this.selectedUnselectedTerminals.map((row: any) => {
+    const selectedIds: number[] = this.selectedUnselectedTerminals.map((row: any) => {
       const id = row.ReaderID || row.TerminalID || row.Id || row.recid || row.id;
       return id !== null && id !== undefined ? Number(id) : null;
-    }).filter((id: any) => id !== null && id !== undefined);
+    }).filter((id): id is number => id !== null && id !== undefined);
 
     if (selectedIds.length === 0) {
       this.toastr.warning('Geçerli terminal seçilmedi', 'Uyarı');
       return;
     }
 
-    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/AppendAccessGroupID`, {
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    
+    this.http.post(`${apiUrl}/api/Terminals/AppendAccessGroupID`, {
       Selecteds: selectedIds,
       AccessGroupID: this.accessGroupIdForDoors
-    }).subscribe({
+    }).pipe(
+      switchMap((response: any) => {
+        if (response.status === 'success' || response.error === false) {
+          // Get first available timezone option if available
+          const defaultTimeZoneId = this.timeZoneOptions.length > 0 ? this.timeZoneOptions[0].value : null;
+          
+          // If there's a default timezone, set it for all transferred terminals
+          if (defaultTimeZoneId != null) {
+            const updateTimeZoneCalls = selectedIds.map((readerId: number) => 
+              this.http.post<{ status?: string; error?: boolean; message?: string }>(`${apiUrl}/api/Terminals/UpdateTimeZone`, {
+                AccessGroupID: this.accessGroupIdForDoors,
+                ReaderID: Number(readerId),
+                TimeZoneID: defaultTimeZoneId
+              }).pipe(
+                catchError((err) => {
+                  console.error(`Error setting timezone for terminal ${readerId}:`, err);
+                  return of({ error: true, message: err.message });
+                })
+              )
+            );
+            
+            // Execute all timezone updates in parallel
+            return forkJoin(updateTimeZoneCalls).pipe(
+              map(() => response) // Return original response
+            );
+          }
+          
+          return of(response);
+        } else {
+          return of(response);
+        }
+      })
+    ).subscribe({
       next: (response: any) => {
         if (response.status === 'success' || response.error === false) {
           this.toastr.success('Terminaller başarıyla eklendi', 'Başarılı');

@@ -77,30 +77,7 @@ export class VisitorEventsInsidersComponent {
   visitedEmployeeSearchTerm$ = new Subject<string>();
   isLoadingVisitedEmployees = false;
   visitorCardOptions: SelectOption[] = [];
-  accessGroupOptions: SelectOption[] = [
-    { value: 1, label: 'ARAC GIRISLERI' },
-    { value: 2, label: 'TURNIKELER' },
-    { value: 3, label: 'ENGELLI TURNIKELER' },
-    { value: 4, label: 'TUM KAPILAR' },
-    { value: 5, label: 'BILGI ISLEM' },
-    { value: 6, label: 'DENEY HAYVANLARI' },
-    { value: 7, label: 'REKTORLUK' },
-    { value: 8, label: 'GIDA LAB' },
-    { value: 9, label: 'EGİTİM 1' },
-    { value: 10, label: 'EGİTİM 2' },
-    { value: 11, label: 'EGİTİM 3' },
-    { value: 12, label: 'MÜHENDİSLİK LAB' },
-    { value: 15, label: 'ANA NİZAMİYE ZİYARETCİ KARTI' },
-    { value: 16, label: 'VETERİNERLİK NİZAMİYE ZİYARETÇİ KARTI' },
-    { value: 17, label: 'BESYO NİZAMİYE' },
-    { value: 18, label: 'UNİYURT NİZAMİYE' },
-    { value: 19, label: 'PERSONEL' },
-    { value: 20, label: 'KYK NİZAMİYE' },
-    { value: 25, label: 'TURNİKELER2' },
-    { value: 26, label: 'Deneme' },
-    { value: 28, label: 'HGS KGS' },
-    { value: 29, label: 'Misafir' }
-  ];
+  accessGroupOptions: SelectOption[] = [];
 
   entryForm: FormGroup = this.fb.group({
     EmployeeID: [{ value: null, disabled: true }],
@@ -307,6 +284,8 @@ export class VisitorEventsInsidersComponent {
     this.loadCompaniesIfNeeded();
     // Always reload visitor cards when modal opens
     this.loadVisitorCards();
+    // Load access groups from API
+    this.loadAccessGroups();
     
     // Reload visitor grid after modal is rendered
     setTimeout(() => {
@@ -638,6 +617,28 @@ export class VisitorEventsInsidersComponent {
       )
       .subscribe((opts) => {
         this.visitorCardOptions = opts;
+        this.cdr.markForCheck();
+      });
+  }
+
+  private loadAccessGroups(): void {
+    this.http
+      .post<any>(`${this.apiUrl}/api/AccessGroups`, { limit: -1, offset: 0 })
+      .pipe(
+        map((res) => this.extractRecords(res)),
+        map((records) =>
+          records.map((x: AnyRecord) => ({
+            value: x['AccessGroupID'] ?? x['Id'] ?? x['id'],
+            label: x['AccessGroupName'] ?? x['Name'] ?? String(x['AccessGroupID'] ?? x['Id'] ?? x['id'])
+          }))
+        ),
+        catchError((error) => {
+          console.error('Load access groups error:', error);
+          return of([] as SelectOption[]);
+        })
+      )
+      .subscribe((opts) => {
+        this.accessGroupOptions = opts;
         this.cdr.markForCheck();
       });
   }

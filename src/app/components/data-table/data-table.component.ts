@@ -2931,7 +2931,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   get columnOptions(): TableColumn[] {
-    return this.columns.filter(col => col.searchable !== false);
+    // Use displayColumns to match grid visible columns with search fields
+    // Only return searchable columns that are visible in the grid
+    return this.displayColumns.filter(col => col.searchable !== false);
   }
 
   // Toolbar methods (w2ui style)
@@ -5196,10 +5198,23 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   /**
    * Get searchable columns for default search fields panel
+   * Uses displayColumns to match grid visible columns with search fields
    */
   getSearchableColumnsForDefaultFields(): TableColumn[] {
-    // displayColumns already filters hidden columns, so we just need to filter searchable
-    return this.displayColumns.filter(col => col.searchable !== false);
+    // Use displayColumns to match grid visible columns with search fields
+    // Only show searchable columns that are visible in the grid
+    return this.displayColumns.filter(col => {
+      // Only show searchable columns
+      if (col.searchable === false) {
+        return false;
+      }
+      // If searchableColumns is set and not empty, filter by it
+      if (this.searchableColumns && this.searchableColumns.length > 0) {
+        return this.searchableColumns.includes(col.field);
+      }
+      // Show all searchable columns that are visible in grid
+      return true;
+    });
   }
 
   /**
