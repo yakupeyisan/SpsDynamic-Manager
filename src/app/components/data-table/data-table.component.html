@@ -983,7 +983,8 @@
                         [recid]="grid.recid || 'CardID'"
                         [joinOptions]="grid.joinOptions || []"
                         [showFooter]="true"
-                        [pagination]="true">
+                        [pagination]="true"
+                        (delete)="onNestedGridDelete($event, grid)">
                       </ui-data-table>
                     </div>
                   </ng-container>

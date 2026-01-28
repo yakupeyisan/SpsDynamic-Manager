@@ -2504,6 +2504,15 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Use filteredData or internalData depending on dataSource
     const dataSource = this.dataSource ? this.filteredData : this.data;
     const selectedRowsArray = dataSource.filter(row => this.selectedRows.has(this.getRowId(row)));
+    
+    if (!selectedRowsArray || selectedRowsArray.length === 0) {
+      this.toastr.warning(this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için bir satır seçiniz.', this.translate.instant('common.warning') || 'Uyarı');
+      return;
+    }
+    
+    // Don't show confirmation here - parent component will handle it
+    // For main grids: parent component (e.g., onTableDelete) will show confirmation
+    // For nested grids: parent component (e.g., onNestedGridDelete) will show confirmation
     this.delete.emit(selectedRowsArray);
     // Clear selection after delete
     this.selectedRows.clear();
@@ -3793,6 +3802,71 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
+   * Handle delete event from nested grids
+   */
+  onNestedGridDelete(rows: TableRow[], grid: FormTabGrid): void {
+    if (!rows || rows.length === 0) {
+      this.toastr.warning(this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için bir satır seçiniz.', this.translate.instant('common.warning') || 'Uyarı');
+      return;
+    }
+    
+    // Show confirmation dialog
+    const confirmMessage = this.translate.instant('common.deleteConfirm') || 
+      (rows.length === 1 
+        ? 'Bu kaydı silmek istediğinize emin misiniz?' 
+        : `${rows.length} kaydı silmek istediğinize emin misiniz?`);
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+    
+    // Get recid field name for this grid
+    const recidField = grid.recid || 'CardID';
+    
+    // Extract IDs from selected rows
+    const ids = rows.map(row => row[recidField] || row['recid'] || row['Id'] || row['ID']).filter(id => id != null);
+    
+    if (ids.length === 0) {
+      this.toastr.warning('Silinecek kayıt bulunamadı.', 'Uyarı');
+      return;
+    }
+    
+    // Determine API endpoint based on grid ID
+    let deleteUrl: string;
+    if (grid.id === 'EmployeeCardGrid') {
+      deleteUrl = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/delete`;
+    } else {
+      // Default: try to infer from grid ID
+      const gridName = grid.id.replace('Employee', '').replace('Grid', '');
+      deleteUrl = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/${gridName}/delete`;
+    }
+    
+    // Send delete request
+    this.http.post(deleteUrl, {
+      request: {
+        action: 'delete',
+        recid: ids.length === 1 ? ids[0] : ids,
+        name: grid.id || 'DeleteRecord'
+      }
+    }).subscribe({
+      next: (response: any) => {
+        if (response && !response.error) {
+          this.toastr.success(this.translate.instant('common.deleteSuccess') || 'Kayıt başarıyla silindi.', this.translate.instant('common.success') || 'Başarılı');
+          // Reload nested grid data
+          this.reloadNestedGrid(grid.id || '');
+        } else {
+          this.toastr.error(response?.message || this.translate.instant('common.deleteError') || 'Silme işlemi başarısız oldu.', this.translate.instant('common.error') || 'Hata');
+        }
+      },
+      error: (error) => {
+        console.error('Error deleting records:', error);
+        const errorMessage = error?.error?.message || error?.message || this.translate.instant('common.deleteError') || 'Silme işlemi sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage, this.translate.instant('common.error') || 'Hata');
+      }
+    });
+  }
+  
+  /**
    * Handle form submit
    */
   onFormSubmit(formValues: any) {
@@ -3934,7 +4008,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             }, 0);
           } else {
             // Keep form open on error so user can fix and retry
-            // Error message is already shown by onSave callback
+            // Show error message from response
+            const errorMessage = response?.message || 'Kayıt sırasında bir hata oluştu.';
+            this.toastr.error(errorMessage, 'Hata');
           }
         },
         error: (error) => {
@@ -3947,6 +4023,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
             status: error?.status,
             url: error?.url 
           });
+          // Show error message
+          const errorMessage = error?.error?.message || error?.message || 'Kayıt sırasında bir hata oluştu.';
+          this.toastr.error(errorMessage, 'Hata');
           // Keep form open on error so user can fix and retry
         }
       });
