@@ -74,15 +74,36 @@
     <p style="margin-top: 20px;">Önizleme hazırlanıyor...</p>
   </div>
   
-  <div *ngIf="!isLoadingPreview" [innerHTML]="previewHtml"></div>
+  <div *ngIf="!isLoadingPreview" class="card-write-list-preview-wrap">
+    <div class="card-write-list-preview-toolbar">
+      <label class="card-write-list-select-all">
+        <input type="checkbox" [checked]="allPreviewPrintSelected" (change)="selectAllPreviewPrint($any($event.target).checked)" class="form-check-input">
+        <span>Tümünü seç</span>
+      </label>
+    </div>
+    <div class="card-write-list-preview-list">
+      <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row">
+        <label class="card-write-list-preview-checkbox">
+          <input type="checkbox" [checked]="previewPrintSelection[i]" (change)="onPreviewPrintSelect(i, $any($event.target).checked)" class="form-check-input" [attr.data-index]="i" [attr.aria-label]="'Kart ' + (i + 1) + ' yazdır'">
+        </label>
+        <div class="card-write-list-preview-content" [innerHTML]="previewCardHtmls[i]"></div>
+      </div>
+    </div>
+  </div>
   
-  <div slot="footer" style="display: flex; justify-content: flex-end; gap: 10px;">
-    <button 
-      type="button" 
-      class="btn btn-secondary" 
-      (click)="closePreviewModal()">
-      <i class="ti ti-x me-1"></i>
-      Kapat
-    </button>
+  <div slot="footer" class="card-write-list-preview-footer">
+    <div class="text-muted small">
+      <ng-container *ngIf="previewData.length">Önlü arkalı kartlarda önce ön yüz, sonra arka yüz sayfa sırasıyla yazdırılır.</ng-container>
+    </div>
+    <div class="card-write-list-preview-footer-actions">
+      <button type="button" class="btn btn-primary" (click)="printSelectedPreview()" [disabled]="!hasAnyPreviewPrintSelected">
+        <i class="ti ti-printer me-1"></i>
+        Yazdır
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="closePreviewModal()">
+        <i class="ti ti-x me-1"></i>
+        Kapat
+      </button>
+    </div>
   </div>
 </ui-modal>

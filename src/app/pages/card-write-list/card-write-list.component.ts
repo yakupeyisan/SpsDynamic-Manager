@@ -51,8 +51,9 @@ export class CardWriteListComponent implements OnInit {
   // Preview modal state
   showPreviewModal = false;
   previewData: any[] = [];
+  previewCardHtmls: SafeHtml[] = []; // Her kart için ayrı önizleme HTML (checkbox solunda göstermek için)
+  previewPrintSelection: boolean[] = []; // Checkbox: hangi kartlar yazdırılacak
   isLoadingPreview = false;
-  previewHtml: SafeHtml = '';
   
   // Form configuration
   formFields: TableColumn[] = formFields;
@@ -111,8 +112,8 @@ export class CardWriteListComponent implements OnInit {
         reload: true,
         columns: true,
         search: true,
-        add: true,
-        edit: true,
+        add: false,
+        edit: false,
         delete: true,
         save: false
       }
@@ -184,7 +185,46 @@ export class CardWriteListComponent implements OnInit {
   }
 
   onTableDelete(event: any): void {
-    // Handle delete
+    const rows = Array.isArray(event) ? event : [event];
+    const selectedIds: number[] = [];
+    for (const row of rows) {
+      const id = row.Id ?? row.recid ?? row.id;
+      if (id != null) selectedIds.push(Number(id));
+    }
+    if (selectedIds.length === 0) {
+      this.toastr.warning(
+        this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için en az bir satır seçiniz.',
+        this.translate.instant('common.warning') || 'Uyarı'
+      );
+      return;
+    }
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!confirm(msg)) return;
+
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardWriteLists/delete`;
+    this.http.post(url, { request: { action: 'delete', recid: selectedIds } }).subscribe({
+      next: (res: any) => {
+        if (res?.status === 'success' || res?.error === false) {
+          this.toastr.success(
+            this.translate.instant('common.deleteSuccess') || 'Kayıt(lar) başarıyla silindi',
+            this.translate.instant('common.success') || 'Başarılı'
+          );
+          this.dataTableComponent?.reload();
+        } else {
+          this.toastr.error(
+            res?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi',
+            this.translate.instant('common.error') || 'Hata'
+          );
+        }
+      },
+      error: (err) => {
+        console.error('CardWriteList delete error:', err);
+        const errMsg = err?.error?.message || err?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi';
+        this.toastr.error(errMsg, this.translate.instant('common.error') || 'Hata');
+      }
+    });
   }
 
   onTableAdd(): void {
@@ -435,16 +475,10 @@ export class CardWriteListComponent implements OnInit {
     forkJoin(requests).subscribe({
       next: (results) => {
         this.previewData = results.filter(r => r !== null);
-        // console.log('loadPreviewData: Loaded preview data:', {
-        //   count: this.previewData.length,
-        //   firstItem: this.previewData[0] ? {
-        //     hasTemplateData: !!this.previewData[0].TemplateData,
-        //     hasCardData: !!this.previewData[0].CardData,
-        //     cardDataKeys: this.previewData[0].CardData ? Object.keys(this.previewData[0].CardData).slice(0, 30) : []
-        //   } : null
-        // });
-        // Generate HTML once when data is loaded
-        this.previewHtml = this.generatePreviewHtml(this.previewData);
+        this.previewPrintSelection = this.previewData.map(() => true); // Varsayılan: hepsi seçili
+        this.previewCardHtmls = this.previewData.map((data) =>
+          this.sanitizer.bypassSecurityTrustHtml(this.buildSingleCardPreviewHtmlString(data))
+        );
         this.isLoadingPreview = false;
         this.cdr.markForCheck();
       },
@@ -453,7 +487,7 @@ export class CardWriteListComponent implements OnInit {
         this.toastr.error('Önizleme yüklenirken hata oluştu.');
         this.isLoadingPreview = false;
         this.showPreviewModal = false;
-        this.previewHtml = '';
+        this.previewCardHtmls = [];
         this.cdr.markForCheck();
       }
     });
@@ -462,167 +496,144 @@ export class CardWriteListComponent implements OnInit {
   closePreviewModal(): void {
     this.showPreviewModal = false;
     this.previewData = [];
-    this.previewHtml = '';
+    this.previewCardHtmls = [];
+    this.previewPrintSelection = [];
+  }
+
+  /** Checkbox: Tüm kartları yazdırma için seç / kaldır */
+  selectAllPreviewPrint(checked: boolean): void {
+    this.previewPrintSelection = this.previewData.map(() => checked);
+    this.cdr.markForCheck();
+  }
+
+  /** Tek bir kartın yazdırma seçimini değiştir */
+  onPreviewPrintSelect(index: number, checked: boolean): void {
+    if (index >= 0 && index < this.previewPrintSelection.length) {
+      this.previewPrintSelection[index] = checked;
+      this.cdr.markForCheck();
+    }
+  }
+
+  /** Tüm kartlar yazdırma için seçili mi (Tümünü seç kutusu) */
+  get allPreviewPrintSelected(): boolean {
+    return this.previewData.length > 0 &&
+      this.previewPrintSelection.length === this.previewData.length &&
+      this.previewPrintSelection.every((b) => b);
+  }
+
+  /** En az bir kart yazdırma için seçili mi (Yazdır butonu aktif) */
+  get hasAnyPreviewPrintSelected(): boolean {
+    return this.previewPrintSelection.some((b) => b);
+  }
+
+  /** Seçili kartlarla yazdır; önlü/arkalı ise önce ön sonra arka sayfa */
+  printSelectedPreview(): void {
+    const selectedData = this.previewData.filter((_, i) => this.previewPrintSelection[i]);
+    if (selectedData.length === 0) {
+      this.toastr.warning('Yazdırmak için en az bir kart seçin.');
+      return;
+    }
+    const printHtml = this.buildPrintHtmlString(selectedData);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      this.toastr.error('Yazdırma penceresi açılamadı. Pop-up engelleyicisini kapatıp tekrar deneyin.');
+      return;
+    }
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 300);
   }
 
   /**
-   * Generate preview HTML from preview data
-   * This is called once when data is loaded, not on every change detection
+   * Yazdırma için HTML: Her kart için önce ön yüz (sayfa), sonra arka yüz (sayfa).
+   * Önlü arkalı yazdırmada yazıcıda "çift taraflı" seçilince doğru sırada basılır.
    */
-  private generatePreviewHtml(previewData: any[]): SafeHtml {
-    if (!previewData || previewData.length === 0) {
-      console.warn('generatePreviewHtml: previewData is empty');
-      return '';
-    }
-    
+  private buildPrintHtmlString(selectedData: any[]): string {
+    if (!selectedData || selectedData.length === 0) return '';
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
-    
-    let html = '<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px; font-family: \'Open Sans\', sans-serif;">';
-    
-    previewData.forEach((data, index) => {
-      // console.log(`generatePreviewHtml: Processing data ${index}:`, {
-      //   hasTemplateData: !!data.TemplateData,
-      //   hasCardData: !!data.CardData,
-      //   templateDataKeys: data.TemplateData ? Object.keys(data.TemplateData) : [],
-      //   cardDataKeys: data.CardData ? Object.keys(data.CardData).slice(0, 20) : []
-      // });
-      
-      if (!data.TemplateData) {
-        console.warn(`generatePreviewHtml: No TemplateData for index ${index}`);
-        return;
-      }
-      
-      if (!data.CardData) {
-        console.warn(`generatePreviewHtml: No CardData for index ${index}`);
-      }
-      
-      html += '<div class="preview-row" style="display: flex; flex-direction: row; justify-content: space-around; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; gap: 20px;">';
-      
-      // FRONT
+    let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kart Yazdır</title>';
+    html += '<style>body{ margin:0; padding:10px; font-family:\'Open Sans\',sans-serif; }';
+    html += '.print-page{ page-break-after:always; display:flex; justify-content:center; align-items:center; min-height:100vh; box-sizing:border-box; }';
+    html += '.print-page:last-child{ page-break-after:auto; }</style></head><body>';
+    selectedData.forEach((data) => {
+      if (!data.TemplateData) return;
       if (data.TemplateData.FRONT) {
-        const front = data.TemplateData.FRONT;
-        const bgStyle = front.background && front.background !== 'transparent' ? `background: url('${front.background}'); background-repeat: no-repeat; background-size: cover;` : 'background: white;';
-        html += `<div class="preview-card-front" data-type="FRONT" style="position: relative; width: ${front.width}; height: ${front.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
-        
-        const frontItems = front.items ? (Array.isArray(front.items) ? front.items : Object.values(front.items)) : [];
-        //console.log(`generatePreviewHtml: FRONT has ${frontItems.length} items`);
-        
-        if (frontItems.length > 0) {
-          frontItems.forEach((item: any, itemIndex: number) => {
-            //console.log(`generatePreviewHtml: Processing FRONT item ${itemIndex}:`, {
-            //  type: item.type,
-            //  field: item.field,
-            //  hasCardData: !!data.CardData
-            //});
-            
-            if (item.type === 'fix') {
-              // PHP: textTransform($item->field, $item->textTransform)
-              const fixText = this.textTransform(item.field || '', item.textTransform);
-              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fixText}</label>`;
-            } else if (item.type === 'label' && item.field) {
-              // PHP: $field = explode("-", $item->field)[0]; textTransform($data->{$field}, $item->textTransform)
-              const field = item.field.split('-')[0];
-              // Try direct access first (like PHP $data->{$field})
-              let value = '';
-              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
-                value = String(data.CardData[field]);
-              } else {
-                value = this.getFieldValue(data.CardData, field);
-              }
-              //console.log(`generatePreviewHtml: label field="${field}", value="${value}", item.field="${item.field}", CardData keys:`, data.CardData ? Object.keys(data.CardData).slice(0, 20) : 'no CardData');
-              // Always render label, even if value is empty (PHP doesn't check)
-              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
-            } else if (item.type === 'image' && item.field) {
-              // PHP: $field = explode("-", $item->field)[0]; $data->PictureID == null ? "avatar.png" : $data->PictureID
-              const field = item.field.split('-')[0];
-              // Try direct access first, then fallback to PictureID
-              let pictureId = '';
-              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
-                pictureId = String(data.CardData[field]);
-              } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
-                pictureId = String(data.CardData.PictureID);
-              } else {
-                pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
-              }
-              //console.log(`generatePreviewHtml: image field="${field}", pictureId="${pictureId}"`);
-              // PHP: $_ENV['app.apiURL'] ?>images/<?= $data->PictureID == null ? "avatar.png" : $data->PictureID . '?v=' . microtime()
-              const avatarUrl = '/assets/images/profile/avaatar.png';
-              const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
-              html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
-            } else if (item.type === 'imagefix' && item.src) {
-              // Fixed image from template (like logo)
-              //console.log(`generatePreviewHtml: imagefix src="${item.src}"`);
-              html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
-            } else if (item.type === 'barcode' && item.field) {
-              const field = item.field.split('-')[0];
-              const value = this.getFieldValue(data.CardData, field);
-              //console.log(`generatePreviewHtml: barcode field="${field}", value="${value}"`);
-              if (value) {
-                html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
-              }
-            }
-          });
-        } else {
-          console.warn('generatePreviewHtml: FRONT has no items');
-        }
-        
-        html += '</div>';
+        html += '<div class="print-page">' + this.buildCardSideHtml(data, 'FRONT', apiUrl) + '</div>';
       }
-      
-      // BACK
       if (data.TemplateData.BACK) {
-        const back = data.TemplateData.BACK;
-        const bgStyle = back.background && back.background !== 'transparent' ? `background: url('${back.background}'); background-repeat: no-repeat; background-size: cover;` : 'background: white;';
-        html += `<div class="preview-card-back" data-type="BACK" style="position: relative; width: ${back.width}; height: ${back.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
-        
-        const backItems = back.items ? (Array.isArray(back.items) ? back.items : Object.values(back.items)) : [];
-        if (backItems.length > 0) {
-          backItems.forEach((item: any) => {
-            if (item.type === 'fix') {
-              // PHP: textTransform($item->field, $item->textTransform)
-              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(item.field || '', item.textTransform)}</label>`;
-            } else if (item.type === 'label' && item.field) {
-              // PHP: $field = explode("-", $item->field)[0]; textTransform($data->{$field}, $item->textTransform)
-              const field = item.field.split('-')[0];
-              // Try direct access first (like PHP $data->{$field})
-              let value = '';
-              if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
-                value = String(data.CardData[field]);
-              } else {
-                value = this.getFieldValue(data.CardData, field);
-              }
-              // Always render label, even if value is empty (PHP doesn't check)
-              html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
-            } else if (item.type === 'image' && item.field) {
-              // PHP: $field = explode("-", $item->field)[0]; $data->PictureID == null ? "avatar.png" : $data->PictureID
-              const field = item.field.split('-')[0];
-              const pictureId = this.getFieldValue(data.CardData, field) || this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
-              const avatarUrl = '/assets/images/profile/avaatar.png';
-              const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
-              html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
-            } else if (item.type === 'imagefix' && item.src) {
-              // Fixed image from template (like logo)
-              html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
-            } else if (item.type === 'barcode' && item.field) {
-              // PHP: $field = explode("-", $item->field)[0]; if ($data->{$field} == null || $data->{$field} == '') continue;
-              const field = item.field.split('-')[0];
-              const value = this.getFieldValue(data.CardData, field);
-              if (value) {
-                html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
-              }
-            }
-          });
-        }
-        
-        html += '</div>';
+        html += '<div class="print-page">' + this.buildCardSideHtml(data, 'BACK', apiUrl) + '</div>';
       }
-      
-      html += '</div>';
     });
-    
+    html += '</body></html>';
+    return html;
+  }
+
+  /** Tek yüz (FRONT veya BACK) HTML üretir; önizleme ve yazdırma için ortak */
+  private buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string): string {
+    const face = data.TemplateData[side];
+    if (!face) return '';
+    const bgStyle = face.background && face.background !== 'transparent'
+      ? `background: url('${face.background}'); background-repeat: no-repeat; background-size: cover;`
+      : 'background: white;';
+    let html = `<div class="preview-card-${side.toLowerCase()}" data-type="${side}" style="position: relative; width: ${face.width}; height: ${face.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
+    const items = face.items ? (Array.isArray(face.items) ? face.items : Object.values(face.items)) : [];
+    items.forEach((item: any) => {
+      if (item.type === 'fix') {
+        const fixText = this.textTransform(item.field || '', item.textTransform);
+        html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fixText}</label>`;
+      } else if (item.type === 'label' && item.field) {
+        const field = item.field.split('-')[0];
+        let value = '';
+        if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
+          value = String(data.CardData[field]);
+        } else {
+          value = this.getFieldValue(data.CardData, field);
+        }
+        html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
+      } else if (item.type === 'image' && item.field) {
+        const field = item.field.split('-')[0];
+        let pictureId = '';
+        if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
+          pictureId = String(data.CardData[field]);
+        } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
+          pictureId = String(data.CardData.PictureID);
+        } else {
+          pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
+        }
+        const avatarUrl = '/assets/images/profile/avaatar.png';
+        const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
+        html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
+      } else if (item.type === 'imagefix' && item.src) {
+        html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
+      } else if (item.type === 'barcode' && item.field) {
+        const field = item.field.split('-')[0];
+        const value = this.getFieldValue(data.CardData, field);
+        if (value) {
+          html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
+        }
+      }
+    });
     html += '</div>';
-    
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    return html;
+  }
+
+  /** Tek kart satırı için önizleme HTML string (checkbox solunda göstermek için) */
+  private buildSingleCardPreviewHtmlString(data: any): string {
+    if (!data?.TemplateData) return '';
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    let html = '<div class="preview-row">';
+    if (data.TemplateData.FRONT) {
+      html += this.buildCardSideHtml(data, 'FRONT', apiUrl);
+    }
+    if (data.TemplateData.BACK) {
+      html += this.buildCardSideHtml(data, 'BACK', apiUrl);
+    }
+    html += '</div>';
+    return html;
   }
 
   /**
@@ -741,7 +752,10 @@ export class CardWriteListComponent implements OnInit {
       case 'lowercase':
         return str.toLowerCase();
       case 'capitalize':
-        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        // İlk harf + boşluk/noktadan sonraki harfler büyük (title case)
+        return str
+          .toLowerCase()
+          .replace(/(^|[\s.]+)(\S)/g, (_, sep, char) => sep + char.toUpperCase());
       default:
         return str;
     }

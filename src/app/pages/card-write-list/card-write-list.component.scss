@@ -1,9 +1,206 @@
 // CardWriteList Component Styles
 .card-write-list-page {
   padding: 20px;
-  
+
   .container-fluid {
     width: 100%;
     max-width: 100%;
+  }
+}
+
+// Önizleme modalı: taşma yok, footer (butonlar) her zaman görünsün
+:host ::ng-deep ui-modal {
+  .ui-modal-dialog {
+    overflow: hidden;
+    height: calc(100vh - 2rem);
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ui-modal-content {
+    overflow: hidden;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ui-modal-body {
+    padding: 1rem 1.25rem;
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .ui-modal-footer {
+    flex-shrink: 0;
+  }
+}
+
+.card-write-list-preview-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Üstte "Tümünü seç" çubuğu
+.card-write-list-preview-toolbar {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.card-write-list-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+
+  .form-check-input {
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+// Kart listesi: her satır = checkbox (sol) + kart önizlemesi
+.card-write-list-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card-write-list-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+// Checkbox kartın hemen solunda, dikey ortada
+.card-write-list-preview-checkbox {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+// Kart önizleme içeriği: resimler kesinlikle taşmasın (position:absolute kırpılsın)
+.card-write-list-preview-row .card-write-list-preview-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+
+  ::ng-deep .preview-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  ::ng-deep .preview-card-front,
+  ::ng-deep .preview-card-back {
+    overflow: hidden !important;
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    box-sizing: border-box;
+    position: relative;
+  }
+}
+
+// Footer: butonlar ve bilgi metni (modal slot içinde stiller garanti)
+.card-write-list-preview-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.card-write-list-preview-footer .text-muted.small {
+  margin: 0;
+  flex: 1;
+  min-width: 120px;
+}
+
+.card-write-list-preview-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.card-write-list-preview-footer-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .ti {
+    font-size: 1.1rem;
+  }
+}
+
+.card-write-list-preview-footer-actions .btn-primary {
+  background-color: var(--mat-sys-primary, #4f46e5);
+  color: var(--mat-sys-on-primary, #fff);
+  border-color: var(--mat-sys-primary, #4f46e5);
+
+  &:hover:not(:disabled) {
+    filter: brightness(0.95);
+  }
+}
+
+.card-write-list-preview-footer-actions .btn-secondary {
+  background-color: var(--mat-sys-surface-container-high, #f1f5f9);
+  color: var(--mat-sys-on-surface-variant, #475569);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+
+  &:hover:not(:disabled) {
+    background-color: var(--mat-sys-surface-container, #e2e8f0);
   }
 }

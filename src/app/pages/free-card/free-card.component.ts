@@ -108,22 +108,13 @@ export class FreeCardComponent implements OnInit {
   get tableToolbarConfig(): ToolbarConfig {
     return {
       items: [
+        { type: 'break' as const, id: 'break-before-assign' },
         {
-          type: 'break' as const,
-          id: 'break-operations-menu'
-        },
-        {
-          id: 'operations',
-          type: 'menu' as const,
-          text: 'İşlemler',
-          icon: 'fa fa-cog',
-          items: [
-            {
-              id: 'assignCard',
-              text: 'Kart Ata',
-              onClick: (event: MouseEvent, item: any) => this.onAssignCard(event, item)
-            }
-          ]
+          id: 'assignCard',
+          type: 'button' as const,
+          text: 'Kart Ata',
+          icon: 'fa fa-credit-card',
+          onClick: (event: MouseEvent, item: any) => this.onAssignCard(event, item)
         }
       ],
       show: {

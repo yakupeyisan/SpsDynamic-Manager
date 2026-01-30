@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   Input,
   ChangeDetectorRef,
   OnChanges,
@@ -13,24 +14,27 @@ import { AppHorizontalNavItemComponent } from './nav-item/nav-item.component';
 import { CommonModule } from '@angular/common';
 import { NavItem } from '../../vertical/sidebar/nav-item/nav-item';
 import { AuthService } from '../../../../services/auth.service';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../../environments/environment';
-import { catchError, map } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { PageVisibilityService } from '../../../../services/page-visibility.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-horizontal-sidebar',
   imports: [AppHorizontalNavItemComponent, CommonModule],
   templateUrl: './sidebar.component.html',
 })
-export class AppHorizontalSidebarComponent implements OnInit {
+export class AppHorizontalSidebarComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [];
   parentActive = '';
   private visibleRoutes: string[] = [];
   private hasLoadedVisibilitySettings: boolean = false;
+  private visibilitySubscription?: Subscription;
 
   mobileQuery: MediaQueryList;
   private _mobileQueryListener: () => void;
+
+  private cloneNavItems(items: NavItem[]): NavItem[] {
+    return JSON.parse(JSON.stringify(items));
+  }
 
   private filterVisibleItems(items: NavItem[], visibleRoutes: string[] = [], strictMode: boolean = false): NavItem[] {
     return items.filter(item => {
@@ -80,7 +84,7 @@ export class AppHorizontalSidebarComponent implements OnInit {
     media: MediaMatcher,
     changeDetectorRef: ChangeDetectorRef,
     private authService: AuthService,
-    private http: HttpClient
+    private pageVisibility: PageVisibilityService
   ) {
     this.mobileQuery = media.matchMedia('(min-width: 1100px)');
     this._mobileQueryListener = () => changeDetectorRef.detectChanges();
@@ -97,57 +101,18 @@ export class AppHorizontalSidebarComponent implements OnInit {
       this.parentActive = this.router.url.split('/')[1];
     });
 
-    // Load page visibility settings for current user
-    this.loadPageVisibility();
+    this.visibilitySubscription = this.pageVisibility.visibility$.subscribe((result) => {
+      if (!result) return;
+      this.visibleRoutes = result.visibleRoutes;
+      this.hasLoadedVisibilitySettings = true;
+      const strictMode = !result.isSupervisor;
+      const source = this.cloneNavItems(navItems);
+      this.navItems = this.filterVisibleItems(source, result.visibleRoutes, strictMode);
+    });
+    this.pageVisibility.refresh().subscribe();
   }
 
-  // Load page visibility settings based on current user
-  private loadPageVisibility(): void {
-    // Load visible routes for current user (user can have multiple authorizations)
-    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/auth/GetPageVisibility`, {})
-      .pipe(
-        map((response: any) => {
-          // Handle different response formats
-          let visibleRoutes: string[] = [];
-          let isSupervisor = false;
-          
-          if (Array.isArray(response)) {
-            visibleRoutes = response;
-          } else if (response && response.data) {
-            // Check if user is supervisor
-            isSupervisor = response.data.isSupervisor === true || response.data.IsSupervisor === true;
-            
-            // Handle format: { status: "success", data: { VisibleRoutes: [], isSupervisor: true } }
-            if (Array.isArray(response.data.VisibleRoutes)) {
-              visibleRoutes = response.data.VisibleRoutes;
-            } else if (Array.isArray(response.data)) {
-              visibleRoutes = response.data;
-            } else if (response.data.visibleRoutes && Array.isArray(response.data.visibleRoutes)) {
-              visibleRoutes = response.data.visibleRoutes;
-            }
-          } else if (response && Array.isArray(response.records)) {
-            visibleRoutes = response.records;
-          } else if (response && Array.isArray(response.visibleRoutes)) {
-            visibleRoutes = response.visibleRoutes;
-          }
-          
-          return { visibleRoutes, isSupervisor };
-        }),
-        catchError(error => {
-          console.error('Error loading page visibility:', error);
-          // If API fails, show all routes (no filtering)
-          return of({ visibleRoutes: [], isSupervisor: false });
-        })
-      ).subscribe({
-        next: (result: { visibleRoutes: string[], isSupervisor: boolean }) => {
-          this.visibleRoutes = result.visibleRoutes;
-          this.hasLoadedVisibilitySettings = true;
-          
-          // If user is supervisor, show all routes (no strict mode)
-          // Otherwise, filter based on visible routes (strict mode)
-          const strictMode = !result.isSupervisor;
-          this.navItems = this.filterVisibleItems(navItems, result.visibleRoutes, strictMode);
-        }
-      });
+  ngOnDestroy(): void {
+    this.visibilitySubscription?.unsubscribe();
   }
 }

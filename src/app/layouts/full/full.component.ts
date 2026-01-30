@@ -1,5 +1,5 @@
 import { BreakpointObserver, MediaMatcher } from '@angular/cdk/layout';
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { MatSidenav, MatSidenavContent } from '@angular/material/sidenav';
 import { CoreService } from 'src/app/services/core.service';
@@ -25,10 +25,7 @@ import { BrandingComponent } from '../full/vertical/sidebar/branding.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ChangePasswordDialogComponent } from './change-password-dialog.component';
-import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
-import { catchError, map } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { PageVisibilityService } from 'src/app/services/page-visibility.service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -72,11 +69,16 @@ interface quicklinks {
   styleUrls: [],
   encapsulation: ViewEncapsulation.None,
 })
-export class FullComponent implements OnInit {
+export class FullComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [];
   private visibleRoutes: string[] = [];
   private hasLoadedVisibilitySettings: boolean = false;
-  
+  private visibilitySubscription?: Subscription;
+
+  private cloneNavItems(items: NavItem[]): NavItem[] {
+    return JSON.parse(JSON.stringify(items));
+  }
+
   private filterVisibleItems(items: NavItem[], visibleRoutes: string[] = [], strictMode: boolean = false): NavItem[] {
     return items.filter(item => {
       // Always hide items explicitly marked as visible: false
@@ -267,7 +269,7 @@ export class FullComponent implements OnInit {
     private navService: NavService,
     private authService: AuthService,
     private dialog: MatDialog,
-    private http: HttpClient
+    private pageVisibility: PageVisibilityService
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
@@ -295,62 +297,20 @@ export class FullComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Load page visibility settings for current user
-    this.loadPageVisibility();
+    this.visibilitySubscription = this.pageVisibility.visibility$.subscribe((result) => {
+      if (!result) return;
+      this.visibleRoutes = result.visibleRoutes;
+      this.hasLoadedVisibilitySettings = true;
+      const strictMode = !result.isSupervisor;
+      const source = this.cloneNavItems(navItems);
+      this.navItems = this.filterVisibleItems(source, result.visibleRoutes, strictMode);
+    });
+    this.pageVisibility.refresh().subscribe();
   }
 
-  // Load page visibility settings based on current user
-  private loadPageVisibility(): void {
-    // Load visible routes for current user (user can have multiple authorizations)
-    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/auth/GetPageVisibility`, {})
-      .pipe(
-        map((response: any) => {
-          // Handle different response formats
-          let visibleRoutes: string[] = [];
-          let isSupervisor = false;
-          
-          if (Array.isArray(response)) {
-            visibleRoutes = response;
-          } else if (response && response.data) {
-            // Check if user is supervisor
-            isSupervisor = response.data.isSupervisor === true || response.data.IsSupervisor === true;
-            
-            // Handle format: { status: "success", data: { VisibleRoutes: [], isSupervisor: true } }
-            if (Array.isArray(response.data.VisibleRoutes)) {
-              visibleRoutes = response.data.VisibleRoutes;
-            } else if (Array.isArray(response.data)) {
-              visibleRoutes = response.data;
-            } else if (response.data.visibleRoutes && Array.isArray(response.data.visibleRoutes)) {
-              visibleRoutes = response.data.visibleRoutes;
-            }
-          } else if (response && Array.isArray(response.records)) {
-            visibleRoutes = response.records;
-          } else if (response && Array.isArray(response.visibleRoutes)) {
-            visibleRoutes = response.visibleRoutes;
-          }
-          
-          return { visibleRoutes, isSupervisor };
-        }),
-        catchError(error => {
-          console.error('Error loading page visibility:', error);
-          // If API fails, show all routes (no filtering)
-          return of({ visibleRoutes: [], isSupervisor: false });
-        })
-      ).subscribe({
-        next: (result: { visibleRoutes: string[], isSupervisor: boolean }) => {
-          this.visibleRoutes = result.visibleRoutes;
-          this.hasLoadedVisibilitySettings = true;
-          
-          // If user is supervisor, show all routes (no strict mode)
-          // Otherwise, filter based on visible routes (strict mode)
-          const strictMode = !result.isSupervisor;
-          this.navItems = this.filterVisibleItems(navItems, result.visibleRoutes, strictMode);
-        }
-      });
-  }
-
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.layoutChangesSubscription.unsubscribe();
+    this.visibilitySubscription?.unsubscribe();
   }
 
   openClosedMenu() {

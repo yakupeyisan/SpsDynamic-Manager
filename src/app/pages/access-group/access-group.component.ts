@@ -61,6 +61,8 @@ export class AccessGroupComponent implements OnInit, AfterViewInit {
   // Time zone options for selected terminals (from POST /api/TimeZones)
   timeZoneOptions: { label: string; value: number }[] = [];
   timeZoneOptionsLoading: boolean = false;
+  /** Varsayılan zaman dilimi adı (Kapı eklenirken atanacak). Sistemde ID 1 veya 2 olabilir. */
+  readonly defaultTimeZoneName = 'Her Zaman';
   
   // Selected terminals table includes TimeZone column; unselected uses base columns only
   selectedTerminalsTableColumns: TableColumn[] = [];
@@ -324,6 +326,15 @@ export class AccessGroupComponent implements OnInit, AfterViewInit {
         this.toastr.error(msg, 'Hata');
       }
     });
+  }
+
+  /** "Her Zaman" zaman diliminin ID'sini döndürür (varsayılan atama). Bulunamazsa ilk seçeneği kullanır. */
+  getDefaultTimeZoneId(): number | null {
+    if (this.timeZoneOptions.length === 0) return null;
+    const herZaman = this.timeZoneOptions.find(
+      (o) => (o.label || '').trim().toLowerCase() === this.defaultTimeZoneName.trim().toLowerCase()
+    );
+    return herZaman != null ? herZaman.value : this.timeZoneOptions[0].value;
   }
 
   /** Returns TimeZoneID from row as string for select [value] binding (empty = 'Seçiniz'). */
@@ -609,8 +620,8 @@ export class AccessGroupComponent implements OnInit, AfterViewInit {
     }).pipe(
       switchMap((response: any) => {
         if (response.status === 'success' || response.error === false) {
-          // Get first available timezone option if available
-          const defaultTimeZoneId = this.timeZoneOptions.length > 0 ? this.timeZoneOptions[0].value : null;
+          // Varsayılan: "Her Zaman" zaman diliminin ID'si (sistemde 1 veya 2 olabilir)
+          const defaultTimeZoneId = this.getDefaultTimeZoneId();
           
           // If there's a default timezone, set it for all transferred terminals
           if (defaultTimeZoneId != null) {

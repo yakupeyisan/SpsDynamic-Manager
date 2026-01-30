@@ -112,6 +112,11 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   private wsSubscription?: Subscription;
   private connectionStatusSubscription?: Subscription;
   
+  // Throttle grid reload when WS messages arrive rapidly
+  private reloadThrottleMs = 150;
+  private lastReloadAt = 0;
+  private pendingReloadId: ReturnType<typeof setTimeout> | null = null;
+  
   // Data source - empty initially, will be populated by WebSocket
   liveViewRecords: any[] = [];
   
@@ -177,7 +182,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Unsubscribe from WebSocket
+    this.clearReloadThrottle();
     if (this.wsSubscription) {
       this.wsSubscription.unsubscribe();
     }
@@ -248,8 +253,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
         this.liveViewRecords = this.liveViewRecords.slice(0, 50);
       }
 
-      if (this.dataTableComponent) this.dataTableComponent.reload();
-      this.cdr.detectChanges();
+      this.scheduleReload();
     });
     
     // Subscribe to connection status
@@ -265,15 +269,46 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Throttled grid reload + change detection (no loading, no scroll-to-top).
+   */
+  private scheduleReload(): void {
+    const now = Date.now();
+    const elapsed = now - this.lastReloadAt;
+
+    const runReload = () => {
+      this.pendingReloadId = null;
+      this.lastReloadAt = Date.now();
+      if (this.dataTableComponent) this.dataTableComponent.reload();
+      this.cdr.detectChanges();
+    };
+
+    if (elapsed >= this.reloadThrottleMs || this.lastReloadAt === 0) {
+      if (this.pendingReloadId) {
+        clearTimeout(this.pendingReloadId);
+        this.pendingReloadId = null;
+      }
+      runReload();
+    } else if (!this.pendingReloadId) {
+      this.pendingReloadId = setTimeout(() => runReload(), this.reloadThrottleMs - elapsed);
+    }
+  }
+
+  private clearReloadThrottle(): void {
+    if (this.pendingReloadId) {
+      clearTimeout(this.pendingReloadId);
+      this.pendingReloadId = null;
+    }
+  }
+
+  /**
    * Stop live view
    */
   private stopLiveView(): void {
-    // Unsubscribe from WebSocket messages
+    this.clearReloadThrottle();
     if (this.wsSubscription) {
       this.wsSubscription.unsubscribe();
       this.wsSubscription = undefined;
     }
-    
     if (this.connectionStatusSubscription) {
       this.connectionStatusSubscription.unsubscribe();
       this.connectionStatusSubscription = undefined;

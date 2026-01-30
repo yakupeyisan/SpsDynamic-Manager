@@ -1,7 +1,7 @@
 <div class="container-fluid p-24">
   <div class="d-flex justify-content-between align-items-center m-b-24">
     <h2 class="m-0">Anasayfa İstatistikleri</h2>
-    <button mat-raised-button color="primary" (click)="loadStatistics()" [disabled]="isLoading">
+    <button mat-raised-button color="primary" (click)="loadStatistics()">
       <i-tabler name="refresh" class="m-r-8" style="width: 18px; height: 18px;"></i-tabler>
       Yenile
     </button>
@@ -235,7 +235,7 @@
       <div class="col-lg-4 col-md-6 col-sm-6 col-12 m-b-16">
         <mat-card class="summary-card summary-card-double">
           <mat-card-content>
-            <div class="d-flex align-items-center m-b-10">
+            <div class="d-flex align-items-center m-b-10 stats-row-clickable" (click)="sendPendingMail()" [class.stats-row-disabled]="sendingMail">
               <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
                 <i-tabler name="mail" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
               </div>
@@ -244,7 +244,7 @@
                 <h5 class="m-0 f-s-18 f-w-600">{{ pendingMailCount | number }}</h5>
               </div>
             </div>
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center stats-row-clickable" (click)="sendPendingSms()" [class.stats-row-disabled]="sendingSms">
               <div class="summary-icon bg-primary d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
                 <i-tabler name="message" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
               </div>
@@ -287,9 +287,4 @@
     </div>
   </div>
 
-  <!-- Loading Indicator -->
-  <div *ngIf="isLoading" class="text-center p-24">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p class="m-t-16 text-muted">İstatistikler yükleniyor...</p>
-  </div>
 </div>

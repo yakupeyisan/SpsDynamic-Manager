@@ -383,6 +383,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   @Output() cellCheckboxChange = new EventEmitter<{ row: TableRow; column: TableColumn; rowIndex: number; columnIndex: number; newValue: boolean; oldValue: boolean }>();
   @Input() showRefresh: boolean = true;
+  /** When false, reload does not show loading overlay (e.g. for live-updating grids like LiveView). */
+  @Input() showLoadingOnReload: boolean = true;
+  /** When false, reload does not scroll table to top (e.g. for live-updating grids). */
+  @Input() scrollToTopOnReload: boolean = true;
   @Input() toolbar?: ToolbarConfig; // Custom toolbar configuration (w2ui style)
   
   @Output() toolbarClick = new EventEmitter<{ item: ToolbarItem; event: MouseEvent }>();
@@ -630,7 +634,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       this.dataSourceSubscription.unsubscribe();
     }
     
-    this.isLoading = true;
+    if (this.showLoadingOnReload) {
+      this.isLoading = true;
+    }
     this.cdr.markForCheck();
     
     // Transform filter to use searchField if available
@@ -663,7 +669,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         this.handleDataSourceResponse(response);
       }),
       catchError(error => {
-        this.isLoading = false;
+        if (this.showLoadingOnReload) {
+          this.isLoading = false;
+        }
         this.internalData = [];
         this.internalTotal = 0;
         this.cdr.markForCheck();
@@ -683,32 +691,38 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       // Handle summary if provided
       // (Summary can be handled separately if needed)
       
-      // Scroll to top when new data is loaded
-      this.scrollToTop();
+      if (this.scrollToTopOnReload) {
+        this.scrollToTop();
+      }
       
       // Force change detection to update the view
       this.cdr.detectChanges();
       
-      // Close spinner after view is updated (wait for DOM to render)
-      // Use requestAnimationFrame to ensure DOM is updated before closing spinner
-      requestAnimationFrame(() => {
+      if (this.showLoadingOnReload) {
         requestAnimationFrame(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
+          requestAnimationFrame(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          });
         });
-      });
+      } else {
+        this.cdr.markForCheck();
+      }
     } else {
       this.internalData = [];
       this.internalTotal = 0;
       this.cdr.detectChanges();
       
-      // Close spinner after view is updated
-      requestAnimationFrame(() => {
+      if (this.showLoadingOnReload) {
         requestAnimationFrame(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
+          requestAnimationFrame(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          });
         });
-      });
+      } else {
+        this.cdr.markForCheck();
+      }
     }
   }
 
@@ -2740,8 +2754,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const cfg = this.effectiveReportConfig;
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
     
-    // Get current search/filter data
-    const filters = this.activeFilter?.conditions?.map((cond: any) => ({
+    // Transform filter to use searchField if available (same as in loadDataSource)
+    const transformedFilter = this.transformFilterForApi(this.activeFilter);
+    
+    // Get current search/filter data - use transformed filter to ensure searchField is used
+    const filters = transformedFilter?.conditions?.map((cond: any) => ({
       field: cond.field,
       operator: cond.operator,
       value: cond.value,
@@ -2764,7 +2781,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       Columns: columns,
       Url: exportUrl,
       Search: filters.length > 0 ? JSON.stringify(filters) : null,
-      SearchLogic: this.activeFilter?.logic || 'AND',
+      SearchLogic: transformedFilter?.logic || this.activeFilter?.logic || 'AND',
       Maps: JSON.stringify(maps),
       Grid: cfg?.grid || this.id || 'default'
     };

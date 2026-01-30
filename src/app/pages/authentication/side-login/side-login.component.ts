@@ -8,7 +8,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { AuthService } from 'src/app/services/auth.service';
-import { catchError, finalize } from 'rxjs/operators';
+import { PageVisibilityService } from 'src/app/services/page-visibility.service';
+import { catchError, finalize, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
@@ -80,7 +81,8 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private pageVisibility: PageVisibilityService
   ) {}
 
   form = new FormGroup({
@@ -309,19 +311,20 @@ export class AppSideLoginComponent implements OnInit, OnDestroy, AfterViewInit {
           
           return of(null);
         }),
+        switchMap((response) => {
+          if (response && response.success) {
+            this.authService.saveToken(response.data.token);
+            this.toastr.success(response.message || 'Giriş başarılı!', 'Başarılı');
+            return this.pageVisibility.refresh();
+          }
+          return of(null);
+        }),
         finalize(() => {
           this.isLoading = false;
         })
       )
-      .subscribe((response) => {
-        if (response && response.success) {
-          // Token'ı kaydet
-          this.authService.saveToken(response.data.token);
-          
-          // Başarı mesajı göster
-          this.toastr.success(response.message || 'Giriş başarılı!', 'Başarılı');
-          
-          // Anasayfaya yönlendir
+      .subscribe((result) => {
+        if (result) {
           this.router.navigate(['/']);
         }
       });

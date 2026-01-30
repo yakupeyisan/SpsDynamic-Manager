@@ -16,6 +16,10 @@ export const routes: Routes = [
           import('./pages/home/home.component').then(
             (m) => m.HomeComponent
           ),
+        data: {
+          title: 'Ana Sayfa',
+          breadcrumb: false,
+        },
       },
       {
         path: 'profile',

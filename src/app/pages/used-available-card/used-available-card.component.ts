@@ -85,22 +85,13 @@ export class UsedAvailableCardComponent implements OnInit {
   get tableToolbarConfig(): ToolbarConfig {
     return {
       items: [
+        { type: 'break' as const, id: 'break-before-return' },
         {
-          type: 'break' as const,
-          id: 'break-operations-menu'
-        },
-        {
-          id: 'operations',
-          type: 'menu' as const,
-          text: 'İşlemler',
-          icon: 'fa fa-cog',
-          items: [
-            {
-              id: 'returnCard',
-              text: 'Kartı İade',
-              onClick: (event: MouseEvent, item: any) => this.onReturnAvailableCard(event, item)
-            }
-          ]
+          id: 'returnCard',
+          type: 'button' as const,
+          text: 'Kartı İade',
+          icon: 'fa fa-undo',
+          onClick: (event: MouseEvent, item: any) => this.onReturnAvailableCard(event, item)
         }
       ],
       show: {

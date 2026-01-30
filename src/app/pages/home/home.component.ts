@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
@@ -21,7 +21,7 @@ import { catchError, map } from 'rxjs/operators';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   // Statistics
   totalPersonCount: number = 0;
   bannedPersonCount: number = 0;
@@ -43,9 +43,11 @@ export class HomeComponent implements OnInit {
   totalFirstMealCount: number = 0;
   totalSecondMealCount: number = 0;
   
-  isLoading: boolean = false;
+  sendingMail: boolean = false;
+  sendingSms: boolean = false;
 
   private apiUrl: string;
+  private statsRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private toastr: ToastrService,
@@ -59,9 +61,6 @@ export class HomeComponent implements OnInit {
   }
 
   loadStatistics(): void {
-    this.isLoading = true;
-
-    // Single endpoint call for all statistics
     this.http.post<any>(`${this.apiUrl}/api/Home/Statistics`, {
       page: 1,
       limit: 1,
@@ -119,15 +118,85 @@ export class HomeComponent implements OnInit {
         this.pendingSmsCount = data.pendingSmsCount || 0;
         this.last7DaysSuccessfulLoad = (data.last7DaysSuccessfulLoad || 0) / 100; // Convert from kuruş to TL
         this.last7DaysFailedLoad = (data.last7DaysFailedLoad || 0) / 100; // Convert from kuruş to TL
-        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading statistics:', error);
         this.toastr.error('İstatistikler yüklenirken bir hata oluştu', 'Hata');
-        this.isLoading = false;
       }
     });
+  }
 
+  private refreshStatisticsSilently(): void {
+    this.loadStatistics();
+  }
+
+  private startStatsRefreshPolling(): void {
+    this.clearStatsRefreshPolling();
+    this.refreshStatisticsSilently();
+    let elapsed = 0;
+    const intervalMs = 2000;
+    this.statsRefreshInterval = setInterval(() => {
+      elapsed += intervalMs;
+      this.refreshStatisticsSilently();
+      if (elapsed >= 10000) {
+        this.clearStatsRefreshPolling();
+      }
+    }, intervalMs);
+  }
+
+  private clearStatsRefreshPolling(): void {
+    if (this.statsRefreshInterval) {
+      clearInterval(this.statsRefreshInterval);
+      this.statsRefreshInterval = null;
+    }
+  }
+
+  sendPendingMail(): void {
+    if (this.sendingMail) return;
+    this.sendingMail = true;
+    this.http.post<any>(`${this.apiUrl}/api/MailTransactions/sendPending`, {}).pipe(
+      catchError((err) => {
+        console.error('Error sending pending mail:', err);
+        this.toastr.error('Bekleyen mailler gönderilirken bir hata oluştu', 'Hata');
+        return of(null);
+      })
+    ).subscribe({
+      next: (result) => {
+        this.sendingMail = false;
+        if (result !== null) {
+          this.startStatsRefreshPolling();
+        }
+      },
+      error: () => {
+        this.sendingMail = false;
+      }
+    });
+  }
+
+  sendPendingSms(): void {
+    if (this.sendingSms) return;
+    this.sendingSms = true;
+    this.http.post<any>(`${this.apiUrl}/api/SmsTransactions/sendPending`, {}).pipe(
+      catchError((err) => {
+        console.error('Error sending pending SMS:', err);
+        this.toastr.error('Bekleyen SMS\'ler gönderilirken bir hata oluştu', 'Hata');
+        return of(null);
+      })
+    ).subscribe({
+      next: (result) => {
+        this.sendingSms = false;
+        if (result !== null) {
+          this.startStatsRefreshPolling();
+        }
+      },
+      error: () => {
+        this.sendingSms = false;
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.clearStatsRefreshPolling();
   }
 }
 

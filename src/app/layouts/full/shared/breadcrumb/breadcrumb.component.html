@@ -1,4 +1,4 @@
-@if(pageInfo.urls){
+@if(pageInfo?.['title']){
   <div class="bg-white rounded p-20 m-b-30">
     <div class="row">
       <div class="col-sm-8">
@@ -6,14 +6,15 @@
           {{ pageInfo?.['title'] }}
         </h4>
       </div>
+      @if(pageInfo?.['urls']?.length){
       <div class="col-sm-4">
         <div
           class="d-flex align-items-center justify-content-lg-end"
-        > 
+        >
           <ul class="breadcrumb">
             @for (url of pageInfo?.['urls']; track url.url;let index = $index,last
             = $last ) { @if(!last){
-  
+
             <li class="breadcrumb-item" [routerLink]="url.url">
               <a [routerLink]="url.url" class="text-body-color">{{
                 url.title
@@ -34,6 +35,7 @@
           </ul>
         </div>
       </div>
+      }
     </div>
   </div>
   }
