@@ -106,6 +106,7 @@ export const navItems: NavItem[] = [
       },
       {
         displayName: 'Alarm Tanımları',
+        route: '/AlarmSettings',
         disabled: true,
       },
     ],
@@ -178,6 +179,7 @@ export const navItems: NavItem[] = [
     children: [
       {
         displayName: 'Ziyaretçi Ayarlar',
+        route: '/VisitorSettings',
         disabled: true,
       },
       {
@@ -356,7 +358,16 @@ export const navItems: NavItem[] = [
     iconName: 'mdi:wrench',
     children: [
       {
+        displayName: 'Yetki Talepleri',
+        route: '/RequestClaims',
+      },
+      {
+        displayName: 'Bekleyen Taleplerim',
+        route: '/MyRequestClaims',
+      },
+      {
         displayName: 'Sanal Pos Ayarları',
+        route: '/VirtualPosSettings',
         disabled: true,
       },
       {
@@ -411,6 +422,7 @@ export const navItems: NavItem[] = [
       },
       {
         displayName: 'Rosslare Senkronizasyon',
+        route: '/RosslareSynchronization',
         disabled: true,
       },
       {

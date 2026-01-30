@@ -1,0 +1,47 @@
+.request-claims-page {
+  padding: 20px;
+  .container-fluid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.request-claims-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.request-claims-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  &:focus {
+    outline: none;
+  }
+}
+
+.request-claims-btn-approve {
+  background: #2e7d32;
+  color: #fff;
+  border-color: #2e7d32;
+  &:hover {
+    background: #1b5e20;
+    border-color: #1b5e20;
+  }
+}
+
+.request-claims-btn-reject {
+  background: #c62828;
+  color: #fff;
+  border-color: #c62828;
+  &:hover {
+    background: #b71c1c;
+    border-color: #b71c1c;
+  }
+}

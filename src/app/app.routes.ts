@@ -621,6 +621,28 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'RequestClaims',
+        loadComponent: () =>
+          import('./pages/request-claims/request-claims.component').then(
+            (m) => m.RequestClaimsComponent
+          ),
+        data: {
+          title: 'Yetki Talepleri',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'MyRequestClaims',
+        loadComponent: () =>
+          import('./pages/my-request-claims/my-request-claims.component').then(
+            (m) => m.MyRequestClaimsComponent
+          ),
+        data: {
+          title: 'Bekleyen Taleplerim',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'LiveViewSettings',
         loadComponent: () =>
           import('./pages/live-view-settings/live-view-settings.component').then(

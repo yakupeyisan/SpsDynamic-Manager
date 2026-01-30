@@ -1,0 +1,40 @@
+<div class="my-request-claims-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'my-request-claims-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="10"
+          [height]="'800px'"
+          [recordHeight]="40"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [recid]="'Id'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (refresh)="onTableRefresh()">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -157,6 +157,10 @@ export interface TableColumn {
   clipboardCopy?: boolean | string | ((record: TableRow) => string); // Clipboard copy functionality
   prependUrl?: string; // URL prefix for picture columns (use {0} as placeholder for pictureId)
   searchField?: string; // Field name to use in search filter (if different from field property, e.g., nested fields)
+  /** For report/export: map raw values to display text (e.g. { "0": "Giriş", "1": "Çıkış" }) so backend outputs labels instead of 0/1 */
+  exportValueMap?: Record<string, string>;
+  /** For report/export: API field path to use for display when different from data field (e.g. Location column: search by DeviceSerial, display Terminals.ReaderName) */
+  exportDisplayField?: string;
   joinTable?: string | string[]; // Join table name(s) - column will be shown when this join is selected
   load?: TableColumnLoad; // Load options from remote URL for list/enum/select types
   fullWidth?: boolean; // Make field take full width in form (spans all columns in grid layout)
@@ -2765,11 +2769,13 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       type: cond.type
     })) || [];
 
-    // Build columns payload
+    // Build columns payload (includes ValueMap and DisplayField for backend)
     const columns = this.buildReportColumnsPayload();
     
-    // Build maps payload
+    // Build maps payload (search field mapping, e.g. Location -> DeviceSerial)
     const maps = this.buildReportMapsPayload();
+    // DisplayMaps: which field to show in export (e.g. Location -> Terminals.ReaderName)
+    const displayMaps = this.buildReportDisplayMapsPayload();
 
     // Get API URL (from reportConfig or infer from dataSource)
     const exportUrl = cfg?.url || this.inferReportUrlFromDataSource();
@@ -2783,6 +2789,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       Search: filters.length > 0 ? JSON.stringify(filters) : null,
       SearchLogic: transformedFilter?.logic || this.activeFilter?.logic || 'AND',
       Maps: JSON.stringify(maps),
+      DisplayMaps: Object.keys(displayMaps).length > 0 ? JSON.stringify(displayMaps) : null,
       Grid: cfg?.grid || this.id || 'default'
     };
 
@@ -2870,12 +2877,13 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }, {});
   }
 
-  private buildReportColumnsPayload(): Array<{ Key: string; Name: string }> {
-    // Backend expects array of objects: [{ Key: "EmployeeName", Name: "Personel Adı" }, ...]
-    // Use visible columns (same order as grid)
+  private buildReportColumnsPayload(): Array<{ Key: string; Name: string; ValueMap?: Record<string, string>; DisplayField?: string }> {
+    // Backend expects array: [{ Key, Name, ValueMap?, DisplayField? }]
+    // ValueMap: enum columns export display text (e.g. inOUT 0->"Giriş", 1->"Çıkış")
+    // DisplayField: column display uses different field (e.g. Location -> Terminals.ReaderName, search stays DeviceSerial)
     const cols = Array.isArray(this.displayColumns) ? this.displayColumns : [];
     const seen = new Set<string>();
-    const result: Array<{ Key: string; Name: string }> = [];
+    const result: Array<{ Key: string; Name: string; ValueMap?: Record<string, string>; DisplayField?: string }> = [];
 
     cols.forEach((c) => {
       if (!c?.field) return;
@@ -2884,10 +2892,23 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       seen.add(key);
 
       const name = String(c.label ?? c.text ?? c.field);
-      result.push({ Key: key, Name: name });
+      const item: { Key: string; Name: string; ValueMap?: Record<string, string>; DisplayField?: string } = { Key: key, Name: name };
+      if (c.exportValueMap && Object.keys(c.exportValueMap).length > 0) item.ValueMap = c.exportValueMap;
+      if (c.exportDisplayField) item.DisplayField = c.exportDisplayField;
+      result.push(item);
     });
 
     return result;
+  }
+
+  /** Backend: which API field to use for display in export when different from search field (e.g. Location -> Terminals.ReaderName) */
+  private buildReportDisplayMapsPayload(): Record<string, string> {
+    const cols = Array.isArray(this.displayColumns) ? this.displayColumns : [];
+    return cols.reduce((acc: Record<string, string>, c: TableColumn) => {
+      if (!c?.field || !c.exportDisplayField) return acc;
+      acc[String(c.field)] = c.exportDisplayField;
+      return acc;
+    }, {});
   }
 
   saveReportTemplate(): void {
@@ -2913,6 +2934,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }));
 
     const maps = this.buildReportMapsPayload();
+    const displayMaps = this.buildReportDisplayMapsPayload();
     const columns = this.buildReportColumnsPayload();
 
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates/form`, {
@@ -2927,6 +2949,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           Url: cfg.url,
           Filters: JSON.stringify(filters),
           Maps: JSON.stringify(maps),
+          DisplayMaps: Object.keys(displayMaps).length > 0 ? JSON.stringify(displayMaps) : undefined,
           Columns: JSON.stringify(columns)
         }
       }

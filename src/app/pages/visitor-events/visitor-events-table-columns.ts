@@ -36,6 +36,19 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'VisitorCard.CardDesc', 
+    label: 'Ziyaretçi Kart Açıklaması', 
+    text: 'Ziyaretçi Kart Açıklaması',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '220px', 
+    size: '220px',
+    searchable: 'text',
+    resizable: true,
+    joinTable: 'VisitorCard',
+    render: (record: TableRow) => (record['VisitorCard'] as any)?.CardDesc ?? ''
+  },
+  { 
     field: 'VisitorCompany', 
     label: 'Ziyaretçi Firma', 
     text: 'Ziyaretçi Firma',

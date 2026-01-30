@@ -368,6 +368,14 @@ export const navItems: NavItem[] = [
             route: '/OperationClaims',
           },
           {
+            displayName: 'Yetki Talepleri',
+            route: '/RequestClaims',
+          },
+          {
+            displayName: 'Bekleyen Taleplerim',
+            route: '/MyRequestClaims',
+          },
+          {
             displayName: 'Canlı İzleme Tanımları',
             route: '/LiveViewSettings',
           },

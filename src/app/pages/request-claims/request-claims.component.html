@@ -1,0 +1,63 @@
+<div class="request-claims-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'request-claims-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [joinOptions]="joinOptions"
+          [canViewDeleted]="true"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="10"
+          [height]="'800px'"
+          [recordHeight]="40"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+          [recid]="'Id'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [reorderColumns]="false"
+          [reorderRows]="false"
+          [lineNumbers]="false"
+          [expandColumn]="false"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+  <ng-template #actionsCell let-row>
+    <div class="request-claims-actions" (click)="$event.stopPropagation()" *ngIf="isRequestPending(row)">
+      <button type="button" class="request-claims-btn request-claims-btn-approve" (click)="openApproveDialog(row)" title="Onayla">
+        Onayla
+      </button>
+      <button type="button" class="request-claims-btn request-claims-btn-reject" (click)="openRejectDialog(row)" title="Reddet">
+        Reddet
+      </button>
+    </div>
+  </ng-template>
+</div>

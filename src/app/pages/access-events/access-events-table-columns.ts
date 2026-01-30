@@ -87,6 +87,32 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'Card.FacilityCode', 
+    label: 'Tesis Kodu', 
+    text: 'Tesis Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => (record['Card'] as any)?.FacilityCode ?? ''
+  },
+  { 
+    field: 'Card.CardCode', 
+    label: 'Kart Kodu', 
+    text: 'Kart Kodu',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => (record['Card'] as any)?.CardCode ?? ''
+  },
+  { 
     field: 'inOUT', 
     label: 'Yön', 
     text: 'Yön',
@@ -101,7 +127,8 @@ export const tableColumns: TableColumn[] = [
       { label: 'Giriş', value: 0 },
       { label: 'Çıkış', value: 1 }
     ] as TableColumnOption[],
-    render: renderInOut
+    render: renderInOut,
+    exportValueMap: { '0': 'Giriş', '1': 'Çıkış' }
   },
   { 
     field: 'Location', 
@@ -115,6 +142,7 @@ export const tableColumns: TableColumn[] = [
     searchable: 'enum' as ColumnType,
     searchField: 'DeviceSerial',
     resizable: true,
+    exportDisplayField: 'Location',
     load: {
       url: `${apiUrl}/api/Terminals`,
       injectAuth: true,
@@ -127,7 +155,7 @@ export const tableColumns: TableColumn[] = [
         }));
       }
     },
-    render: (record: TableRow) => String(record['Location'] ?? '')
+    render: (record: TableRow) => (record['Terminals'] as any)?.ReaderName ?? record['ReaderName'] ?? String(record['Location'] ?? '')
   },
   { 
     field: 'DeviceSerial', 
@@ -156,7 +184,8 @@ export const tableColumns: TableColumn[] = [
       { label: 'RED', value: 0 },
       { label: 'Onaylandı', value: 1 }
     ] as TableColumnOption[],
-    render: renderEventType
+    render: renderEventType,
+    exportValueMap: { '0': 'Onaylanmadı', '1': 'Onaylandı' }
   },
   { 
     field: 'EventDesc', 

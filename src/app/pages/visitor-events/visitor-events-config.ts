@@ -9,6 +9,12 @@ export const joinOptions: JoinOption[] = [
     default: true
   },
   {
+    key: 'VisitorCard',
+    label: 'Ziyaretçi Kart',
+    nested: false,
+    default: true
+  },
+  {
     key: 'VisitedEmployee',
     label: 'Ziyaret Edilen Kişi',
     nested: false,
@@ -19,7 +25,7 @@ export const joinOptions: JoinOption[] = [
 // Column groups configuration
 export const columnGroups: TableColumnGroup[] = [
   {
-    span: 5,
+    span: 6,
     text: 'Ziyaretçi'
   },
   {

@@ -22,6 +22,14 @@ export const formFields: TableColumn[] = [
     fullWidth: false
   },
   { 
+    field: 'VisitorCard.CardDesc', 
+    label: 'Ziyaretçi Kart Açıklaması', 
+    text: 'Ziyaretçi Kart Açıklaması', 
+    type: 'text' as ColumnType,
+    fullWidth: true,
+    disabled: true
+  },
+  { 
     field: 'VisitorCompany', 
     label: 'Ziyaretçi Firma', 
     text: 'Ziyaretçi Firma', 
@@ -84,7 +92,7 @@ export const formFields: TableColumn[] = [
 export const formTabs: FormTab[] = [
   { 
     label: 'Ziyaret Bilgileri', 
-    fields: ['VisitorEmployeeID', 'VisitorCardID', 'VisitorCompany', 'VisitedCompany', 'VisitedEmployeeID', 'Description', 'AccessGroupName', 'TerminalDetails', 'InDate', 'OutDate'] 
+    fields: ['VisitorEmployeeID', 'VisitorCardID', 'VisitorCard.CardDesc', 'VisitorCompany', 'VisitedCompany', 'VisitedEmployeeID', 'Description', 'AccessGroupName', 'TerminalDetails', 'InDate', 'OutDate'] 
   }
 ];
 
@@ -110,6 +118,11 @@ export const formDataMapper = (apiRecord: any) => {
   // Map nested VisitedEmployee object to VisitedEmployeeID field
   if (apiRecord.VisitedEmployee && (apiRecord.VisitedEmployee.EmployeeID || apiRecord.VisitedEmployee.Id)) {
     formData['VisitedEmployeeID'] = apiRecord.VisitedEmployee.EmployeeID || apiRecord.VisitedEmployee.Id;
+  }
+  
+  // Map VisitorCard.CardDesc for display in form
+  if (apiRecord.VisitorCard) {
+    formData['VisitorCard.CardDesc'] = apiRecord.VisitorCard.CardDesc ?? '';
   }
   
   return formData;

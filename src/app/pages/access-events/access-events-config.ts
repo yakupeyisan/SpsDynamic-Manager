@@ -4,4 +4,5 @@ import { JoinOption } from 'src/app/components/data-table/data-table.component';
 export const joinOptions: JoinOption[] = [
   { key: 'Employee', label: 'Personel', nested: false, default: true },
   { key: 'Card', label: 'Kart', nested: false, default: true },
+  { key: 'Terminals', label: 'Terminal (Lokasyon adı)', nested: false, default: true },
 ];
