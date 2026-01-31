@@ -195,7 +195,53 @@ export class CardComponent implements OnInit {
   }
 
   onTableDelete(event: any): void {
-    // Handle delete
+    const rows = Array.isArray(event) ? event : [event];
+    const recidField = 'CardID';
+    const selectedIds: number[] = [];
+    for (const row of rows) {
+      const id = row[recidField] ?? row.recid ?? row.id ?? row.CardID;
+      if (id != null) selectedIds.push(Number(id));
+    }
+    if (selectedIds.length === 0) {
+      this.toastr.warning(
+        this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için en az bir satır seçiniz.',
+        this.translate.instant('common.warning') || 'Uyarı'
+      );
+      return;
+    }
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
+
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/delete`;
+    this.http.post(url, {
+      request: {
+        action: 'delete',
+        recid: selectedIds.length === 1 ? selectedIds[0] : selectedIds,
+        name: 'DeleteCard'
+      }
+    }).subscribe({
+      next: (res: any) => {
+        if (res && !res.error) {
+          this.toastr.success(
+            this.translate.instant('common.deleteSuccess') || 'Kayıt(lar) başarıyla silindi',
+            this.translate.instant('common.success') || 'Başarılı'
+          );
+          this.dataTableComponent?.reload();
+        } else {
+          this.toastr.error(
+            res?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi',
+            this.translate.instant('common.error') || 'Hata'
+          );
+        }
+      },
+      error: (err) => {
+        console.error('Card delete error:', err);
+        const errMsg = err?.error?.message || err?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi';
+        this.toastr.error(errMsg, this.translate.instant('common.error') || 'Hata');
+      }
+    });
   }
 
   onTableAdd(): void {

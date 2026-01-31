@@ -164,6 +164,11 @@ export class ReportsComponent implements OnInit {
       return;
     }
 
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
+
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/ReportTemplates/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response?.status === 'success' || response?.error === false) {

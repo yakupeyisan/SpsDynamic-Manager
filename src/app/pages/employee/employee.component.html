@@ -166,6 +166,52 @@
   </div>
 </ui-modal>
 
+<!-- Ziyaretçiden Aktar Modal -->
+<ui-modal
+  [show]="showTransferFromVisitorModal"
+  [title]="'Ziyaretçiden Aktar'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="onTransferFromVisitorModalChange($event)"
+  (closed)="closeTransferFromVisitorModal()">
+  <div *ngIf="showTransferFromVisitorModal" style="padding: 1rem;">
+    <ui-data-table
+      #visitorTransferGrid
+      [id]="'visitor-with-deleted-grid'"
+      [showFooter]="true"
+      [page]="1"
+      [columns]="visitorWithDeletedTableColumns"
+      [dataSource]="visitorWithDeletedDataSource"
+      [joinOptions]="[]"
+      [canViewDeleted]="true"
+      [selectable]="true"
+      [pagination]="true"
+      [pageSize]="20"
+      [height]="'500px'"
+      [recordHeight]="40"
+      [showEmptyRows]="true"
+      [fixedBody]="true"
+      [advancedFilter]="true"
+      [showRefresh]="true"
+      [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
+      [recid]="'EmployeeID'"
+      [selectType]="'row'"
+      [multiSelect]="false"
+      [multiSort]="true"
+      [keyboard]="true"
+      [liveSearch]="true"
+      [reorderColumns]="false"
+      [reorderRows]="false"
+      [lineNumbers]="false"
+      [expandColumn]="false"
+      [nestedFields]="true"
+      [columnTooltip]="'top'"
+      [toolbar]="visitorTransferTableToolbarConfig">
+    </ui-data-table>
+  </div>
+</ui-modal>
+
 <!-- Close and Clone Modal -->
 <ui-modal
   title="Kartı Kapat ve Yeni Ekle"

@@ -1,5 +1,5 @@
 // RequestClaims table columns configuration
-import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
+import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 
 export const tableColumns: TableColumn[] = [
   {
@@ -25,6 +25,17 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   {
+    field: 'ClaimDesc',
+    label: 'Yetki Açıklaması',
+    text: 'Yetki Açıklaması',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '220px',
+    size: '220px',
+    searchable: 'text',
+    resizable: true
+  },
+  {
     field: 'Description',
     label: 'Açıklama',
     text: 'Açıklama',
@@ -34,6 +45,30 @@ export const tableColumns: TableColumn[] = [
     size: '250px',
     searchable: 'text',
     resizable: true
+  },
+  {
+    field: 'RequestUser.Name',
+    label: 'Talep Eden Ad',
+    text: 'Talep Eden Ad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['RequestUser']?.Name ?? ''
+  },
+  {
+    field: 'RequestUser.SurName',
+    label: 'Talep Eden Soyad',
+    text: 'Talep Eden Soyad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['RequestUser']?.SurName ?? ''
   },
   {
     field: 'RequestedAt',
@@ -47,6 +82,30 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   {
+    field: 'ApprovedUser.Name',
+    label: 'Onaylayan Ad',
+    text: 'Onaylayan Ad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['ApprovedUser']?.Name ?? ''
+  },
+  {
+    field: 'ApprovedUser.SurName',
+    label: 'Onaylayan Soyad',
+    text: 'Onaylayan Soyad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['ApprovedUser']?.SurName ?? ''
+  },
+  {
     field: 'ApprovedAt',
     label: 'Onay Tarihi',
     text: 'Onay Tarihi',
@@ -56,6 +115,30 @@ export const tableColumns: TableColumn[] = [
     size: '150px',
     searchable: 'text',
     resizable: true
+  },
+  {
+    field: 'RejectedUser.Name',
+    label: 'Reddeden Ad',
+    text: 'Reddeden Ad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['RejectedUser']?.Name ?? ''
+  },
+  {
+    field: 'RejectedUser.SurName',
+    label: 'Reddeden Soyad',
+    text: 'Reddeden Soyad',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '120px',
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['RejectedUser']?.SurName ?? ''
   },
   {
     field: 'RejectedAt',

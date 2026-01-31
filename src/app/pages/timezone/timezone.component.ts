@@ -379,6 +379,11 @@ export class TimezoneComponent implements OnInit {
       return;
     }
 
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
+
     // Call delete API
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TimeZones/delete`, {
       request: {
@@ -595,6 +600,11 @@ export class TimezoneComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
+
+    const periodMsg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(periodMsg)) return;
 
     // Call delete API
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TimeZonePeriods/delete`, {

@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, Input } from '@angular/core';
+import { Component, Output, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
 import { CoreService } from 'src/app/services/core.service';
 import { MatDialog } from '@angular/material/dialog';
 import { navItems } from '../../vertical/sidebar/sidebar-data';
@@ -14,7 +14,9 @@ import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, Subscription } from 'rxjs';
+import { PendingClaimsService } from 'src/app/services/pending-claims.service';
+import { RequestClaimsDialogComponent } from 'src/app/dialogs/request-claims-dialog/request-claims-dialog.component';
 
 interface notifications {
   id: number;
@@ -46,7 +48,7 @@ interface apps {
   imports: [RouterModule, CommonModule, TablerIconsModule, MaterialModule, BrandingComponent],
   templateUrl: './header.component.html',
 })
-export class AppHorizontalHeaderComponent {
+export class AppHorizontalHeaderComponent implements OnInit, OnDestroy {
   @Input() showToggle = true;
   @Input() toggleChecked = false;
   @Output() toggleMobileNav = new EventEmitter<void>();
@@ -56,6 +58,10 @@ export class AppHorizontalHeaderComponent {
   showFiller = false;
 
   @Output() optionsChange = new EventEmitter<AppSettings>();
+
+  // Pending claims
+  pendingClaimsCount = 0;
+  private pendingClaimsSub?: Subscription;
 
   public selectedLanguage: any = {
     language: 'Türkçe',
@@ -103,9 +109,44 @@ export class AppHorizontalHeaderComponent {
     private translate: TranslateService,
     private http: HttpClient,
     private toastr: ToastrService,
-    private router: Router
+    private router: Router,
+    public pendingClaimsService: PendingClaimsService
   ) {
     translate.setDefaultLang('en');
+  }
+
+  ngOnInit(): void {
+    this.pendingClaimsSub = this.pendingClaimsService.pendingClaims$.subscribe(() => {
+      this.pendingClaimsCount = this.pendingClaimsService.count;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pendingClaimsSub?.unsubscribe();
+  }
+
+  openPendingClaimsDialog(): void {
+    const claimsWithDetails = this.pendingClaimsService.uniqueClaimsWithDetails;
+    console.log('[HorizontalHeader] uniqueClaimsWithDetails:', JSON.stringify(claimsWithDetails));
+    if (claimsWithDetails.length === 0) {
+      console.warn('[HorizontalHeader] No claims to show!');
+      return;
+    }
+    const dialogData = {
+      message: 'Aşağıdaki yetkiler için talepte bulunabilirsiniz.',
+      claims_with_details: claimsWithDetails
+    };
+    console.log('[HorizontalHeader] Opening dialog with data:', JSON.stringify(dialogData));
+    const dialogRef = this.dialog.open(RequestClaimsDialogComponent, {
+      width: '560px',
+      data: dialogData,
+      disableClose: false
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === true) {
+        this.pendingClaimsService.clear();
+      }
+    });
   }
 
   openDialog() {

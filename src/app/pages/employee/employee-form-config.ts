@@ -324,32 +324,17 @@ export const formTabs: FormTab[] = [
       toolbar: {
         items: [
           {
-            id: 'formatla',
-            type: 'button' as const,
-            text: 'Formatla', // Will be translated in component
-            tooltip: 'Kartı Formatla', // Will be translated in component
-            onClick: null as any // Will be set in component
-          },
-          {
-            id: 'transfer',
-            type: 'button' as const,
-            text: 'Transfer', // Will be translated in component
-            tooltip: 'Kartı Transfer Et', // Will be translated in component
-            onClick: null as any // Will be set in component
-          },
-          {
-            id: 'sifirla',
-            type: 'button' as const,
-            text: 'Sıfırla', // Will be translated in component
-            tooltip: 'Kartı Sıfırla', // Will be translated in component
-            onClick: null as any // Will be set in component
-          },
-          {
-            id: 'kapat-ve-yeni-ekle',
-            type: 'button' as const,
-            text: 'Kartı Kapat ve Yeni Ekle', // Will be translated in component
-            tooltip: 'Kartı Kapat ve Yeni Ekle', // Will be translated in component
-            onClick: null as any // Will be set in component
+            id: 'islemler',
+            type: 'menu' as const,
+            text: 'İşlemler',
+            tooltip: 'Kart İşlemleri',
+            items: [
+              { id: 'formatla', text: 'Formatla' },
+              { id: 'transfer', text: 'Transfer' },
+              { id: 'sifirla', text: 'Sıfırla' },
+              { id: 'kapat-ve-yeni-ekle', text: 'Kartı Kapat ve Yeni Ekle' },
+              { id: 'kart-kisiden-al', text: 'Kartı Kişiden Al' }
+            ]
           }
         ],
         show: {

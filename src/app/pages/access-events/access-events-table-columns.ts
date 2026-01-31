@@ -26,6 +26,15 @@ function renderEventType(record: TableRow): string {
   return '';
 }
 
+// Helper function to render isOffline field (false = Online yeşil, true = Offline kırmızı)
+function renderIsOffline(record: TableRow): string {
+  const value = record['isOffline'];
+  if (value === true || value === '1' || value === 1) {
+    return '<span style="color: #c91818; font-weight: 500;">Offline</span>';
+  }
+  return '<span style="color: #238749; font-weight: 500;">Online</span>';
+}
+
 export const tableColumns: TableColumn[] = [
   { 
     field: 'AccessEventID', 
@@ -72,6 +81,59 @@ export const tableColumns: TableColumn[] = [
     render: (record: TableRow) => {
       const employee = record['Employee'];
       return employee?.['SurName'] || '';
+    }
+  },
+  { 
+    field: 'Employee.Company',
+    label: 'Firma',
+    text: 'Firma',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '150px',
+    size: '150px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const emp = record['Employee'];
+      const company = emp?.Company;
+      return company?.PdksCompanyName ?? company?.Name ?? '';
+    }
+  },
+  { 
+    field: 'Employee.Kadro',
+    label: 'Kadro',
+    text: 'Kadro',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '150px',
+    size: '150px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => record['Employee']?.Kadro?.Name ?? ''
+  },
+  { 
+    field: 'Employee.EmployeeDepartments',
+    label: 'Departman',
+    text: 'Departman',
+    type: 'text' as ColumnType,
+    sortable: false,
+    width: '180px',
+    size: '180px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const emp = record['Employee'];
+      const depts = emp?.EmployeeDepartments;
+      if (depts && Array.isArray(depts) && depts.length > 0) {
+        return depts
+          .map((ed: any) => ed?.Department?.DepartmentName)
+          .filter(Boolean)
+          .join(', ') || '';
+      }
+      return '';
     }
   },
   { 
@@ -280,27 +342,37 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'isOffline', 
-    label: 'Offline', 
-    text: 'Offline',
-    type: 'checkbox' as ColumnType, 
+    label: 'Durum', 
+    text: 'Durum',
+    type: 'enum' as ColumnType, 
     sortable: true, 
-    width: '80px', 
-    size: '80px',
+    width: '100px', 
+    size: '100px',
     min: 20,
-    searchable: 'checkbox' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    resizable: true,
+    options: [
+      { label: 'Online', value: false },
+      { label: 'Offline', value: true }
+    ] as TableColumnOption[],
+    render: renderIsOffline
   },
   { 
     field: 'isPdks', 
     label: 'Puantaj', 
     text: 'Puantaj',
-    type: 'checkbox' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
-    width: '80px', 
-    size: '80px',
+    width: '100px', 
+    size: '100px',
     min: 20,
-    searchable: 'checkbox' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    resizable: true,
+    options: [
+      { label: 'Evet', value: true },
+      { label: 'Hayır', value: false }
+    ] as TableColumnOption[],
+    render: (record: TableRow) => (record['isPdks'] ? 'Evet' : 'Hayır')
   },
   { 
     field: 'ReferanceID', 
@@ -313,5 +385,28 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'int' as ColumnType,
     resizable: true
+  },
+  { 
+    field: 'IsVisitor',
+    label: 'Ziyaretçi mi',
+    text: 'Ziyaretçi mi',
+    type: 'enum' as ColumnType,
+    sortable: true,
+    width: '100px',
+    size: '100px',
+    min: 20,
+    searchable: 'enum' as ColumnType,
+    searchField: 'Employee.IsVisitor',
+    resizable: true,
+    options: [
+      { label: 'Evet', value: true },
+      { label: 'Hayır', value: false }
+    ] as TableColumnOption[],
+    render: (record: TableRow) => {
+      const emp = record['Employee'];
+      const card = record['Card'];
+      const isVisitor = emp?.IsVisitor ?? card?.isVisitor ?? false;
+      return isVisitor ? 'Evet' : 'Hayır';
+    }
   }
 ];

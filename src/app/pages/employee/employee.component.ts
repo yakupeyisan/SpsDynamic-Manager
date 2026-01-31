@@ -154,6 +154,10 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   mailSubject: string = '';
   isSendingMail: boolean = false;
   
+  // Transfer from Visitor modal state
+  showTransferFromVisitorModal = false;
+  isTransferringFromVisitor = false;
+  
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
   // Reader messages tracking
@@ -188,6 +192,51 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
   };
 
+  // Transfer from Visitor modal - table columns (Kişi no, Tc Kimlik No, Adı Soyadı)
+  visitorWithDeletedTableColumns: TableColumn[] = [
+    { field: 'EmployeeID', label: 'Kişi No', text: 'Kişi No', type: 'int', sortable: true, width: '100px', size: '100px', searchable: 'int', resizable: true },
+    { field: 'IdentificationNumber', label: 'TC Kimlik No', text: 'TC Kimlik No', type: 'text', sortable: true, width: '130px', size: '130px', searchable: 'text', resizable: true },
+    {
+      field: 'FullName',
+      label: 'Adı Soyadı',
+      text: 'Adı Soyadı',
+      type: 'text',
+      sortable: false,
+      width: '250px',
+      size: '250px',
+      searchable: false,
+      resizable: true,
+      render: (record: any) => `${record.Name || ''} ${record.SurName || ''}`.trim() || '-'
+    }
+  ];
+
+  visitorWithDeletedDataSource = (params: any) => {
+    return this.http.post<GridResponse>(
+      `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/GetAllVisitorWithDeleted`,
+      {
+        page: params.page || 1,
+        limit: params.limit || 100,
+        offset: ((params.page || 1) - 1) * (params.limit || 100),
+        search: params.search || undefined,
+        searchLogic: params.searchLogic || 'AND',
+        sort: params.sort,
+        join: params.join,
+        showDeleted: params.showDeleted,
+        columns: this.visitorWithDeletedTableColumns
+      }
+    ).pipe(
+      map((response: GridResponse) => ({
+        status: 'success' as const,
+        total: response.total || (response.records ? response.records.length : 0),
+        records: response.records || []
+      })),
+      catchError(error => {
+        console.error('Error loading visitors with deleted:', error);
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
   // Toolbar configuration
   get tableToolbarConfig(): ToolbarConfig {
     return {
@@ -202,6 +251,11 @@ export class EmployeeComponent implements OnInit, OnDestroy {
           text: this.translate.instant('toolbar.operations'),
           tooltip: this.translate.instant('toolbar.operationsTooltip'),
           items: [
+            {
+              id: 'transfer-from-visitor',
+              text: 'Ziyaretçiden aktar',
+              onClick: (event: MouseEvent, item: any) => this.openTransferFromVisitorModal()
+            },
             {
               id: 'bulk-access-permission',
               text: this.translate.instant('operations.bulkAccessPermission'),
@@ -404,6 +458,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   private previousCafeteriaAccount: any = null;
 
   @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  @ViewChild('visitorTransferGrid') visitorTransferGrid?: DataTableComponent;
 
   onFormChange = (formData: any) => {
     //console.log('onFormChange called with formData:', formData);
@@ -802,6 +857,98 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.showBulkDepartmentModal = false;
     this.selectedEmployeesForDepartment = [];
     this.selectedDepartmentIds = [];
+  }
+
+  openTransferFromVisitorModal() {
+    this.showTransferFromVisitorModal = true;
+    this.cdr.markForCheck();
+  }
+
+  onTransferFromVisitorModalChange(show: boolean) {
+    this.showTransferFromVisitorModal = show;
+    if (!show) {
+      this.closeTransferFromVisitorModal();
+    }
+  }
+
+  closeTransferFromVisitorModal() {
+    this.showTransferFromVisitorModal = false;
+    this.cdr.markForCheck();
+  }
+
+  get visitorTransferTableToolbarConfig(): ToolbarConfig {
+    return {
+      items: [
+        {
+          id: 'transfer',
+          type: 'button' as const,
+          text: 'Aktar',
+          icon: 'arrow-right',
+          disabled: this.isTransferringFromVisitor,
+          onClick: () => this.onTransferFromVisitorClick()
+        }
+      ],
+      show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false }
+    };
+  }
+
+  onTransferFromVisitorClick() {
+    if (!this.visitorTransferGrid) {
+      this.toastr.warning('Tablo bulunamadı.');
+      return;
+    }
+    const selectedRows = this.visitorTransferGrid.selectedRows;
+    if (!selectedRows || selectedRows.size === 0) {
+      this.toastr.warning('Lütfen aktarılacak ziyaretçiyi seçiniz.');
+      return;
+    }
+    if (selectedRows.size !== 1) {
+      this.toastr.warning('Lütfen tek bir ziyaretçi seçiniz.');
+      return;
+    }
+    const dataSource = this.visitorTransferGrid.filteredData || this.visitorTransferGrid.data || [];
+    const recidField = this.visitorTransferGrid.recid || 'EmployeeID';
+    const selectedId = Array.from(selectedRows)[0];
+    const row = dataSource.find((r: any) => {
+      const rowId = r['recid'] ?? r[recidField] ?? r['id'] ?? r['_id'];
+      return rowId === selectedId || String(rowId) === String(selectedId);
+    });
+    if (!row) {
+      this.toastr.warning('Seçili kayıt bulunamadı.');
+      return;
+    }
+    const employeeId = row['EmployeeID'] ?? row[recidField] ?? row['Id'] ?? row['id'] ?? null;
+    if (employeeId == null) {
+      this.toastr.warning('Kişi ID bulunamadı.');
+      return;
+    }
+    const fullName = `${row['Name'] || ''} ${row['SurName'] || ''}`.trim() || `#${employeeId}`;
+    if (!window.confirm(`${fullName} kişisi ziyaretçiden personele aktarılacaktır. Onaylıyor musunuz?`)) {
+      return;
+    }
+    this.isTransferringFromVisitor = true;
+    this.cdr.markForCheck();
+    this.http.post(
+      `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/TransferFromVisitor`,
+      { EmployeeID: employeeId }
+    ).pipe(
+      finalize(() => {
+        this.isTransferringFromVisitor = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
+      next: () => {
+        this.toastr.success('Aktarım başarıyla tamamlandı.');
+        this.visitorTransferGrid?.reload();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      },
+      error: (err) => {
+        console.error('TransferFromVisitor error:', err);
+        this.toastr.error(err?.error?.message || 'Aktarım sırasında bir hata oluştu.');
+      }
+    });
   }
 
   closeBulkScoringModal() {
@@ -2300,6 +2447,47 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Kartı Kişiden Al - POST to api/Cards/SetFree with CardID
+   */
+  onCardSetFree(event: MouseEvent, item: any) {
+    const selectedCardIds = this.getSelectedCardIds();
+    
+    if (selectedCardIds.length === 0) {
+      this.toastr.warning('Lütfen kartı kişiden almak için bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    if (selectedCardIds.length > 1) {
+      this.toastr.warning('Lütfen sadece bir kart seçin', 'Uyarı');
+      return;
+    }
+
+    if (!window.confirm('Kart kişiden alıncaktır onaylıyor musunuz?')) {
+      return;
+    }
+
+    const cardId = selectedCardIds[0];
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+
+    this.http.post(`${apiUrl}/api/Cards/SetFree`, { CardID: cardId }).pipe(
+      catchError(err => {
+        this.toastr.error(err?.error?.message || err?.message || 'Kart kişiden alınırken hata oluştu', 'Hata');
+        return of(null);
+      })
+    ).subscribe(response => {
+      if (response !== null) {
+        this.toastr.success('Kart kişiden alındı', 'Başarılı');
+        const cardGrid = this.dataTableComponent?.nestedGrids?.find(
+          (g: DataTableComponent) => g.id === 'EmployeeCardGrid'
+        );
+        if (cardGrid) {
+          cardGrid.reload();
+        }
+      }
+    });
+  }
+
+  /**
    * Handle card close and clone button click
    */
   onCardCloseAndClone(event: MouseEvent, item: any) {
@@ -2605,7 +2793,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Initialize toolbar items for EmployeeCardGrid
+   * Initialize toolbar items for EmployeeCardGrid (İşlemler menu)
    */
   private initializeCardGridToolbar(): void {
     // Find the CardGrid in formTabs
@@ -2616,35 +2804,31 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     if (cardTab && cardTab.grids) {
       const cardGrid = cardTab.grids.find(grid => grid.id === 'EmployeeCardGrid');
       if (cardGrid && cardGrid.toolbar && cardGrid.toolbar.items) {
-        // Update toolbar items with translations and onClick handlers
         cardGrid.toolbar.items = cardGrid.toolbar.items.map(item => {
-          if (item.id === 'formatla') {
+          if (item.id === 'islemler' && item.type === 'menu' && item.items) {
             return {
               ...item,
-              text: this.translate.instant('card.format'),
-              tooltip: this.translate.instant('card.formatTooltip'),
-              onClick: (event: MouseEvent, item: any) => this.onCardFormat(event, item)
-            };
-          } else if (item.id === 'transfer') {
-            return {
-              ...item,
-              text: this.translate.instant('card.transfer'),
-              tooltip: this.translate.instant('card.transferTooltip'),
-              onClick: (event: MouseEvent, item: any) => this.onCardTransfer(event, item)
-            };
-          } else if (item.id === 'sifirla') {
-            return {
-              ...item,
-              text: this.translate.instant('card.reset'),
-              tooltip: this.translate.instant('card.resetTooltip'),
-              onClick: (event: MouseEvent, item: any) => this.onCardReset(event, item)
-            };
-          } else if (item.id === 'kapat-ve-yeni-ekle') {
-            return {
-              ...item,
-              text: 'Kartı Kapat ve Yeni Ekle',
-              tooltip: 'Kartı Kapat ve Yeni Ekle',
-              onClick: (event: MouseEvent, item: any) => this.onCardCloseAndClone(event, item)
+              items: item.items.map((subItem: any) => {
+                const handlers: Record<string, (e: MouseEvent, i: any) => void> = {
+                  'formatla': (e, i) => this.onCardFormat(e, i),
+                  'transfer': (e, i) => this.onCardTransfer(e, i),
+                  'sifirla': (e, i) => this.onCardReset(e, i),
+                  'kapat-ve-yeni-ekle': (e, i) => this.onCardCloseAndClone(e, i),
+                  'kart-kisiden-al': (e, i) => this.onCardSetFree(e, i)
+                };
+                const texts: Record<string, string> = {
+                  'formatla': this.translate.instant('card.format'),
+                  'transfer': this.translate.instant('card.transfer'),
+                  'sifirla': this.translate.instant('card.reset'),
+                  'kapat-ve-yeni-ekle': 'Kartı Kapat ve Yeni Ekle',
+                  'kart-kisiden-al': 'Kartı Kişiden Al'
+                };
+                return {
+                  ...subItem,
+                  text: texts[subItem.id] ?? subItem.text,
+                  onClick: handlers[subItem.id]
+                };
+              })
             };
           }
           return item;

@@ -36,6 +36,19 @@
     <mat-icon *ngIf="isDownloading" class="spinning">sync</mat-icon>
   </button>
 
+  <!-- --------------------------------------------------------------- -->
+  <!--  Pending Claims Button (Yetki Talep Et) -->
+  <!-- --------------------------------------------------------------- -->
+  <button 
+    *ngIf="pendingClaimsCount > 0"
+    mat-icon-button 
+    (click)="openPendingClaimsDialog()" 
+    matTooltip="Yetki Talep Et"
+    class="d-flex align-items-center justify-content-center position-relative pending-claims-btn">
+    <mat-icon>verified_user</mat-icon>
+    <span class="pending-claims-badge">{{ pendingClaimsCount }}</span>
+  </button>
+
   <div class="d-none d-lg-flex">
     <!-- --------------------------------------------------------------- -->
     <!--  Links -->

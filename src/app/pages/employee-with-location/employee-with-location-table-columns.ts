@@ -113,6 +113,37 @@ export const tableColumns: TableColumn[] = [
     tooltip: 'Mobile Phone'
   },
   { 
+    field: 'Company.PdksCompanyName', 
+    label: 'Firma', 
+    text: 'Firma',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '200px', 
+    size: '200px',
+    min: 20,
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => {
+      const company = record['Company'];
+      return company?.PdksCompanyName ?? company?.Name ?? '';
+    },
+    tooltip: 'Firma'
+  },
+  { 
+    field: 'Kadro.Name', 
+    label: 'Kadro', 
+    text: 'Kadro',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '150px', 
+    size: '150px',
+    min: 20,
+    searchable: 'text',
+    resizable: true,
+    render: (record: TableRow) => record['Kadro']?.Name ?? '',
+    tooltip: 'Kadro'
+  },
+  { 
     field: 'EmployeeDepartments.Department.DepartmentName', 
     label: 'Departman', 
     text: 'Departman',

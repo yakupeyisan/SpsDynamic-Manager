@@ -6,6 +6,7 @@ import {
   signal,
   ViewEncapsulation,
   OnInit,
+  OnDestroy,
 } from '@angular/core';
 import { CoreService } from 'src/app/services/core.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -24,7 +25,9 @@ import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, Subscription } from 'rxjs';
+import { PendingClaimsService } from 'src/app/services/pending-claims.service';
+import { RequestClaimsDialogComponent } from 'src/app/dialogs/request-claims-dialog/request-claims-dialog.component';
 
 interface notifications {
   id: number;
@@ -63,7 +66,7 @@ interface apps {
   templateUrl: './header.component.html',
   encapsulation: ViewEncapsulation.None,
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   @Input() showToggle = true;
   @Input() toggleChecked = false;
   @Output() toggleMobileNav = new EventEmitter<void>();
@@ -79,6 +82,10 @@ export class HeaderComponent implements OnInit {
   userDisplayName: string = '';
   userEmail: string = '';
   userProfileImage: string = '/assets/images/profile/avaatar.png'; // Default profile image
+
+  // Pending claims
+  pendingClaimsCount = 0;
+  private pendingClaimsSub?: Subscription;
 
   toggleCollpase() {
     this.isCollapse = !this.isCollapse; // Toggle visibility
@@ -117,7 +124,8 @@ export class HeaderComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private http: HttpClient,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    public pendingClaimsService: PendingClaimsService
   ) {
     translate.setDefaultLang('tr');
     // Set initial language based on current translate service
@@ -133,6 +141,39 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     // Fetch user data from API
     this.loadUserDataFromApi();
+    // Subscribe to pending claims
+    this.pendingClaimsSub = this.pendingClaimsService.pendingClaims$.subscribe(() => {
+      this.pendingClaimsCount = this.pendingClaimsService.count;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pendingClaimsSub?.unsubscribe();
+  }
+
+  openPendingClaimsDialog(): void {
+    const claimsWithDetails = this.pendingClaimsService.uniqueClaimsWithDetails;
+    console.log('[Header] uniqueClaimsWithDetails:', JSON.stringify(claimsWithDetails));
+    console.log('[Header] pendingClaims raw:', JSON.stringify(this.pendingClaimsService.pendingClaims));
+    if (claimsWithDetails.length === 0) {
+      console.warn('[Header] No claims to show!');
+      return;
+    }
+    const dialogData = {
+      message: 'Aşağıdaki yetkiler için talepte bulunabilirsiniz.',
+      claims_with_details: claimsWithDetails
+    };
+    console.log('[Header] Opening dialog with data:', JSON.stringify(dialogData));
+    const dialogRef = this.dialog.open(RequestClaimsDialogComponent, {
+      width: '560px',
+      data: dialogData,
+      disableClose: false
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === true) {
+        this.pendingClaimsService.clear();
+      }
+    });
   }
 
   loadUserDataFromApi(): void {

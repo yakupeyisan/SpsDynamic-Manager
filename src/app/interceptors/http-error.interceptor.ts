@@ -1,15 +1,14 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-import { RequestClaimsDialogComponent } from '../dialogs/request-claims-dialog/request-claims-dialog.component';
+import { PendingClaimsService } from '../services/pending-claims.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const authService = inject(AuthService);
-  const dialog = inject(MatDialog);
+  const pendingClaimsService = inject(PendingClaimsService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -25,21 +24,18 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
-      // 403 Forbidden - yetki yok; required_claims varsa "Yetki talep et" modalını aç
+      // 403 Forbidden - yetki yok; required_claims varsa listeye ekle
       if (error.status === 403 && error.error) {
+        console.log('[httpErrorInterceptor] 403 error received:', error.error);
         const data = error.error.data ?? error.error;
+        console.log('[httpErrorInterceptor] Extracted data:', data);
         const requiredClaims = data.required_claims ?? data.requiredClaims;
+        console.log('[httpErrorInterceptor] requiredClaims:', requiredClaims);
         if (requiredClaims && Array.isArray(requiredClaims) && requiredClaims.length > 0) {
-          dialog.open(RequestClaimsDialogComponent, {
-            data: {
-              message: error.error.message ?? 'Bu işlem için yetkiniz bulunmuyor.',
-              required_claims: requiredClaims,
-              user_claims: data.user_claims ?? data.userClaims,
-              authorization_options: data.authorization_options ?? data.authorizationOptions
-            },
-            width: '520px',
-            disableClose: false
-          });
+          const message = error.error.message ?? 'Bu işlem için yetkiniz bulunmuyor.';
+          const claimDetails = data.required_claim_details ?? data.requiredClaimDetails;
+          console.log('[httpErrorInterceptor] claimDetails:', claimDetails);
+          pendingClaimsService.addClaims(requiredClaims, message, claimDetails);
         }
       }
 

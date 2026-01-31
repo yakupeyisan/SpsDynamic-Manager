@@ -166,6 +166,11 @@ export class LiveViewSettingsComponent implements OnInit {
       this.toastr.warning(this.translate.instant('common.selectRowToDelete'), this.translate.instant('common.warning'));
       return;
     }
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
+
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/LiveViewSettings/delete`, { request: { action: 'delete', recid: selectedIds } }).subscribe({
       next: (response: any) => {
         if (response.status === 'success') {

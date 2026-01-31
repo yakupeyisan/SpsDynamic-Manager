@@ -441,34 +441,30 @@ export class AvailableCardComponent implements OnInit {
   }
 
   onTableDelete(event: any): void {
-    if (!this.dataTableComponent) {
-      this.toastr.warning('DataTableComponent not found');
-      return;
-    }
-
-    const selectedRows = this.dataTableComponent.selectedRows;
-    if (selectedRows.size === 0) {
-      this.toastr.warning('Lütfen silmek için en az bir kayıt seçiniz.');
-      return;
-    }
-
+    const rows = Array.isArray(event) ? event : [event];
     const selectedIds: number[] = [];
-    selectedRows.forEach((row: any) => {
-      const cardId = row.CardID || row.recid;
-      if (cardId != null) selectedIds.push(Number(cardId));
-    });
-
+    for (const row of rows) {
+      const id = row.CardID ?? row.recid ?? row.id;
+      if (id != null) selectedIds.push(Number(id));
+    }
     if (selectedIds.length === 0) {
-      this.toastr.warning('Geçerli kayıt seçilmedi.');
+      this.toastr.warning(
+        this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için en az bir satır seçiniz.',
+        this.translate.instant('common.warning') || 'Uyarı'
+      );
       return;
     }
-
-    if (!confirm(`${selectedIds.length} kayıt silinecek. Emin misiniz?`)) {
-      return;
-    }
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
 
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/AvailableCards/delete`, {
-      Selecteds: selectedIds
+      request: {
+        action: 'delete',
+        recid: selectedIds.length === 1 ? selectedIds[0] : selectedIds,
+        name: 'DeleteCard'
+      }
     }).subscribe({
       next: (response: any) => {
         if (response?.error === false || response?.status === 'success') {

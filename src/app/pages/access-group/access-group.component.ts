@@ -414,6 +414,11 @@ export class AccessGroupComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
+
     // Call delete API
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessGroups/delete`, {
       request: {

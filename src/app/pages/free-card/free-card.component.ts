@@ -417,55 +417,48 @@ export class FreeCardComponent implements OnInit {
   }
 
   onTableDelete(event: any): void {
-    if (!this.dataTableComponent) {
-      this.toastr.warning('DataTableComponent not found');
-      return;
-    }
-
-    // Get selected rows
-    const selectedRows = this.dataTableComponent.selectedRows;
-    if (selectedRows.size === 0) {
-      this.toastr.warning('Lütfen silmek için en az bir kayıt seçiniz.');
-      return;
-    }
-
-    // Get selected card IDs
+    const rows = Array.isArray(event) ? event : [event];
     const selectedIds: number[] = [];
-    selectedRows.forEach((row: any) => {
-      const cardId = row.CardID || row.recid;
-      if (cardId) {
-        selectedIds.push(cardId);
-      }
-    });
-
+    for (const row of rows) {
+      const id = row.CardID ?? row.recid ?? row.id;
+      if (id != null) selectedIds.push(Number(id));
+    }
     if (selectedIds.length === 0) {
-      this.toastr.warning('Geçerli kayıt seçilmedi.');
+      this.toastr.warning(
+        this.translate.instant('common.selectRowToDelete') || 'Lütfen silmek için en az bir satır seçiniz.',
+        this.translate.instant('common.warning') || 'Uyarı'
+      );
       return;
     }
+    const msg = selectedIds.length === 1
+      ? 'Seçili kayıt silinecek. Silmek için onaylıyor musunuz?'
+      : `${selectedIds.length} kayıt silinecek. Silmek için onaylıyor musunuz?`;
+    if (!window.confirm(msg)) return;
 
-    // Confirm deletion
-    if (!confirm(`${selectedIds.length} kayıt silinecek. Emin misiniz?`)) {
-      return;
-    }
-
-    // Delete via API
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/FreeCards/delete`, {
-      Selecteds: selectedIds
+      request: {
+        action: 'delete',
+        recid: selectedIds.length === 1 ? selectedIds[0] : selectedIds,
+        name: 'DeleteCard'
+      }
     }).subscribe({
       next: (response: any) => {
-        if (response.error === false || response.status === 'success') {
-          this.toastr.success(this.translate.instant('common.deleteSuccess') || 'Kayıt(lar) başarıyla silindi', this.translate.instant('common.success') || 'Başarılı');
-          // Reload grid
-          if (this.dataTableComponent) {
-            this.dataTableComponent.reload();
-          }
+        if (response?.error === false || response?.status === 'success') {
+          this.toastr.success(
+            this.translate.instant('common.deleteSuccess') || 'Kayıt(lar) başarıyla silindi',
+            this.translate.instant('common.success') || 'Başarılı'
+          );
+          this.dataTableComponent?.reload();
         } else {
-          this.toastr.error(response.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi', this.translate.instant('common.error') || 'Hata');
+          this.toastr.error(
+            response?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi',
+            this.translate.instant('common.error') || 'Hata'
+          );
         }
       },
       error: (error) => {
-        console.error('Error deleting cards:', error);
-        const errorMessage = error.error?.message || error.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi';
+        console.error('Error deleting free cards:', error);
+        const errorMessage = error?.error?.message || error?.message || this.translate.instant('common.deleteError') || 'Kayıt(lar) silinemedi';
         this.toastr.error(errorMessage, this.translate.instant('common.error') || 'Hata');
       }
     });

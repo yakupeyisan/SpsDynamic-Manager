@@ -39,7 +39,7 @@ export class EmployeeWithLocationComponent implements OnInit {
       search: params.search || undefined,
       searchLogic: params.searchLogic || 'AND',
       sort: params.sort,
-      join: params.join || ['EmployeeDepartments', 'EmployeeLastAccessEvent'],
+      join: params.join || ['Company', 'Kadro', 'EmployeeDepartments', 'EmployeeLastAccessEvent'],
       showDeleted: params.showDeleted,
       columns: this.tableColumns
     }).pipe(
@@ -58,7 +58,7 @@ export class EmployeeWithLocationComponent implements OnInit {
           search: params.search || undefined,
           searchLogic: params.searchLogic || 'AND',
           sort: params.sort,
-          join: params.join || ['EmployeeDepartments', 'EmployeeLastAccessEvent'],
+          join: params.join || ['Company', 'Kadro', 'EmployeeDepartments', 'EmployeeLastAccessEvent'],
           showDeleted: params.showDeleted,
           columns: this.tableColumns
         }).pipe(
