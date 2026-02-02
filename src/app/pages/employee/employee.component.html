@@ -737,6 +737,99 @@
   </div>
 </ui-modal>
 
+<!-- Bulk Antipassback Modal -->
+<ui-modal
+  [show]="showBulkAntipassbackModal"
+  [title]="'Toplu Antipassback Durumu Değiştir'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkAntipassbackModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili çalışanların antipassback durumları güncellenecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Çalışanlar</span>
+        <span class="cancel-section-badge">{{ selectedEmployeesForAntipassback.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let employee of selectedEmployeesForAntipassback; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Çalışan ID:</span>
+              <span class="selected-event-value">{{ employee['EmployeeID'] || employee['recid'] || employee['id'] }}</span>
+            </div>
+            <div *ngIf="employee['Name'] || employee['SurName']" class="selected-event-row">
+              <span class="selected-event-label">Ad Soyad:</span>
+              <span class="selected-event-value">{{ employee['Name'] || '' }} {{ employee['SurName'] || '' }}</span>
+            </div>
+            <div *ngIf="employee['IdentificationNumber']" class="selected-event-row">
+              <span class="selected-event-label">TC Kimlik:</span>
+              <span class="selected-event-value">{{ employee['IdentificationNumber'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Antipassback Toggle Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-toggle-right me-2"></i>
+        <span class="cancel-section-title">Antipassback Durumu</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none;">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="antipassbackEnabled"
+            [disabled]="isUpdatingAntipassback"
+            style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 500;">Antipassback Aktif</span>
+        </label>
+      </div>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>İşaretli olduğunda seçili çalışanlara antipassback dokunulmazlığı verilir (her zaman geçerli), kaldırıldığında pasif edilir.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkAntipassbackModal()"
+      [disabled]="isUpdatingAntipassback">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkAntipassback()"
+      [disabled]="isUpdatingAntipassback || selectedEmployeesForAntipassback.length === 0">
+      <span *ngIf="isUpdatingAntipassback" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingAntipassback" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
 <!-- Bulk QR Card Create Modal -->
 <ui-modal
   [show]="showBulkQrCardCreateModal"

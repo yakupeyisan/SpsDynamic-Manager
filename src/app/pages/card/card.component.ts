@@ -64,6 +64,16 @@ export class CardComponent implements OnInit {
   selectedCafeteriaGroupId: number | null = null;
   isUpdatingCafeteriaGroup: boolean = false;
   
+  // Bulk Card Status Change modal state
+  showBulkStatusModal = false;
+  selectedCardsForStatus: any[] = [];
+  selectedStatus: boolean | null = null;
+  isUpdatingStatus: boolean = false;
+  statusOptions = [
+    { label: 'Aktif', value: true },
+    { label: 'Pasif', value: false }
+  ];
+  
   // Card Write modal state
   showCardWriteModal = false;
   selectedCardsForWrite: any[] = [];
@@ -119,6 +129,11 @@ export class CardComponent implements OnInit {
               id: 'changeGroup',
               text: 'Kafeterya Grubunu Degistir',
               onClick: (event: MouseEvent, item: any) => this.onChangeGroup(event, item)
+            },
+            {
+              id: 'bulkStatus',
+              text: 'Toplu Kart Durumu Değiştir',
+              onClick: (event: MouseEvent, item: any) => this.onBulkStatusChange(event, item)
             },
             {
               id: 'changeStatus',
@@ -427,6 +442,84 @@ export class CardComponent implements OnInit {
       }));
     }
     return [];
+  }
+
+  onBulkStatusChange(event: MouseEvent, item: any): void {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+    
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir kart seçiniz.');
+      return;
+    }
+    
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedCardsForStatus = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['CardID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+    
+    this.selectedStatus = null;
+    this.showBulkStatusModal = true;
+  }
+  
+  onBulkStatusModalChange(show: boolean) {
+    this.showBulkStatusModal = show;
+    if (!show) {
+      this.closeBulkStatusModal();
+    }
+  }
+  
+  closeBulkStatusModal() {
+    this.showBulkStatusModal = false;
+    this.selectedCardsForStatus = [];
+    this.selectedStatus = null;
+  }
+  
+  onConfirmBulkStatus() {
+    if (this.selectedStatus === null || this.selectedStatus === undefined) {
+      this.toastr.warning('Lütfen kart durumunu seçiniz (Aktif veya Pasif).');
+      return;
+    }
+    
+    if (this.selectedCardsForStatus.length === 0) {
+      this.toastr.warning('Seçili kart bulunamadı.');
+      return;
+    }
+    
+    this.isUpdatingStatus = true;
+    
+    const cardIds = this.selectedCardsForStatus.map(card => 
+      card['recid'] ?? card['CardID'] ?? card['id']
+    );
+    
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Cards/BulkUpdateStatus`, {
+      CardIDs: cardIds,
+      Status: this.selectedStatus
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingStatus = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Kart durumu güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating card status:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingStatus = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Kart durumları başarıyla güncellendi.');
+        this.closeBulkStatusModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
   }
 
   onChangeStatus(event: MouseEvent, item: any): void {

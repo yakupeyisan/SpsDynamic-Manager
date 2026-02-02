@@ -111,6 +111,12 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   scoringEnabled: boolean = true;
   isUpdatingScoring: boolean = false;
 
+  // Bulk Antipassback modal state
+  showBulkAntipassbackModal = false;
+  selectedEmployeesForAntipassback: any[] = [];
+  antipassbackEnabled: boolean = true;
+  isUpdatingAntipassback: boolean = false;
+
   // Bulk Access Group modal state
   showBulkAccessGroupModal = false;
   selectedEmployeesForAccessGroup: any[] = [];
@@ -268,6 +274,11 @@ export class EmployeeComponent implements OnInit, OnDestroy {
               id: 'bulk-scoring',
               text: this.translate.instant('operations.bulkScoring'),
               onClick: (event: MouseEvent, item: any) => this.onBulkScoring(event, item)
+            },
+            {
+              id: 'bulk-antipassback',
+              text: 'Toplu Antipassback Durumu Değiştir',
+              onClick: (event: MouseEvent, item: any) => this.onBulkAntipassback(event, item)
             },
             {
               id: 'bulk-department',
@@ -750,6 +761,29 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.showBulkScoringModal = true;
   }
 
+  onBulkAntipassback(event: MouseEvent, item: any) {
+    if (!this.dataTableComponent) {
+      this.toastr.warning('DataTableComponent not found');
+      return;
+    }
+
+    const selectedRows = this.dataTableComponent.selectedRows;
+    if (selectedRows.size === 0) {
+      this.toastr.warning('Lütfen en az bir çalışan seçiniz.');
+      return;
+    }
+
+    const selectedIds = Array.from(selectedRows);
+    const dataSource = this.dataTableComponent.dataSource ? this.dataTableComponent.filteredData : this.dataTableComponent.data;
+    this.selectedEmployeesForAntipassback = dataSource.filter((row: any) => {
+      const id = row['recid'] ?? row['EmployeeID'] ?? row['id'];
+      return selectedIds.includes(id);
+    });
+
+    this.antipassbackEnabled = true;
+    this.showBulkAntipassbackModal = true;
+  }
+
   onBulkDepartment(event: MouseEvent, item: any) {
     if (!this.dataTableComponent) {
       this.toastr.warning('DataTableComponent not found');
@@ -843,6 +877,13 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.showBulkScoringModal = show;
     if (!show) {
       this.closeBulkScoringModal();
+    }
+  }
+
+  onBulkAntipassbackModalChange(show: boolean) {
+    this.showBulkAntipassbackModal = show;
+    if (!show) {
+      this.closeBulkAntipassbackModal();
     }
   }
   
@@ -949,6 +990,13 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     this.selectedEmployeesForScoring = [];
     this.scoringEnabled = true;
     this.isUpdatingScoring = false;
+  }
+
+  closeBulkAntipassbackModal() {
+    this.showBulkAntipassbackModal = false;
+    this.selectedEmployeesForAntipassback = [];
+    this.antipassbackEnabled = true;
+    this.isUpdatingAntipassback = false;
   }
   
   // Bulk QR Card Create Modal Methods
@@ -1127,6 +1175,43 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
         this.toastr.success('Puantaj bilgisi başarıyla güncellendi.');
         this.closeBulkScoringModal();
+        if (this.dataTableComponent) {
+          this.dataTableComponent.reload();
+        }
+      }
+    });
+  }
+
+  onConfirmBulkAntipassback() {
+    if (this.selectedEmployeesForAntipassback.length === 0) {
+      this.toastr.warning('Seçili çalışan bulunamadı.');
+      return;
+    }
+
+    this.isUpdatingAntipassback = true;
+
+    const employeeIds = this.selectedEmployeesForAntipassback.map(emp =>
+      emp['recid'] ?? emp['EmployeeID'] ?? emp['id']
+    );
+
+    this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/BulkUpdateAntipassback`, {
+      EmployeeIDs: employeeIds,
+      Antipassback: this.antipassbackEnabled
+    }).pipe(
+      catchError(error => {
+        this.isUpdatingAntipassback = false;
+        this.cdr.markForCheck();
+        const errorMessage = error?.error?.message || error?.message || 'Antipassback durumu güncelleme sırasında bir hata oluştu.';
+        this.toastr.error(errorMessage);
+        console.error('Error updating antipassback:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isUpdatingAntipassback = false;
+        this.cdr.markForCheck();
+        this.toastr.success('Antipassback durumları başarıyla güncellendi.');
+        this.closeBulkAntipassbackModal();
         if (this.dataTableComponent) {
           this.dataTableComponent.reload();
         }

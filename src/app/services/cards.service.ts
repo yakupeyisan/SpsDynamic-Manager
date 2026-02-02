@@ -108,6 +108,11 @@ export interface ChangeStatusResponse {
   [key: string]: any;
 }
 
+export interface BulkUpdateStatusRequest {
+  CardIDs: number[];
+  Status: boolean;
+}
+
 export interface AccessEvent {
   AccessEventID?: number;
   DeviceEventID?: number;
@@ -217,6 +222,17 @@ export class CardsService {
     // Authorization header interceptor tarafından otomatik ekleniyor
     const request: ChangeCardPasswordRequest = { cardPassword };
     return this.http.post<ChangeCardPasswordResponse>(this.getApiUrl(`/api/Cards/ChangeCardPassword/${cardId}`), request);
+  }
+
+  /**
+   * Bulk update card status (active/passive)
+   * POST /api/Cards/BulkUpdateStatus
+   */
+  bulkUpdateStatus(cardIds: number[], status: boolean): Observable<ChangeStatusResponse> {
+    return this.http.post<ChangeStatusResponse>(this.getApiUrl('/api/Cards/BulkUpdateStatus'), {
+      CardIDs: cardIds,
+      Status: status
+    });
   }
 
   /**

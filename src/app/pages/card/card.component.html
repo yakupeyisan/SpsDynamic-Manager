@@ -152,6 +152,101 @@
   </div>
 </ui-modal>
 
+<!-- Bulk Card Status Change Modal -->
+<ui-modal
+  [show]="showBulkStatusModal"
+  [title]="'Toplu Kart Durumu Değiştir'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkStatusModalChange($event)">
+  <div class="cancel-confirmation-content">
+    <!-- Warning Alert -->
+    <div class="cancel-warning-alert">
+      <div class="cancel-warning-icon">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="cancel-warning-text">
+        <strong>Uyarı:</strong> Seçili kartların durumları değiştirilecektir. Onaylıyor musunuz?
+      </div>
+    </div>
+    
+    <!-- Selected Records Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-list-check me-2"></i>
+        <span class="cancel-section-title">Seçili Kartlar</span>
+        <span class="cancel-section-badge">{{ selectedCardsForStatus.length }}</span>
+      </div>
+      <div class="selected-events-list">
+        <div 
+          *ngFor="let card of selectedCardsForStatus; let i = index" 
+          class="selected-event-item">
+          <div class="selected-event-number">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-label">Kart ID:</span>
+              <span class="selected-event-value">{{ card['CardID'] || card['recid'] || card['id'] }}</span>
+            </div>
+            <div *ngIf="card['TagCode']" class="selected-event-row">
+              <span class="selected-event-label">Tag Kodu:</span>
+              <span class="selected-event-value">{{ card['TagCode'] }}</span>
+            </div>
+            <div *ngIf="card['CardCode']" class="selected-event-row">
+              <span class="selected-event-label">Kart Kodu:</span>
+              <span class="selected-event-value">{{ card['CardCode'] }}</span>
+            </div>
+            <div *ngIf="card['Employee']?.Name || card['Employee']?.SurName" class="selected-event-row">
+              <span class="selected-event-label">Kişi:</span>
+              <span class="selected-event-value">{{ card['Employee']?.Name || '' }} {{ card['Employee']?.SurName || '' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Status Selection Section -->
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-toggle-right me-2"></i>
+        <span class="cancel-section-title">Kart Durumu</span>
+        <span class="text-danger ms-1">*</span>
+      </div>
+      <ui-select
+        [(ngModel)]="selectedStatus"
+        [options]="statusOptions"
+        [placeholder]="'Durum seçiniz (Aktif / Pasif)...'"
+        [disabled]="isUpdatingStatus"
+        [required]="true">
+      </ui-select>
+      <div class="cancel-description-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Aktif: Kart kullanıma açık. Pasif: Kart kullanıma kapalı.</span>
+      </div>
+    </div>
+  </div>
+  
+  <div slot="footer" class="cancel-modal-footer">
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-secondary" 
+      (click)="closeBulkStatusModal()"
+      [disabled]="isUpdatingStatus">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button 
+      type="button" 
+      class="cancel-btn cancel-btn-primary" 
+      (click)="onConfirmBulkStatus()"
+      [disabled]="isUpdatingStatus || selectedStatus === null || selectedStatus === undefined">
+      <span *ngIf="isUpdatingStatus" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUpdatingStatus" class="ti ti-check me-1"></i>
+      Onayla ve Güncelle
+    </button>
+  </div>
+</ui-modal>
+
 <!-- Card Write Modal -->
 <ui-modal
   [show]="showCardWriteModal"
