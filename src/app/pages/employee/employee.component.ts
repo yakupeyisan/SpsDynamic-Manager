@@ -2447,7 +2447,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Kartı Kişiden Al - POST to api/Cards/SetFree with CardID
+   * Kartı Kişiden Al - POST to api/Cards/SetFreeForEmployee with CardID
    */
   onCardSetFree(event: MouseEvent, item: any) {
     const selectedCardIds = this.getSelectedCardIds();
@@ -2469,7 +2469,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     const cardId = selectedCardIds[0];
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
-    this.http.post(`${apiUrl}/api/Cards/SetFree`, { CardID: cardId }).pipe(
+    this.http.post(`${apiUrl}/api/Cards/SetFreeForEmployee`, { CardID: cardId }).pipe(
       catchError(err => {
         this.toastr.error(err?.error?.message || err?.message || 'Kart kişiden alınırken hata oluştu', 'Hata');
         return of(null);

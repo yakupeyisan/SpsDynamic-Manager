@@ -84,16 +84,29 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'Employee.Company',
+    field: 'Employee.Company.PdksCompanyName',
     label: 'Firma',
     text: 'Firma',
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false,
     width: '150px',
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
+    searchField: 'Employee.Company.PdksCompanyID',
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/PdksCompanys`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return (data?.records || []).map((item: any) => ({
+          id: item?.PdksCompanyID ?? item?.id,
+          text: item?.PdksCompanyName ?? item?.Name ?? ''
+        }));
+      }
+    },
     render: (record: TableRow) => {
       const emp = record['Employee'];
       const company = emp?.Company;
@@ -101,29 +114,55 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'Employee.Kadro',
+    field: 'Employee.Kadro.Name',
     label: 'Kadro',
     text: 'Kadro',
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false,
     width: '150px',
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
+    searchField: 'Employee.Kadro.ID',
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/PdksStaffs`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return (data?.records || []).map((item: any) => ({
+          id: item?.ID ?? item?.id,
+          text: item?.Name ?? ''
+        }));
+      }
+    },
     render: (record: TableRow) => record['Employee']?.Kadro?.Name ?? ''
   },
   { 
-    field: 'Employee.EmployeeDepartments',
+    field: 'Employee.EmployeeDepartments.Department.DepartmentName',
     label: 'Departman',
     text: 'Departman',
-    type: 'text' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false,
     width: '180px',
     size: '180px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
+    searchField: 'Employee.EmployeeDepartments.Department.DepartmentID',
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/Departments`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return (data?.records || []).map((item: any) => ({
+          id: item?.DepartmentID ?? item?.id,
+          text: item?.DepartmentName ?? item?.Name ?? ''
+        }));
+      }
+    },
     render: (record: TableRow) => {
       const emp = record['Employee'];
       const depts = emp?.EmployeeDepartments;

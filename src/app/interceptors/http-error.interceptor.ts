@@ -1,9 +1,9 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, from, map, of, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-import { PendingClaimsService } from '../services/pending-claims.service';
+import { ClaimDetail, PendingClaimsService } from '../services/pending-claims.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -12,35 +12,72 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 401 Unauthorized hatası - token geçersiz veya süresi dolmuş
-      if (error.status === 401) {
-        // Token'ı temizle
-        authService.removeToken();
-        
-        // Login sayfasına yönlendir (sadece zaten login sayfasında değilsek)
-        const currentUrl = router.url;
-        if (!currentUrl.includes('/authentication/login')) {
-          router.navigate(['/authentication/login']);
-        }
-      }
+      // responseType: 'blob' kullanılan isteklerde (örn. Exports) hata gövdesi Blob gelir;
+      // 403/401 işleyebilmek için Blob'u JSON'a çeviriyoruz
+      const needsBlobParse =
+        error.error instanceof Blob &&
+        (error.status === 401 || error.status === 403);
 
-      // 403 Forbidden - yetki yok; required_claims varsa listeye ekle
-      if (error.status === 403 && error.error) {
-        console.log('[httpErrorInterceptor] 403 error received:', error.error);
-        const data = error.error.data ?? error.error;
-        console.log('[httpErrorInterceptor] Extracted data:', data);
-        const requiredClaims = data.required_claims ?? data.requiredClaims;
-        console.log('[httpErrorInterceptor] requiredClaims:', requiredClaims);
-        if (requiredClaims && Array.isArray(requiredClaims) && requiredClaims.length > 0) {
-          const message = error.error.message ?? 'Bu işlem için yetkiniz bulunmuyor.';
-          const claimDetails = data.required_claim_details ?? data.requiredClaimDetails;
-          console.log('[httpErrorInterceptor] claimDetails:', claimDetails);
-          pendingClaimsService.addClaims(requiredClaims, message, claimDetails);
-        }
-      }
+      const body$ = needsBlobParse
+        ? from((error.error as Blob).text()).pipe(
+            map((text) => {
+              try {
+                return JSON.parse(text) as Record<string, unknown>;
+              } catch {
+                return {};
+              }
+            }),
+            catchError(() => of({}))
+          )
+        : of(error.error);
 
-      // Hatayı tekrar fırlat (component'lerin hata mesajlarını gösterebilmesi için)
-      return throwError(() => error);
+      return body$.pipe(
+        switchMap((body) => {
+          const err =
+            body !== error.error
+              ? new HttpErrorResponse({
+                  error: body,
+                  headers: error.headers,
+                  status: error.status,
+                  statusText: error.statusText,
+                  url: error.url ?? undefined,
+                })
+              : error;
+
+          // 401 Unauthorized hatası - token geçersiz veya süresi dolmuş
+          if (err.status === 401) {
+            authService.removeToken();
+            const currentUrl = router.url;
+            if (!currentUrl.includes('/authentication/login')) {
+              router.navigate(['/authentication/login']);
+            }
+          }
+
+          // 403 Forbidden - yetki yok; required_claims varsa listeye ekle
+          if (err.status === 403 && err.error) {
+            const errObj = err.error as Record<string, unknown>;
+            const data = errObj['data'] ?? err.error;
+            const dataObj = data as Record<string, unknown>;
+            const requiredClaims =
+              (dataObj['required_claims'] ?? dataObj['requiredClaims']) as string[] | undefined;
+            if (requiredClaims && Array.isArray(requiredClaims) && requiredClaims.length > 0) {
+              const message =
+                (errObj['message'] as string | undefined) ?? 'Bu işlem için yetkiniz bulunmuyor.';
+              const claimDetails =
+                (dataObj['required_claim_details'] ?? dataObj['requiredClaimDetails']) as
+                  | ClaimDetail[]
+                  | undefined;
+              pendingClaimsService.addClaims(
+                requiredClaims,
+                message,
+                claimDetails
+              );
+            }
+          }
+
+          return throwError(() => err);
+        })
+      );
     })
   );
 };
