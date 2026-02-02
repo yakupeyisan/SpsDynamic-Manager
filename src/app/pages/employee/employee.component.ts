@@ -192,22 +192,15 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
   };
 
-  // Transfer from Visitor modal - table columns (Kişi no, Tc Kimlik No, Adı Soyadı)
+  // Transfer from Visitor modal - grid fills available space (100% of flex container)
+  transferFromVisitorGridHeight = '100%';
+
+  // Transfer from Visitor modal - table columns (Kişi no, TC Kimlik No, Adı, Soyadı)
   visitorWithDeletedTableColumns: TableColumn[] = [
     { field: 'EmployeeID', label: 'Kişi No', text: 'Kişi No', type: 'int', sortable: true, width: '100px', size: '100px', searchable: 'int', resizable: true },
     { field: 'IdentificationNumber', label: 'TC Kimlik No', text: 'TC Kimlik No', type: 'text', sortable: true, width: '130px', size: '130px', searchable: 'text', resizable: true },
-    {
-      field: 'FullName',
-      label: 'Adı Soyadı',
-      text: 'Adı Soyadı',
-      type: 'text',
-      sortable: false,
-      width: '250px',
-      size: '250px',
-      searchable: false,
-      resizable: true,
-      render: (record: any) => `${record.Name || ''} ${record.SurName || ''}`.trim() || '-'
-    }
+    { field: 'Name', label: 'Adı', text: 'Adı', type: 'text', sortable: true, width: '120px', size: '120px', searchable: 'text', resizable: true },
+    { field: 'SurName', label: 'Soyadı', text: 'Soyadı', type: 'text', sortable: true, width: '120px', size: '120px', searchable: 'text', resizable: true }
   ];
 
   visitorWithDeletedDataSource = (params: any) => {

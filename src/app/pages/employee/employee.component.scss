@@ -1,3 +1,34 @@
+// Ziyaretçiden Aktar modal - grid dikeyde ekrana sığar, popup ile büyür/küçülür
+:host ::ng-deep .ui-modal-body:has(.transfer-from-visitor-modal-content) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.transfer-from-visitor-modal-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+  overflow: hidden;
+
+  ui-data-table,
+  ::ng-deep .ui-data-table {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::ng-deep .ui-table-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
 .employee-page {
   padding: 24px;
 

@@ -2,27 +2,32 @@
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 
 export const tableColumns: TableColumn[] = [
-  // Ziyaretçi group (3 columns)
+  // Ziyaretçi group
   { 
-    field: 'VisitorEmployeeID', 
-    label: 'Ziyaretçi', 
-    text: 'Ziyaretçi',
+    field: 'VisitorEmployee.Name', 
+    label: 'Ziyaretçi Adı', 
+    text: 'Ziyaretçi Adı',
     type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '200px', 
-    size: '200px',
-    searchable: 'text',
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
     resizable: true,
     joinTable: 'VisitorEmployee',
-    render: (record: TableRow) => {
-      const visitor = record['VisitorEmployee'];
-      if (visitor) {
-        const name = visitor['Name'] || '';
-        const surname = visitor['SurName'] || '';
-        return `${name} ${surname}`.trim() || visitor['IdentificationNumber'] || record['VisitorEmployeeID'] || '';
-      }
-      return record['VisitorEmployeeID'] || '';
-    }
+    render: (record: TableRow) => (record['VisitorEmployee'] as any)?.Name ?? ''
+  },
+  { 
+    field: 'VisitorEmployee.SurName', 
+    label: 'Ziyaretçi Soyadı', 
+    text: 'Ziyaretçi Soyadı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    joinTable: 'VisitorEmployee',
+    render: (record: TableRow) => (record['VisitorEmployee'] as any)?.SurName ?? ''
   },
   { 
     field: 'VisitorCardID', 
@@ -107,25 +112,30 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'VisitedEmployeeID', 
-    label: 'Ziyaret Edilen Kişi', 
-    text: 'Ziyaret Edilen Kişi',
+    field: 'VisitedEmployee.Name', 
+    label: 'Ziyaret Edilen Kişi Adı', 
+    text: 'Ziyaret Edilen Kişi Adı',
     type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '200px', 
-    size: '200px',
-    searchable: 'text',
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
     resizable: true,
     joinTable: 'VisitedEmployee',
-    render: (record: TableRow) => {
-      const visited = record['VisitedEmployee'];
-      if (visited) {
-        const name = visited['Name'] || '';
-        const surname = visited['SurName'] || '';
-        return `${name} ${surname}`.trim() || visited['IdentificationNumber'] || record['VisitedEmployeeID'] || '';
-      }
-      return record['VisitedEmployeeID'] || '';
-    }
+    render: (record: TableRow) => (record['VisitedEmployee'] as any)?.Name ?? ''
+  },
+  { 
+    field: 'VisitedEmployee.SurName', 
+    label: 'Ziyaret Edilen Kişi Soyadı', 
+    text: 'Ziyaret Edilen Kişi Soyadı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    joinTable: 'VisitedEmployee',
+    render: (record: TableRow) => (record['VisitedEmployee'] as any)?.SurName ?? ''
   },
   { 
     field: 'VisitedPhone', 

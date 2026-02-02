@@ -25,11 +25,11 @@ export const joinOptions: JoinOption[] = [
 // Column groups configuration
 export const columnGroups: TableColumnGroup[] = [
   {
-    span: 6,
+    span: 7,
     text: 'Ziyaretçi'
   },
   {
-    span: 4,
+    span: 5,
     text: 'Ziyaret Edilen'
   },
   {
