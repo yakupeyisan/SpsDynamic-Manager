@@ -44,15 +44,28 @@
             <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </span>
-        <div class="ui-toolbar-search">
+        <div class="ui-toolbar-search ui-saved-search-container" #savedSearchContainer>
           <ui-input
             [placeholder]="translatedSearchPlaceholder"
             [(ngModel)]="searchTerm"
             (valueChange)="onSearchChange($event)"
             (keyupEvent)="onSearchKeyUp($event)"
+            (focusEvent)="onSearchFocus($event)"
             (blurEvent)="onSearchBlur()"
             class="ui-search-input">
           </ui-input>
+          <div *ngIf="showSavedSearchesDropdown && getSavedSearchesForGrid().length > 0" 
+               class="ui-saved-searches-dropdown ui-saved-searches-dropdown-fixed"
+               [style.top]="savedSearchDropdownStyle.top"
+               [style.left]="savedSearchDropdownStyle.left"
+               [style.width]="savedSearchDropdownStyle.width"
+               (mousedown)="$event.preventDefault()">
+            <div *ngFor="let item of getSavedSearchesForGrid()" 
+                 class="ui-saved-search-item"
+                 (mousedown)="applySavedSearch(item)">
+              {{ item.name }}
+            </div>
+          </div>
         </div>
         <button *ngIf="advancedFilter" class="ui-filter-icon-outer" (click)="openFilterPanel()" [title]="translate.instant('table.advancedFilter')">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -394,6 +407,20 @@
         </ng-container>
       </div>
       <div class="ui-filter-tags-right">
+        <button 
+          *ngIf="!appliedSavedSearchId"
+          class="ui-filter-tag ui-filter-tag-save" 
+          (click)="saveSearchToLocalStorage()"
+          [title]="'Aramayı Kaydet'">
+          Aramayı Kaydet
+        </button>
+        <button 
+          *ngIf="appliedSavedSearchId"
+          class="ui-filter-tag ui-filter-tag-delete" 
+          (click)="deleteSavedSearchFromLocalStorage()"
+          [title]="'Aramayı Sil'">
+          Aramayı Sil
+        </button>
         <button 
           *ngIf="enableReportSave" 
           class="ui-filter-tag ui-filter-tag-save" 

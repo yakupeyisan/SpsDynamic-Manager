@@ -73,7 +73,7 @@
 
     <div *ngIf="!isTaskModalLoading && taskFields.length > 0" class="report-task-fields">
       <div *ngFor="let f of taskFields; let i = index" class="report-task-field">
-        <label class="report-task-label">{{ f.Name || f.Field }}</label>
+        <label class="report-task-label">{{ getFieldDisplayName(f) }}</label>
 
         <!-- date/datetime -->
         <div *ngIf="f.Type === 'date' || f.Type === 'datetime'" class="report-task-field-controls">

@@ -6,6 +6,7 @@
         [options]="logicOptions"
         [ngModel]="currentFilter.logic"
         (valueChange)="onLogicChange($event)"
+        [size]="'sm'"
         class="ui-filter-logic-select">
       </ui-select>
     </div>
@@ -23,7 +24,8 @@
               [options]="getOperatorsForField(condition.field)"
               [ngModel]="condition.operator"
               (valueChange)="onOperatorChange(i, $event)"
-              [placeholder]="getTranslatedPlaceholder('FILTER_OPERATOR')">
+              [placeholder]="getTranslatedPlaceholder('FILTER_OPERATOR')"
+              [size]="'sm'">
             </ui-select>
           </div>
 
@@ -44,7 +46,8 @@
                 [ngModel]="getBetweenMin(condition.value)"
                 (valueChange)="onBetweenMinChange(i, $event)"
                 [type]="getFieldType(condition.field)"
-                [placeholder]="getTranslatedPlaceholder('FILTER_MIN')">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MIN')"
+                size="sm">
               </ui-input>
               <span class="ui-filter-between-separator">-</span>
               <!-- Date type for between -->
@@ -61,7 +64,8 @@
                 [ngModel]="getBetweenMax(condition.value)"
                 (valueChange)="onBetweenMaxChange(i, $event)"
                 [type]="getFieldType(condition.field)"
-                [placeholder]="getTranslatedPlaceholder('FILTER_MAX')">
+                [placeholder]="getTranslatedPlaceholder('FILTER_MAX')"
+                size="sm">
               </ui-input>
             </div>
 
@@ -84,7 +88,8 @@
               [options]="getListOptions(condition.field)"
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
-              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUE')">
+              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUE')"
+              [size]="'sm'">
             </ui-select>
 
             <!-- Enum type (multi select) -->
@@ -94,7 +99,8 @@
               [ngModel]="condition.value || []"
               (valueChange)="onEnumValueChange(i, $event)"
               [multiple]="true"
-              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUES')">
+              [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_VALUES')"
+              [size]="'sm'">
             </ui-select>
 
             <!-- Date type (date picker) -->
@@ -112,7 +118,8 @@
               [ngModel]="condition.value"
               (valueChange)="onValueChange(i, $event)"
               [type]="getFieldType(condition.field)"
-              [placeholder]="getTranslatedPlaceholder('FILTER_VALUE')">
+              [placeholder]="getTranslatedPlaceholder('FILTER_VALUE')"
+              size="sm">
             </ui-input>
           </div>
 
@@ -136,6 +143,7 @@
         [ngModel]="selectedFieldForAdd"
         (valueChange)="onSelectedFieldForAddChange($event)"
         [placeholder]="getTranslatedPlaceholder('FILTER_SELECT_FIELD')"
+        [size]="'sm'"
         class="ui-filter-add-field-select">
       </ui-select>
       <ui-button variant="secondary" size="sm" (clicked)="addCondition()">
@@ -151,6 +159,7 @@
         [options]="getLimitOptions()"
         [ngModel]="currentLimit"
         (valueChange)="onLimitChange($event)"
+        [size]="'sm'"
         class="ui-filter-limit-select">
       </ui-select>
     </div>

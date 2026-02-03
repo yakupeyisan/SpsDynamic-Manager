@@ -2,13 +2,13 @@
   background-color: var(--ui-white);
   border-radius: 0;
   box-shadow: none;
-  min-width: 600px;
-  max-width: 700px;
+  min-width: 420px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 180px);
   width: 100%;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 8px 12px 10px;
   border-bottom: 1px solid var(--ui-border-color);
   background-color: var(--ui-white);
   flex-shrink: 0;
@@ -26,21 +26,21 @@
 
 .ui-filter-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ui-gray-900);
-  line-height: 1.4;
-  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
 .ui-filter-header-right {
   display: flex;
   align-items: center;
-  gap: var(--ui-spacing-md);
+  gap: var(--ui-spacing-xs);
 }
 
 .ui-filter-logic-select {
-  min-width: 100px;
+  min-width: 56px;
+  max-width: 72px;
 }
 
 .ui-filter-logic-select ::ng-deep .ui-select-dropdown {
@@ -49,10 +49,11 @@
 
 
 .ui-filter-body {
-  padding: 20px 24px;
+  padding: 8px 12px 10px;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0;
   background-color: var(--ui-white);
 }
 
@@ -61,11 +62,11 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .ui-filter-condition {
-  padding: 16px 0;
+  padding: 6px 0;
   background-color: transparent;
   border-radius: 0;
   border: none;
@@ -75,10 +76,10 @@
 
 .ui-filter-condition:hover {
   background-color: #f9fafb;
-  margin-left: -8px;
-  margin-right: -8px;
-  padding-left: 8px;
-  padding-right: 8px;
+  margin-left: -4px;
+  margin-right: -4px;
+  padding-left: 4px;
+  padding-right: 4px;
   border-radius: 4px;
 }
 
@@ -88,48 +89,80 @@
 
 .ui-filter-condition-row {
   display: grid;
-  grid-template-columns: 140px 130px 1fr 32px;
-  gap: 12px;
+  grid-template-columns: 72px 115px minmax(0, 1fr) 24px;
+  gap: 6px;
   align-items: center;
 }
 
 .ui-filter-field,
 .ui-filter-operator,
 .ui-filter-value {
-  min-width: 0; /* Prevent grid blowout */
+  min-width: 0;
 }
 
 .ui-filter-panel ::ng-deep .ui-select-dropdown {
   z-index: 1002;
 }
 
+/* Arasında (Between) - Eşit genişlikte Min/Max inputları için grid düzeni */
 .ui-filter-between {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 20px 1fr;
+  gap: 6px;
   align-items: center;
-  gap: var(--ui-spacing-xs);
+  min-width: 0;
   width: 100%;
 }
 
 .ui-filter-between ui-input {
-  flex: 1;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Min/Max inputlarının eşit ve tam genişlikte render edilmesi */
+.ui-filter-panel ::ng-deep .ui-filter-between ui-input,
+.ui-filter-panel ::ng-deep .ui-filter-between ui-input .ui-input-wrapper,
+.ui-filter-panel ::ng-deep .ui-filter-between ui-input .ui-input-container {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.ui-filter-panel ::ng-deep .ui-filter-between ui-input input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ui-filter-between input.ui-filter-date-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .ui-filter-between-separator {
   color: var(--ui-gray-500);
-  font-weight: var(--ui-font-weight-medium);
-  padding: 0 var(--ui-spacing-xs);
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
 }
 
 .ui-filter-date-input {
   width: 100%;
-  padding: var(--ui-spacing-sm) var(--ui-spacing-md);
+  min-width: 0;
+  padding: 4px 8px;
   border: 1px solid var(--ui-gray-300);
   border-radius: var(--ui-border-radius-sm);
-  font-size: var(--ui-font-size-base);
+  font-size: 12px;
   font-family: inherit;
   background-color: var(--ui-white);
   color: var(--ui-gray-900);
   transition: border-color var(--ui-transition-base);
+  box-sizing: border-box;
+  min-height: 25px;
 }
 
 .ui-filter-date-input:focus {
@@ -141,7 +174,6 @@
 .ui-filter-actions {
   display: flex;
   align-items: center;
-  padding-top: 4px;
 }
 
 .ui-filter-remove-btn {
@@ -149,11 +181,11 @@
   border: none;
   color: #6b7280;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 16px;
   line-height: 1;
-  padding: 4px;
-  width: 28px;
-  height: 28px;
+  padding: 2px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -175,16 +207,16 @@
 .ui-filter-actions-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 4px;
   margin-bottom: 0;
-  padding-top: 16px;
+  padding-top: 8px;
   border-top: 1px solid #e5e7eb;
 }
 
 .ui-filter-add-field-select {
-  min-width: 180px;
-  max-width: 250px;
+  min-width: 90px;
+  max-width: 140px;
   flex: 0 0 auto;
 }
 
@@ -196,8 +228,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 8px;
+  padding: 8px 12px;
   border-top: 1px solid #e5e7eb;
   background-color: #f9fafb;
   flex-shrink: 0;
@@ -208,24 +240,25 @@
 .ui-filter-footer-left {
   display: flex;
   align-items: center;
-  gap: var(--ui-spacing-sm);
+  gap: 6px;
 }
 
 .ui-filter-footer-right {
   display: flex;
   align-items: center;
-  gap: var(--ui-spacing-sm);
+  gap: 6px;
 }
 
 .ui-filter-limit-label {
-  font-size: var(--ui-font-size-sm);
-  font-weight: var(--ui-font-weight-medium);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--ui-gray-700);
   white-space: nowrap;
 }
 
 .ui-filter-limit-select {
-  min-width: 120px;
+  min-width: 64px;
+  max-width: 80px;
 }
 
 .ui-filter-limit-select ::ng-deep .ui-select-dropdown {
@@ -235,9 +268,65 @@
 .ui-filter-field-label {
   font-weight: 500;
   color: var(--ui-gray-700);
-  font-size: 13px;
+  font-size: 11px;
   margin: 0;
-  padding: 4px 0;
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Compact overrides for filter inputs */
+.ui-filter-panel ::ng-deep ui-input .ui-input,
+.ui-filter-panel ::ng-deep .ui-input {
+  font-size: 12px;
+  padding: 4px 8px;
+  min-height: 25px;
+}
+
+/* Tüm filter select'leri kompakt: Arasında, Koşul, Tümü/AND/OR, Kayıt Limiti */
+.ui-filter-panel ::ng-deep ui-select .ui-select,
+.ui-filter-panel ::ng-deep ui-select .ui-select-value {
+  font-size: 11px;
+  padding: 4px 6px;
+  min-height: 23px !important;
+  line-height: 1.25;
+}
+
+.ui-filter-panel ::ng-deep ui-select .ui-select {
+  padding: 4px 8px 4px 6px;
+}
+
+/* Operatör select (Arasında, Büyük Eşittir vb.) - metin tek satırda, yükseklik artmasın */
+.ui-filter-panel ::ng-deep .ui-filter-operator ui-select .ui-select-value {
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
+.ui-filter-panel ::ng-deep ui-select .ui-select-arrow {
+  font-size: 9px;
+}
+
+/* Dropdown liste */
+.ui-filter-panel ::ng-deep .ui-select-dropdown {
+  max-height: 160px;
+}
+
+.ui-filter-panel ::ng-deep .ui-select-option {
+  padding: 4px 8px;
+  font-size: 11px;
+  min-height: 23px;
+  line-height: 1.25;
+}
+
+.ui-filter-panel ::ng-deep .ui-select-search-input {
+  padding: 4px 6px;
+  font-size: 11px;
+  min-height: 23px;
+}
+
+.ui-filter-panel ::ng-deep .ui-select-search {
+  padding: 4px 6px;
 }
 
 @media (max-width: 768px) {
@@ -259,15 +348,16 @@
 .ui-filter-checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-spacing-sm);
+  gap: 2px;
 }
 
 .ui-filter-checkbox-option {
   display: flex;
   align-items: center;
-  gap: var(--ui-spacing-sm);
+  gap: 6px;
   cursor: pointer;
   user-select: none;
+  font-size: 12px;
 }
 
 .ui-filter-checkbox-option .ui-filter-checkbox {

@@ -17,6 +17,7 @@ import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { InputComponent } from 'src/app/components/input/input.component';
 import { SelectComponent, SelectOption } from 'src/app/components/select/select.component';
 import { ButtonComponent } from 'src/app/components/button/button.component';
+import { SerializableLoadConfig } from 'src/app/utils/report-load-config';
 
 type ReportFieldType = 'text' | 'textarea' | 'int' | 'date' | 'datetime' | 'list' | 'enum';
 
@@ -26,6 +27,7 @@ interface ReportField {
   Field: string;
   Type: ReportFieldType;
   Options?: any;
+  loadConfig?: SerializableLoadConfig;
   ExtendRecord?: string;
 }
 
@@ -192,6 +194,34 @@ export class ReportsComponent implements OnInit {
     return parts[0] || field;
   }
 
+  /** Alan yolundan okunabilir etiket (örn: Employee.EmployeeDepartments.Department.DepartmentName -> Departman) */
+  getFieldDisplayName(field: ReportField): string {
+    const name = field?.Name || field?.Field || '';
+    if (!name) return '';
+    const fieldPath = String(field.Field || '').trim();
+    const lastPart = fieldPath.split('.').filter(Boolean).pop() || fieldPath;
+
+    const labelMap: Record<string, string> = {
+      DepartmentName: 'Departman',
+      DepartmentID: 'Departman',
+      'Department.DepartmentName': 'Departman',
+      'Department.DepartmentID': 'Departman',
+      inOUT: 'Yön',
+      KadroName: 'Kadro',
+      CompanyName: 'Firma',
+      EmployeeID: 'Çalışan',
+      TagCode: 'Tag Kodu',
+      IdentificationNumber: 'TC Kimlik No',
+      Name: 'Ad',
+      SurName: 'Soyad',
+      Location: 'Konum',
+      EventTime: 'Olay Zamanı',
+      CardCode: 'Kart Kodu',
+      FacilityCode: 'Tesis Kodu',
+    };
+    return labelMap[lastPart] || labelMap[fieldPath] || lastPart.replace(/([A-Z])/g, ' $1').trim();
+  }
+
   getOperatorOptionsForType(type: ReportFieldType): SelectOption[] {
     if (type === 'text' || type === 'textarea') {
       return [
@@ -305,14 +335,19 @@ export class ReportsComponent implements OnInit {
         .map((x: any) => {
           const fieldName = x?.field ?? x?.Field ?? '';
           const type = (x?.type ?? x?.Type ?? 'text') as ReportFieldType;
+          const label = x?.label ?? x?.Label ?? fieldName;
+          const options = x?.options ?? x?.Options ?? x?.items;
+          const loadConfig = x?.loadConfig;
           if (!fieldName) return null;
-          return { Field: fieldName, Name: fieldName, Type: type } as ReportField;
+          return { Field: fieldName, Name: label, Type: type, Options: options, loadConfig } as ReportField;
         })
         .filter((x: ReportField | null): x is ReportField => x !== null);
       this.taskFields = fields;
       this.taskFieldStates = this.initTaskFieldStates(fields);
-      this.isTaskModalLoading = false;
-      this.cdr.markForCheck();
+      this.loadOptionsFromLoadConfig().finally(() => {
+        this.isTaskModalLoading = false;
+        this.cdr.markForCheck();
+      });
       return;
     }
 
@@ -394,6 +429,38 @@ export class ReportsComponent implements OnInit {
       }
     }
     return this.normalizeOptionsToSelectOptions(parsed);
+  }
+
+  /** loadConfig ile generic option yükleme - tüm sayfalara uyumlu */
+  private async loadOptionsFromLoadConfig(): Promise<void> {
+    for (const f of this.taskFields) {
+      if ((f.Type !== 'enum' && f.Type !== 'list') || this.getListEnumOptions(f).length > 0) continue;
+      const cfg = f.loadConfig;
+      if (!cfg?.url) continue;
+
+      try {
+        const method = cfg.method || 'POST';
+        const body = cfg.data;
+        const resp: any = method === 'GET'
+          ? await lastValueFrom(this.http.get<any>(cfg.url))
+          : await lastValueFrom(this.http.post<any>(cfg.url, body || { limit: -1, offset: 0 }));
+
+        const recordsPath = cfg.recordsPath ?? 'records';
+        const arr = recordsPath ? (resp?.[recordsPath] ?? resp?.data) : resp;
+        const records = Array.isArray(arr) ? arr : [];
+
+        const idF = cfg.idField ?? 'id';
+        const textF = cfg.textField ?? 'Name';
+        f.Options = {
+          items: records.map((r: any) => ({
+            id: r?.[idF] ?? r?.id ?? r?.Id ?? r?.ID,
+            text: r?.[textF] ?? r?.Name ?? r?.text ?? r?.label ?? String(r?.[idF] ?? r?.id ?? '')
+          }))
+        };
+      } catch (e) {
+        console.warn(`Options load failed for ${f.Field}:`, e);
+      }
+    }
   }
 
   onDateModeChange(index: number, mode: 'defined' | 'notDefined'): void {

@@ -21,6 +21,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ButtonComponent } from '../button/button.component';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
+import { buildSerializableLoadConfig } from '../../utils/report-load-config';
 
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
@@ -396,6 +397,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Output() toolbarClick = new EventEmitter<{ item: ToolbarItem; event: MouseEvent }>();
 
   @ViewChild('tableWrapper', { static: false }) tableWrapperRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('savedSearchContainer', { static: false }) savedSearchContainerRef?: ElementRef<HTMLElement>;
   @ViewChildren(DataTableComponent) nestedGrids?: QueryList<DataTableComponent>;
 
   selectedRows: Set<any> = new Set();
@@ -467,6 +469,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   // Search debounce state
   private searchDebounceTimer: any = null;
   private lastSearchText: string = '';
+
+  // Saved search (Aramayı Kaydet) - localStorage search_ prefix
+  showSavedSearchesDropdown = false;
+  private savedSearchBlurTimer: any = null;
+  savedSearchDropdownStyle: { top: string; left: string; width: string } = { top: '0', left: '0', width: '200px' };
+  appliedSavedSearchId: string | null = null;
 
   // Cache for loaded column options
   private columnOptionsCache: Map<string, TableColumnOption[]> = new Map();
@@ -863,6 +871,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     // Only update searchTerm, don't perform search
     // Search will be performed only on Enter key press
     this.searchTerm = searchValue;
+    // Kullanıcı yazdığında kaydedilmiş aramalar listesini gizle
+    if (searchValue && searchValue.trim() !== '') {
+      this.showSavedSearchesDropdown = false;
+      this.cdr.markForCheck();
+    }
   }
   
   /**
@@ -1046,28 +1059,136 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
+   * Handle search input focus - show saved searches dropdown
+   */
+  onSearchFocus(event: FocusEvent) {
+    this.lastSearchText = '';
+    if (this.savedSearchBlurTimer) {
+      clearTimeout(this.savedSearchBlurTimer);
+      this.savedSearchBlurTimer = null;
+    }
+    const saved = this.getSavedSearchesForGrid();
+    if ((!this.searchTerm || String(this.searchTerm).trim() === '') && saved.length > 0) {
+      this.showSavedSearchesDropdown = true;
+      const target = event.target as HTMLElement;
+      const inputContainer = target.closest('.ui-saved-search-container') || target.closest('.ui-toolbar-search');
+      const el = (inputContainer || target) as HTMLElement;
+      if (el?.getBoundingClientRect) {
+        const rect = el.getBoundingClientRect();
+        this.savedSearchDropdownStyle = {
+          top: `${rect.bottom + 2}px`,
+          left: `${rect.left}px`,
+          width: `${Math.max(rect.width, 200)}px`
+        };
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  private updateSavedSearchDropdownPosition(): void {
+    if (this.savedSearchContainerRef?.nativeElement) {
+      const rect = this.savedSearchContainerRef.nativeElement.getBoundingClientRect();
+      this.savedSearchDropdownStyle = {
+        top: `${rect.bottom + 2}px`,
+        left: `${rect.left}px`,
+        width: `${Math.max(rect.width, 200)}px`
+      };
+      this.cdr.markForCheck();
+    }
+  }
+
+  /**
    * Handle search input blur event (w2ui.js style)
    */
   onSearchBlur() {
-    // Clear last search text on blur (w2ui.js style)
     this.lastSearchText = '';
+    // Kısa gecikme - dropdown item'a tıklanabiliyor olsun
+    this.savedSearchBlurTimer = setTimeout(() => {
+      this.showSavedSearchesDropdown = false;
+      this.savedSearchBlurTimer = null;
+      this.cdr.markForCheck();
+    }, 200);
+  }
+
+  private getSavedSearchStorageKey(): string {
+    return `search_${this.id || 'default'}`;
+  }
+
+  getSavedSearchesForGrid(): Array<{ id: string; name: string; filter: import('./filter.model').AdvancedFilter }> {
+    try {
+      const key = this.getSavedSearchStorageKey();
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+
+  saveSearchToLocalStorage(): void {
+    if (!this.activeFilter || !this.activeFilter.conditions?.length) {
+      this.toastr.warning('Kaydedilecek arama yok.', 'Uyarı');
+      return;
+    }
+    const name = window.prompt('Arama adı girin:', '');
+    if (name === null || !name.trim()) return;
+
+    const key = this.getSavedSearchStorageKey();
+    const list = this.getSavedSearchesForGrid();
+    const newItem = {
+      id: 's_' + Date.now(),
+      name: name.trim(),
+      filter: { ...this.activeFilter, conditions: [...this.activeFilter.conditions] }
+    };
+    list.push(newItem);
+    try {
+      localStorage.setItem(key, JSON.stringify(list));
+      this.toastr.success('Arama kaydedildi.', 'Başarılı');
+    } catch (e) {
+      this.toastr.error('Arama kaydedilemedi.', 'Hata');
+    }
+  }
+
+  applySavedSearch(item: { id: string; name: string; filter: import('./filter.model').AdvancedFilter }): void {
+    this.showSavedSearchesDropdown = false;
+    if (this.savedSearchBlurTimer) {
+      clearTimeout(this.savedSearchBlurTimer);
+      this.savedSearchBlurTimer = null;
+    }
+    this.activeFilter = { ...item.filter, conditions: [...item.filter.conditions] };
+    this.currentPage = 1;
+    this.appliedSavedSearchId = item.id;
+    if (this.dataSource) {
+      this.cdr.markForCheck();
+      this.loadDataSource();
+    }
+    this.advancedFilterChange.emit(this.activeFilter);
+    this.closeFilterPanel();
+    this.cdr.markForCheck();
+  }
+
+  deleteSavedSearchFromLocalStorage(): void {
+    if (!this.appliedSavedSearchId) return;
+    const msg = 'Bu kaydedilmiş arama silinecek. Onaylıyor musunuz?';
+    if (!window.confirm(msg)) return;
+
+    const key = this.getSavedSearchStorageKey();
+    const list = this.getSavedSearchesForGrid().filter((item) => item.id !== this.appliedSavedSearchId);
+    try {
+      localStorage.setItem(key, JSON.stringify(list));
+      this.appliedSavedSearchId = null;
+      this.toastr.success('Arama silindi.', 'Başarılı');
+      this.cdr.markForCheck();
+    } catch (e) {
+      this.toastr.error('Arama silinemedi.', 'Hata');
+    }
   }
 
   onLimitChange(limit: number) {
     this.currentLimit = limit;
     this.currentPage = 1; // Reset to first page on limit change
-    
-    // If limit is set and pagination is enabled, update pageSize to match limit
-    if (limit > 0 && this.pagination) {
-      // Note: We don't change the pageSize input, but use limit as effective pageSize
-      // This ensures each page shows exactly 'limit' number of records
-    }
-    
-    // Reload data if using dataSource
-    if (this.dataSource) {
-      this.loadDataSource();
-    }
-    
+    // Limit değiştiğinde otomatik arama yapma - sadece "Ara" butonuna basıldığında arasın
     this.limitChange.emit(limit);
   }
 
@@ -2594,6 +2715,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   onFilterChange(filter: AdvancedFilter) {
+    this.appliedSavedSearchId = null;
     this.activeFilter = filter;
     this.currentPage = 1; // Reset to first page
     
@@ -2610,6 +2732,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   onFilterClear() {
+    this.appliedSavedSearchId = null;
     this.activeFilter = null;
     this.searchTerm = '';
     this.currentPage = 1;
@@ -2662,6 +2785,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (!this.activeFilter || !this.activeFilter.conditions || index < 0 || index >= this.activeFilter.conditions.length) {
       return;
     }
+
+    this.appliedSavedSearchId = null;
 
     // Remove the condition at the specified index
     const newConditions = this.activeFilter.conditions.filter((_, i) => i !== index);
@@ -2926,12 +3051,17 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return;
     }
 
-    const filters = this.pendingReportFilter.conditions.map((cond: any) => ({
-      field: cond.field,
-      operator: cond.operator,
-      value: cond.value,
-      type: cond.type
-    }));
+    const filters = this.pendingReportFilter.conditions.map((cond: any) => {
+      const col = this.displayColumns.find((c) => (c.searchField || c.field) === cond.field || c.field === cond.field);
+      const result: any = { field: cond.field, operator: cond.operator, value: cond.value, type: cond.type };
+      if (col?.label || col?.text) result.label = col.label || col.text;
+      const loadConfig = col ? buildSerializableLoadConfig(col) : null;
+      if (loadConfig) result.loadConfig = loadConfig;
+      else if (col?.options && Array.isArray(col.options)) {
+        result.options = { items: col.options.map((o: any) => ({ id: o?.value ?? o?.id, text: o?.label ?? o?.text ?? '' })) };
+      }
+      return result;
+    });
 
     const maps = this.buildReportMapsPayload();
     const displayMaps = this.buildReportDisplayMapsPayload();

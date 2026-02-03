@@ -571,6 +571,42 @@
   padding: var(--ui-spacing-xs) 0;
 }
 
+.ui-saved-search-container {
+  position: relative;
+}
+
+.ui-saved-searches-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  background: var(--ui-white);
+  border: 1px solid var(--ui-border-color, #e5e7eb);
+  border-radius: var(--ui-border-radius, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* fixed positioning - parent overflow: hidden'dan kaçınmak için */
+.ui-saved-searches-dropdown-fixed {
+  position: fixed !important;
+  margin-top: 0 !important;
+}
+
+.ui-saved-search-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.ui-saved-search-item:hover {
+  background-color: var(--ui-gray-100, #f3f4f6);
+}
+
 .ui-search-input {
   width: 100%;
 }
@@ -735,6 +771,18 @@
 .ui-filter-tag-save:hover {
   background-color: var(--ui-gray-300, #d1d5db);
   border-color: var(--ui-gray-400, #9ca3af);
+}
+
+.ui-filter-tag-delete {
+  background-color: var(--ui-danger-light, #fee2e2);
+  border-color: var(--ui-danger, #dc2626);
+  color: var(--ui-danger-dark, #b91c1c);
+}
+
+.ui-filter-tag-delete:hover {
+  background-color: var(--ui-danger, #dc2626);
+  border-color: var(--ui-danger-dark, #b91c1c);
+  color: var(--ui-white, #ffffff);
 }
 
 .ui-filter-tag-clear-all {
@@ -1077,22 +1125,23 @@
   border-radius: 0 0 var(--ui-border-radius) var(--ui-border-radius);
   z-index: 1000;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  overflow-x: visible;
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
   animation: ui-filter-slide-down var(--ui-transition-base);
-  width: 700px;
+  width: 500px;
   max-width: calc(90vw - 20px);
+  display: flex;
+  flex-direction: column;
 }
 
 .ui-filter-overlay-content {
   position: relative;
   z-index: 1001;
-  width: auto;
-  overflow: visible;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
 @keyframes ui-filter-slide-down {
