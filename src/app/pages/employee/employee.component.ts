@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs';
 // Import configurations
 import { joinOptions } from './employee-config';
 import { tableColumns } from './employee-table-columns';
-import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper, imageUploadUrl, imageField, imagePreviewUrl } from './employee-form-config';
+import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper, imageAsBase64Field, imageField, imagePreviewUrl } from './employee-form-config';
 import { getGridColumns } from './employee-nested-grids';
 
 // Import types from DataTableComponent
@@ -63,7 +63,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
-  imageUploadUrl = imageUploadUrl;
+  imageAsBase64Field = imageAsBase64Field;
   imageField = imageField;
   imagePreviewUrl = imagePreviewUrl;
   

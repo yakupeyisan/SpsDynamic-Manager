@@ -1,27 +1,6 @@
 <!-- LiveView Component Template -->
 <div class="live-view-page">
   <div class="container-fluid">
-    <!-- Live View Control Panel -->
-    <div class="row mb-3">
-      <div class="col-12">
-        <div class="live-view-control-panel">
-          <div class="control-item">
-            <label class="control-label">Canlı İzle:</label>
-            <label class="switch">
-              <input 
-                type="checkbox" 
-                [(ngModel)]="isLiveViewEnabled"
-                (change)="toggleLiveView(isLiveViewEnabled)">
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="control-item">
-            <span class="control-info">Kayıt Sayısı: {{ liveViewRecords.length }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <!-- Data Table Section -->
     <div class="row">
       <div class="col-12">

@@ -811,6 +811,7 @@
   overflow-x: auto;
   overflow-y: auto;
   width: 100%;
+  margin-bottom: 30px !important;
   position: relative;
 }
 
@@ -1666,6 +1667,49 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
 
 .ui-form-radio-button ::ng-deep .mdc-radio {
   margin-right: 0.5rem;
+}
+
+/* Sound file select + play button row */
+.ui-form-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.ui-form-sound-row .ui-form-sound-select {
+  flex: 1;
+  min-width: 0;
+}
+.ui-form-sound-play-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--ui-gray-300, #dee2e6);
+  border-radius: 4px;
+  background: var(--ui-gray-50, #f8f9fa);
+  color: var(--ui-gray-700, #495057);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ui-form-sound-play-btn:hover:not(:disabled) {
+  background: var(--ui-gray-200, #e9ecef);
+  color: var(--ui-primary-color, #007bff);
+}
+.ui-form-sound-play-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ui-form-sound-play-btn.playing {
+  background: var(--ui-primary-color, #007bff);
+  color: #fff;
+  border-color: var(--ui-primary-color, #007bff);
+}
+.ui-form-sound-play-btn .ti {
+  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {

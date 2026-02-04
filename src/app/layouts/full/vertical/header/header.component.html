@@ -8,6 +8,20 @@
   }
 
   <!-- --------------------------------------------------------------- -->
+  <!-- WebSocket status: green = connected, red = disconnected; click to reconnect when red -->
+  <!-- --------------------------------------------------------------- -->
+  <button
+    mat-icon-button
+    type="button"
+    [matTooltip]="wsConnected ? 'WebSocket bağlı' : 'WebSocket bağlı değil. Yeniden bağlanmak için tıklayın.'"
+    [class.ws-connected]="wsConnected"
+    [class.ws-disconnected]="!wsConnected"
+    (click)="!wsConnected && onWebSocketReconnect()"
+    class="d-flex align-items-center justify-content-center ws-status-btn">
+    <span class="ws-status-dot" [class.connected]="wsConnected"></span>
+  </button>
+
+  <!-- --------------------------------------------------------------- -->
   <!-- Mobile Menu -->
   @if(!showToggle) {
   <button mat-icon-button (click)="toggleMobileNav.emit()" class="d-flex justify-content-center align-items-center">

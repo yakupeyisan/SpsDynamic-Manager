@@ -107,7 +107,6 @@ export const navItems: NavItem[] = [
       {
         displayName: 'Alarm Tanımları',
         route: '/AlarmSettings',
-        disabled: true,
       },
     ],
   },
@@ -348,7 +347,7 @@ export const navItems: NavItem[] = [
         route: '/ReportTasks',
       },
       {
-        displayName: 'Zamanlanmış Görevler',
+        displayName: 'Görev',
         route: '/TaskSchedulers',
       },
     ],
@@ -436,6 +435,10 @@ export const navItems: NavItem[] = [
       {
         displayName: 'Ayarlar',
         route: '/GridSettings',
+      },
+      {
+        displayName: 'Ses Dosyaları',
+        route: '/SoundFiles',
       },
     ],
   },

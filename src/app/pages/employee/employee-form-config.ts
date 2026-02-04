@@ -574,10 +574,10 @@ export const formDataMapper = (apiRecord: any) => {
   return formData;
 };
 
-// Image upload URL
-export const imageUploadUrl = `${apiUrl}/api/Upload/Image`;
+// Image: embed as base64 in form payload when adding/updating person (no separate upload)
+export const imageAsBase64Field = 'Picture';
 
-// Image field name
+// Image field name (form field for image input)
 export const imageField = 'PictureID';
 
 // Image preview URL generator

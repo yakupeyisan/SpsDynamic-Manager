@@ -16,6 +16,8 @@ import { FormFieldComponent } from 'src/app/components/form/form-field.component
 import { SelectComponent } from 'src/app/components/select/select.component';
 import { InputComponent } from 'src/app/components/input/input.component';
 import { ButtonComponent } from 'src/app/components/button/button.component';
+import { TabsComponent } from 'src/app/components/tabs/tabs.component';
+import { TabItemComponent } from 'src/app/components/tabs/tab-item.component';
 
 @Component({
   selector: 'app-manual-door-trigger',
@@ -31,7 +33,9 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
     FormFieldComponent,
     SelectComponent,
     InputComponent,
-    ButtonComponent
+    ButtonComponent,
+    TabsComponent,
+    TabItemComponent
   ],
   templateUrl: './manual-door-trigger.component.html',
   styleUrls: ['./manual-door-trigger.component.scss']
@@ -39,8 +43,13 @@ import { ButtonComponent } from 'src/app/components/button/button.component';
 export class ManualDoorTriggerComponent implements OnInit {
   @ViewChild('doorsGrid') doorsGridComponent?: DataTableComponent;
 
+  // Tab panel: 0=Kapılar, 1=Inputlar, 2=Outputlar
+  activeTab: number = 0;
+
   // Grid height
   gridHeight: string = 'calc(100vh - 250px)';
+  /** Tab içindeki gridler için: yükseklik zinciriyle dolacak, scroll tablo wrapper'da çalışır */
+  tabGridHeight: string = '100%';
 
   // Form data
   formData: any = {
@@ -58,6 +67,9 @@ export class ManualDoorTriggerComponent implements OnInit {
 
   // Selected doors
   selectedDoors: TableRow[] = [];
+
+  /** Son tetikleme cevapları: SerialNumber -> { message, status } (açıklama ve satır rengi için) */
+  doorTriggerResults: Record<string, { message: string; status: string }> = {};
 
   // Doors table columns
   doorsTableColumns: TableColumn[] = [
@@ -110,6 +122,26 @@ export class ManualDoorTriggerComponent implements OnInit {
     }
   };
 
+  // Inputs table columns
+  inputsTableColumns: TableColumn[] = [
+    { field: 'SerialNumber', label: 'Seri No', text: 'Seri No', type: 'text' as ColumnType, sortable: true, width: '120px', searchable: 'text', resizable: true },
+    { field: 'Name', label: 'Ad', text: 'Ad', type: 'text' as ColumnType, sortable: true, width: '200px', searchable: 'text', resizable: true },
+    { field: 'Description', label: 'Açıklama', text: 'Açıklama', type: 'text' as ColumnType, sortable: false, width: '100%', searchable: 'text', resizable: true }
+  ];
+
+  // Outputs table columns
+  outputsTableColumns: TableColumn[] = [
+    { field: 'SerialNumber', label: 'Seri No', text: 'Seri No', type: 'text' as ColumnType, sortable: true, width: '120px', searchable: 'text', resizable: true },
+    { field: 'Name', label: 'Ad', text: 'Ad', type: 'text' as ColumnType, sortable: true, width: '200px', searchable: 'text', resizable: true },
+    { field: 'Description', label: 'Açıklama', text: 'Açıklama', type: 'text' as ColumnType, sortable: false, width: '100%', searchable: 'text', resizable: true }
+  ];
+
+  // Toolbar config for inputs/outputs (read-only)
+  inputsOutputsToolbarConfig: ToolbarConfig = {
+    items: [],
+    show: { reload: true, columns: false, search: true, add: false, edit: false, delete: false, save: false }
+  };
+
   // Data source for doors grid
   doorsDataSource = (params: any) => {
     return this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetAllDoors`, {}).pipe(
@@ -130,6 +162,20 @@ export class ManualDoorTriggerComponent implements OnInit {
           records = response.records;
         }
         
+        // Son tetikleme cevabını açıklamaya yaz ve başarılı satırı işaretle
+        records = records.map((r: any) => {
+          const key = r.SerialNumber ?? r.serialNumber;
+          const res = key ? this.doorTriggerResults[key] : null;
+          if (res) {
+            return {
+              ...r,
+              Description: res.message,
+              _triggerSuccess: res.status === 'success'
+            };
+          }
+          return r;
+        });
+        
         return {
           status: 'success' as const,
           total: records.length,
@@ -143,6 +189,41 @@ export class ManualDoorTriggerComponent implements OnInit {
       })
     );
   };
+
+  // Data source for inputs grid
+  inputsDataSource = (params: any) => {
+    const baseUrl = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetAllInputs`;
+    return this.http.post<any>(baseUrl, {}).pipe(
+      map((response: any) => this.normalizeGridResponse(response, 'Inputlar')),
+      catchError(error => {
+        console.error('Error loading inputs:', error);
+        this.toastr.error('Inputlar yüklenirken hata oluştu', 'Hata');
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  // Data source for outputs grid
+  outputsDataSource = (params: any) => {
+    const baseUrl = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetAllOutputs`;
+    return this.http.post<any>(baseUrl, {}).pipe(
+      map((response: any) => this.normalizeGridResponse(response, 'Outputlar')),
+      catchError(error => {
+        console.error('Error loading outputs:', error);
+        this.toastr.error('Outputlar yüklenirken hata oluştu', 'Hata');
+        return of({ status: 'error' as const, total: 0, records: [] } as GridResponse);
+      })
+    );
+  };
+
+  private normalizeGridResponse(response: any, context: string): GridResponse {
+    let records: any[] = [];
+    if (response?.data?.data && Array.isArray(response.data.data)) records = response.data.data;
+    else if (response?.data && Array.isArray(response.data)) records = response.data;
+    else if (Array.isArray(response)) records = response;
+    else if (response?.records && Array.isArray(response.records)) records = response.records;
+    return { status: 'success' as const, total: records.length, records };
+  }
 
   constructor(
     private http: HttpClient,
@@ -197,6 +278,16 @@ export class ManualDoorTriggerComponent implements OnInit {
     this.selectedDoors = selectedRows;
   }
 
+  /** Başarılı tetikleme satırına yeşil arka plan verir */
+  getDoorRowClass(row: TableRow): string | null {
+    return (row as any)._triggerSuccess ? 'row-trigger-success' : null;
+  }
+
+  /** Input sekmesi açıkken işlemler paneli pasif (0=Kapılar, 1=Inputlar, 2=Outputlar) */
+  get isOperationsPanelDisabled(): boolean {
+    return this.activeTab === 1;
+  }
+
   // Save handler
   onSave(): void {
     if (this.selectedDoors.length === 0) {
@@ -229,16 +320,23 @@ export class ManualDoorTriggerComponent implements OnInit {
         `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/OpenDoor`,
         requestData
       ).pipe(
-        map((response: any) => ({
-          success: response.success !== false && response.error !== true,
-          message: response.message || response.Message || (response.success ? 'Başarılı' : 'Hata'),
-          door: door
-        })),
+        map((response: any) => {
+          // API örnek: { "status": "success", "message": "OK" }
+          const status = response?.status === 'success' ? 'success' : 'error';
+          const message = response?.message ?? response?.Message ?? (status === 'success' ? 'Başarılı' : 'Hata');
+          return {
+            success: status === 'success',
+            message,
+            status,
+            door
+          };
+        }),
         catchError(error => {
           console.error('Error opening door:', error);
           return of({
             success: false,
             message: error.error?.message || error.message || 'Hata oluştu',
+            status: 'error',
             door: door
           });
         })
@@ -251,20 +349,24 @@ export class ManualDoorTriggerComponent implements OnInit {
         let successCount = 0;
         let errorCount = 0;
 
-        results.forEach((result, index) => {
+        results.forEach((result) => {
+          const door = result.door;
+          const key = door?.SerialNumber ?? door?.serialNumber;
+          if (key) {
+            this.doorTriggerResults[key] = {
+              message: result.message,
+              status: result.success ? 'success' : 'error'
+            };
+            // Grid'i reload etmeden satırı güncelle (açıklama + yeşil satır)
+            if (this.doorsGridComponent) {
+              this.doorsGridComponent.set(key, {
+                Description: result.message,
+                _triggerSuccess: result.success
+              });
+            }
+          }
           if (result.success) {
             successCount++;
-            // Update door description in grid
-            const door = result.door;
-            if (this.doorsGridComponent && door) {
-              // Find and update the record
-              setTimeout(() => {
-                // Refresh grid to show updated status
-                if (this.doorsGridComponent) {
-                  this.doorsGridComponent.onRefresh();
-                }
-              }, 100);
-            }
           } else {
             errorCount++;
           }
@@ -279,13 +381,7 @@ export class ManualDoorTriggerComponent implements OnInit {
           this.toastr.error('Kapı tetikleme işlemi başarısız oldu.', 'Hata');
         }
 
-        // Clear selection and refresh grid
         this.selectedDoors = [];
-        setTimeout(() => {
-          if (this.doorsGridComponent) {
-            this.doorsGridComponent.onRefresh();
-          }
-        }, 500);
       },
       error: (error) => {
         console.error('Error in forkJoin:', error);

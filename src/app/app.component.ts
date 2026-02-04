@@ -1,9 +1,16 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, NgZone } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { environment } from '../environments/environment';
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
+import { WebSocketService } from './services/websocket.service';
+import { MatDialog } from '@angular/material/dialog';
+import { HttpClient } from '@angular/common/http';
+import { ToastrService } from 'ngx-toastr';
+import { WebSocketRestartDialogComponent } from './dialogs/websocket-restart-dialog/websocket-restart-dialog.component';
+import { catchError } from 'rxjs/operators';
+import { of, Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-root',
@@ -11,13 +18,19 @@ import { LoadingSpinnerComponent } from './components/loading-spinner/loading-sp
     imports: [RouterOutlet, LoadingSpinnerComponent],
     templateUrl: './app.component.html'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'SpsDynamic';
+  private reconnectFailedSub?: Subscription;
 
   constructor(
     private translate: TranslateService,
     @Inject(DOCUMENT) private document: Document,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private wsService: WebSocketService,
+    private dialog: MatDialog,
+    private http: HttpClient,
+    private toastr: ToastrService,
+    private ngZone: NgZone
   ) {
     // Set default language to Turkish
     this.translate.setDefaultLang('tr');
@@ -32,6 +45,45 @@ export class AppComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.applyThemeColors();
     }
+
+    // WebSocket 5 denemede bağlanamazsa dialog göster (emit setInterval zincirinden geldiği için gecikmeli + zone)
+    this.reconnectFailedSub = this.wsService.getReconnectFailed().subscribe(() => {
+      window.setTimeout(() => {
+        this.ngZone.run(() => this.openWebSocketRestartDialog());
+      }, 150);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.reconnectFailedSub?.unsubscribe();
+  }
+
+  private openWebSocketRestartDialog(): void {
+    const doRestart = (result: boolean) => {
+      if (!result) return;
+      const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+      this.http.get(`${apiUrl}/api/Websocket/Restart`).pipe(
+        catchError(err => {
+          this.toastr.error(err?.error?.message || err?.message || 'WebSocket yeniden başlatılamadı.', 'Hata');
+          return of(null);
+        })
+      ).subscribe(res => {
+        if (res != null) {
+          this.toastr.success('WebSocket sunucusu yeniden başlatıldı.', 'Başarılı');
+          this.wsService.reconnect();
+        }
+      });
+    };
+
+    const dialogRef = this.dialog.open(WebSocketRestartDialogComponent, {
+      width: '400px',
+      disableClose: false,
+      hasBackdrop: true,
+      panelClass: 'websocket-restart-dialog'
+    });
+    dialogRef.afterClosed().subscribe((result: boolean | undefined) => {
+      doRestart(result === true);
+    });
   }
 
   private applyThemeColors(): void {

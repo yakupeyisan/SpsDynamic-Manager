@@ -1,10 +1,15 @@
 // Manual Door Trigger Component Styles
 .manual-door-trigger-page {
   padding: 20px;
-  
+
   .container-fluid {
     width: 100%;
     max-width: 100%;
+  }
+
+  // Başarılı manuel tetikleme satırı: yeşil arka plan
+  ::ng-deep .row-trigger-success {
+    background-color: rgba(34, 197, 94, 0.2) !important;
   }
 }
 
@@ -23,6 +28,11 @@
     border-radius: var(--ui-border-radius, 4px);
     overflow: hidden;
     min-width: 0; // Allow flex shrinking
+
+    &.panel-disabled {
+      opacity: 0.65;
+      pointer-events: none;
+    }
     
     .door-trigger-panel-header {
       padding: 12px 16px;
@@ -48,9 +58,97 @@
       flex-direction: column;
       min-height: 0;
       padding: 16px;
+
+      // Tab panel wrapper: sol panel tab'lı yapı (scroll grid içinde çalışsın diye yükseklik zinciri)
+      &.door-trigger-tabs-wrapper {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+
+        ::ng-deep ui-tabs {
+          display: flex !important;
+          flex-direction: column !important;
+          flex: 1 !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+
+          .ui-tabs-content {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 0 !important;
+          }
+
+          // Sadece aktif tab (içinde .ui-tab-panel olan) tam yüksekliği alsın; diğerleri 0
+          ui-tab-item {
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 0 0 0 !important;
+          }
+          ui-tab-item:has(.ui-tab-panel) {
+            flex: 1 1 0 !important;
+          }
+
+          .ui-tab-panel {
+            flex: 1 !important;
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+          }
+        }
+
+        .door-trigger-tab-content {
+          flex: 1 !important;
+          min-height: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          overflow: hidden !important;
+
+          ::ng-deep ui-data-table {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+
+            .ui-data-table {
+              display: flex !important;
+              flex-direction: column !important;
+              flex: 1 !important;
+              min-height: 0 !important;
+              border: none !important;
+              overflow: hidden !important;
+            }
+
+            .ui-table-wrapper {
+              flex: 1 !important;
+              overflow-y: auto !important;
+              overflow-x: auto !important;
+              min-height: 0 !important;
+              margin-bottom: 32px !important;
+              -webkit-overflow-scrolling: touch;
+            }
+
+            .ui-table-footer {
+              position: absolute !important;
+              bottom: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              height: 32px !important;
+              background-color: #f8f8f8 !important;
+            }
+          }
+        }
+      }
       
-      // Grid panel specific styles
-      &:has(ui-data-table) {
+      // Grid panel specific styles (tek grid olduğunda)
+      &:has(ui-data-table):not(.door-trigger-tabs-wrapper) {
         padding: 0;
         
         ::ng-deep ui-data-table {

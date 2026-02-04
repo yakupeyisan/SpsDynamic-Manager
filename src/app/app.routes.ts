@@ -550,7 +550,7 @@ export const routes: Routes = [
             (m) => m.TaskSchedulersComponent
           ),
         data: {
-          title: 'Zamanlanmış Görevler',
+          title: 'Görev',
           breadcrumb: false,
         },
       },
@@ -782,6 +782,28 @@ export const routes: Routes = [
           ),
         data: {
           title: 'Ayarlar',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'SoundFiles',
+        loadComponent: () =>
+          import('./pages/sound-files/sound-files.component').then(
+            (m) => m.SoundFilesComponent
+          ),
+        data: {
+          title: 'Ses dosyasını güncelle',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'AlarmSettings',
+        loadComponent: () =>
+          import('./pages/alarm-settings/alarm-settings.component').then(
+            (m) => m.AlarmSettingsComponent
+          ),
+        data: {
+          title: 'Alarm Tanımları',
           breadcrumb: false,
         },
       },

@@ -1,0 +1,145 @@
+<div class="sound-files-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="main-card">
+          <div class="card-header">
+            <div class="header-content">
+              <h2 class="page-title">
+                <mat-icon>library_music</mat-icon>
+                Ses Dosyaları
+              </h2>
+              <div class="header-actions">
+                <button mat-raised-button color="primary" (click)="openAdd()" [disabled]="loading" class="add-btn">
+                  <mat-icon>add</mat-icon>
+                  Yeni ekle
+                </button>
+                <button mat-icon-button (click)="load()" [disabled]="loading" matTooltip="Yenile">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-content">
+            @if (loading && list.length === 0) {
+              <div class="loading-state">
+                <mat-spinner diameter="48"></mat-spinner>
+                <p>Yükleniyor...</p>
+              </div>
+            } @else if (list.length === 0 && !showForm) {
+              <div class="empty-state">
+                <mat-icon class="empty-icon">library_music</mat-icon>
+                <p class="empty-text">Henüz ses dosyası yok.</p>
+                <button mat-raised-button color="primary" (click)="openAdd()">
+                  <mat-icon>add</mat-icon>
+                  İlk ses dosyasını ekle
+                </button>
+              </div>
+            } @else if (list.length > 0) {
+              <div class="sound-list">
+                @for (item of list; track item.id) {
+                  <mat-card class="sound-card">
+                    <mat-card-content>
+                      <div class="sound-info">
+                        <span class="sound-name">{{ item.Name || '(Adsız)' }}</span>
+                        <span class="sound-file-info">{{ item.Name ? 'Oynatılabilir' : '—' }}</span>
+                      </div>
+                      <div class="sound-actions">
+                        <button
+                          mat-icon-button
+                          color="primary"
+                          (click)="play(item)"
+                          [matTooltip]="isPlaying(item) ? 'Durdur' : 'Oynat'"
+                          [class.playing]="isPlaying(item)"
+                          [disabled]="!item.Name">
+                          <mat-icon>{{ isPlaying(item) ? 'stop' : 'play_arrow' }}</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="deleteItem(item)" matTooltip="Sil">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                }
+              </div>
+            }
+
+            @if (showForm) {
+              <mat-card class="form-card ses-kaydetme-form">
+                <mat-card-header>
+                  <mat-card-title>Yeni ses dosyası</mat-card-title>
+                  <mat-card-subtitle>Dosya adını girin, mikrofonla kaydedin veya dosya yükleyin</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-fields">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Dosya adı</mat-label>
+                      <input matInput [(ngModel)]="formName" placeholder="Örn: Hoş geldiniz" />
+                    </mat-form-field>
+
+                    <div class="mic-record-field full-width">
+                      <label class="file-label">Mikrofonla kaydet</label>
+                      <div class="mic-record-row">
+                        @if (!isRecording) {
+                          <button
+                            type="button"
+                            mat-raised-button
+                            color="accent"
+                            (click)="startRecording()"
+                            [disabled]="loading">
+                            <mat-icon>mic</mat-icon>
+                            Kayda başla
+                          </button>
+                        } @else {
+                          <button type="button" mat-raised-button color="warn" (click)="stopRecording()">
+                            <mat-icon>stop</mat-icon>
+                            Kaydı durdur
+                          </button>
+                          <span class="recording-duration">{{ formatDuration(recordingDuration) }}</span>
+                          <span class="recording-badge">Kaydediliyor...</span>
+                        }
+                      </div>
+                      @if (microphoneError) {
+                        <p class="mic-error">{{ microphoneError }}</p>
+                      }
+                    </div>
+
+                    <div class="file-field full-width">
+                      <label class="file-label">Veya dosyadan yükle</label>
+                      <div class="file-row">
+                        <input
+                          type="file"
+                          [id]="fileInputId"
+                          [accept]="acceptedAudioTypes"
+                          (change)="onFileSelected($event)"
+                          class="file-input-hidden" />
+                        <button type="button" mat-stroked-button (click)="triggerFileInput()" [disabled]="isRecording">
+                          <mat-icon>upload_file</mat-icon>
+                          {{ formFile ? formFile.name : 'Dosya seç' }}
+                        </button>
+                        @if (formFile) {
+                          <span class="file-name">{{ formFile.name }}</span>
+                          <button type="button" mat-icon-button (click)="clearSelectedFile()" matTooltip="Seçimi kaldır">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                        }
+                      </div>
+                      <p class="file-hint">MP3, WAV, OGG vb. ses dosyası seçin veya yukarıdan mikrofonla kaydedin.</p>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button mat-button (click)="cancelForm()" [disabled]="isRecording">İptal</button>
+                    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading || isRecording">
+                      {{ loading ? 'Kaydediliyor...' : 'Kaydet' }}
+                    </button>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

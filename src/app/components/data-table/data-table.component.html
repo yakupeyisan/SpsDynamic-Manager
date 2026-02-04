@@ -443,7 +443,7 @@
 
   <div #tableWrapper class="ui-table-wrapper" 
        [style.height]="height && fixedBody ? height : null"
-       [style.padding-bottom]="showFooter ? '24px' : null"
+       [style.padding-bottom]="showFooter ? '0px' : null"
        [attr.tabindex]="keyboard ? (tabIndex ?? 0) : null"
        (focus)="onGridFocus($event)"
        (blur)="onGridBlur($event)"
@@ -511,6 +511,7 @@
           [attr.index]="i"
           [class.ui-table-row-even]="i % 2 === 0"
           [class.ui-table-row-odd]="i % 2 === 1"
+          [ngClass]="getRowClass ? getRowClass(row) : null"
           (dblclick)="onRowDblClick(row, $event)"
           (contextmenu)="onRowContextMenu(row, $event)"
           (mousedown)="onRowMouseDown(row, $event)"
@@ -753,23 +754,23 @@
               [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
               [(ngModel)]="formData[column.field]"
               [placeholder]="getColumnLabel(column)"
-              [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+              [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
             </ui-input>
             
             <!-- Number Input -->
             <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
               <!-- Disabled currency/money fields show formatted value -->
-              <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+              <span *ngIf="(getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
                     class="ui-form-disabled-value">
                 {{ getFormattedFormValue(column) }}
               </span>
               <!-- Regular number input for editable fields or non-currency disabled fields -->
               <ui-input
-                *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                *ngIf="!((getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
                 type="number"
                 [(ngModel)]="formData[column.field]"
                 [placeholder]="getColumnLabel(column)"
-                [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
               </ui-input>
             </ng-container>
             
@@ -778,33 +779,59 @@
               *ngIf="column.type === 'radio'"
               [(ngModel)]="formData[column.field]"
               (ngModelChange)="onFormFieldChange(column.field, $event)"
-              [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+              [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
               class="ui-form-radio-group">
               <mat-radio-button
                 *ngFor="let option of (column.options || getColumnOptions(column))"
                 [value]="option.value"
-                [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                 class="ui-form-radio-button">
                 {{ option.label }}
               </mat-radio-button>
             </mat-radio-group>
             
-            <!-- Select/Enum/List -->
-            <ui-select
-              *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-              [options]="column.options || getColumnOptions(column)"
-              [(ngModel)]="formData[column.field]"
-              [placeholder]="getColumnLabel(column)"
-              [multiple]="column.type === 'enum'"
-              [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
-            </ui-select>
+            <!-- Select/Enum/List (searchable from parent: formFieldSearch) -->
+            <ng-container *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'">
+              <!-- SoundFile: select + Oynat button -->
+              <div *ngIf="column.field === 'SoundFile'" class="ui-form-sound-row">
+                <ui-select
+                  class="ui-form-sound-select"
+                  [options]="column.options || getColumnOptions(column)"
+                  [(ngModel)]="formData[column.field]"
+                  [placeholder]="getColumnLabel(column)"
+                  [disabled]="getColumnDisabled(column)">
+                </ui-select>
+                <button type="button" class="ui-form-sound-play-btn" [disabled]="!formData[column.field]" [class.playing]="isPlayingSound(formData[column.field])" (click)="playSoundFile(formData[column.field])" title="Oynat">
+                  <i-tabler name="player-play" *ngIf="!isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                  <i-tabler name="player-stop" *ngIf="isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                </button>
+              </div>
+              <ui-select
+                *ngIf="column.field !== 'SoundFile' && formFieldSearch && formFieldSearch[column.field]"
+                [options]="formFieldSearch[column.field].options"
+                [(ngModel)]="formData[column.field]"
+                [placeholder]="formFieldSearch[column.field].placeholder || getColumnLabel(column)"
+                [searchPlaceholder]="formFieldSearch[column.field].searchPlaceholder || 'Ara...'"
+                [disableClientFilter]="true"
+                [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
+                (searchChange)="formFieldSearch[column.field].onSearch($event)">
+              </ui-select>
+              <ui-select
+                *ngIf="column.field !== 'SoundFile' && (!formFieldSearch || !formFieldSearch[column.field])"
+                [options]="column.options || getColumnOptions(column)"
+                [(ngModel)]="formData[column.field]"
+                [placeholder]="getColumnLabel(column)"
+                [multiple]="column.type === 'enum'"
+                [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
+              </ui-select>
+            </ng-container>
             
             <!-- Checkbox/Toggle -->
             <ui-toggle
               *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
               [(ngModel)]="formData[column.field]"
               [label]="''"
-                          [disabled]="column.disabled || false">
+                          [disabled]="getColumnDisabled(column) || false">
             </ui-toggle>
             
           </ui-form-field>
@@ -919,23 +946,23 @@
                           [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
                           [(ngModel)]="formData[column.field]"
                           [placeholder]="getColumnLabel(column)"
-                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                          [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
                         </ui-input>
                         
                         <!-- Number Input -->
                         <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
                           <!-- Disabled currency/money fields show formatted value -->
-                          <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+                          <span *ngIf="(getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
                                 class="ui-form-disabled-value">
                             {{ getFormattedFormValue(column) }}
                           </span>
                           <!-- Regular number input for editable fields or non-currency disabled fields -->
                           <ui-input
-                            *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                            *ngIf="!((getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
                             type="number"
                             [(ngModel)]="formData[column.field]"
                             [placeholder]="getColumnLabel(column)"
-                            [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                            [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
                           </ui-input>
                         </ng-container>
                         
@@ -944,34 +971,61 @@
                           *ngIf="column.type === 'radio'"
                           [(ngModel)]="formData[column.field]"
                           (ngModelChange)="onFormFieldChange(column.field, $event)"
-                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                          [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                           class="ui-form-radio-group">
                           <mat-radio-button
                             *ngFor="let option of (column.options || getColumnOptions(column))"
                             [value]="option.value"
-                            [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                            [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                             class="ui-form-radio-button">
                             {{ option.label }}
                           </mat-radio-button>
                         </mat-radio-group>
                         
-                        <!-- Select/Enum/List -->
-                        <ui-select
-                          *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-                          [options]="column.options || getColumnOptions(column)"
-                          [(ngModel)]="formData[column.field]"
-                          (valueChange)="onFormFieldChange(column.field, $event)"
-                          [placeholder]="getColumnLabel(column)"
-                          [multiple]="column.type === 'enum'"
-                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
-                        </ui-select>
+                        <!-- Select/Enum/List (searchable from parent: formFieldSearch) -->
+                        <ng-container *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'">
+                          <div *ngIf="column.field === 'SoundFile'" class="ui-form-sound-row">
+                            <ui-select
+                              class="ui-form-sound-select"
+                              [options]="column.options || getColumnOptions(column)"
+                              [(ngModel)]="formData[column.field]"
+                              (valueChange)="onFormFieldChange(column.field, $event)"
+                              [placeholder]="getColumnLabel(column)"
+                              [disabled]="getColumnDisabled(column)">
+                            </ui-select>
+                            <button type="button" class="ui-form-sound-play-btn" [disabled]="!formData[column.field]" [class.playing]="isPlayingSound(formData[column.field])" (click)="playSoundFile(formData[column.field])" title="Oynat">
+                              <i-tabler name="player-play" *ngIf="!isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                              <i-tabler name="player-stop" *ngIf="isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                            </button>
+                          </div>
+                          <ui-select
+                            *ngIf="column.field !== 'SoundFile' && formFieldSearch && formFieldSearch[column.field]"
+                            [options]="formFieldSearch[column.field].options"
+                            [(ngModel)]="formData[column.field]"
+                            (valueChange)="onFormFieldChange(column.field, $event)"
+                            [placeholder]="formFieldSearch[column.field].placeholder || getColumnLabel(column)"
+                            [searchPlaceholder]="formFieldSearch[column.field].searchPlaceholder || 'Ara...'"
+                            [disableClientFilter]="true"
+                            [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
+                            (searchChange)="formFieldSearch[column.field].onSearch($event)">
+                          </ui-select>
+                          <ui-select
+                            *ngIf="column.field !== 'SoundFile' && (!formFieldSearch || !formFieldSearch[column.field])"
+                            [options]="column.options || getColumnOptions(column)"
+                            [(ngModel)]="formData[column.field]"
+                            (valueChange)="onFormFieldChange(column.field, $event)"
+                            [placeholder]="getColumnLabel(column)"
+                            [multiple]="column.type === 'enum'"
+                            [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
+                          </ui-select>
+                        </ng-container>
                         
                         <!-- Checkbox/Toggle -->
                         <ui-toggle
                           *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
                           [(ngModel)]="formData[column.field]"
                           [label]="''"
-                          [disabled]="column.disabled || false">
+                          [disabled]="getColumnDisabled(column) || false">
                         </ui-toggle>
                         
                         <!-- Textarea -->
@@ -979,7 +1033,7 @@
                           *ngIf="column.type === 'textarea' || (column.type === 'text' && column.field === 'CardDesc')"
                           [(ngModel)]="formData[column.field]"
                           [placeholder]="getColumnLabel(column)"
-                          [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                          [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                           class="ui-form-textarea"
                           rows="4">
                         </textarea>
@@ -1071,23 +1125,23 @@
                     [type]="column.type === 'time' ? 'time' : (column.type === 'date' ? 'date' : 'text')"
                     [(ngModel)]="formData[column.field]"
                     [placeholder]="getColumnLabel(column)"
-                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                    [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
                   </ui-input>
                   
                   <!-- Number Input -->
                   <ng-container *ngIf="column.type === 'int' || column.type === 'float' || column.type === 'money' || column.type === 'currency' || column.type === 'percent'">
                     <!-- Disabled currency/money fields show formatted value -->
-                    <span *ngIf="(column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
+                    <span *ngIf="(getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money')" 
                           class="ui-form-disabled-value">
                       {{ getFormattedFormValue(column) }}
                     </span>
                     <!-- Regular number input for editable fields or non-currency disabled fields -->
                     <ui-input
-                      *ngIf="!((column.disabled || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
+                      *ngIf="!((getColumnDisabled(column) || column.field === recid || column.field === 'recid') && (column.type === 'currency' || column.type === 'money'))"
                       type="number"
                       [(ngModel)]="formData[column.field]"
                       [placeholder]="getColumnLabel(column)"
-                      [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
+                      [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
                     </ui-input>
                   </ng-container>
                   
@@ -1096,33 +1150,58 @@
                     *ngIf="column.type === 'radio'"
                     [(ngModel)]="formData[column.field]"
                     (ngModelChange)="onFormFieldChange(column.field, $event)"
-                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                    [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                     class="ui-form-radio-group">
                     <mat-radio-button
                       *ngFor="let option of (column.options || getColumnOptions(column))"
                       [value]="option.value"
-                      [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                      [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                       class="ui-form-radio-button">
                       {{ option.label }}
                     </mat-radio-button>
                   </mat-radio-group>
                   
-                  <!-- Select/Enum/List -->
-                  <ui-select
-                    *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'"
-                    [options]="column.options || getColumnOptions(column)"
-                    [(ngModel)]="formData[column.field]"
-                    [placeholder]="getColumnLabel(column)"
-                    [multiple]="column.type === 'enum'"
-                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'">
-                  </ui-select>
+                  <!-- Select/Enum/List (searchable from parent: formFieldSearch) -->
+                  <ng-container *ngIf="column.type === 'enum' || column.type === 'list' || column.type === 'select' || column.type === 'combo'">
+                    <div *ngIf="column.field === 'SoundFile'" class="ui-form-sound-row">
+                      <ui-select
+                        class="ui-form-sound-select"
+                        [options]="column.options || getColumnOptions(column)"
+                        [(ngModel)]="formData[column.field]"
+                        [placeholder]="getColumnLabel(column)"
+                        [disabled]="getColumnDisabled(column)">
+                      </ui-select>
+                      <button type="button" class="ui-form-sound-play-btn" [disabled]="!formData[column.field]" [class.playing]="isPlayingSound(formData[column.field])" (click)="playSoundFile(formData[column.field])" title="Oynat">
+                        <i-tabler name="player-play" *ngIf="!isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                        <i-tabler name="player-stop" *ngIf="isPlayingSound(formData[column.field])" style="width: 1.1rem; height: 1.1rem;"></i-tabler>
+                      </button>
+                    </div>
+                    <ui-select
+                      *ngIf="column.field !== 'SoundFile' && formFieldSearch && formFieldSearch[column.field]"
+                      [options]="formFieldSearch[column.field].options"
+                      [(ngModel)]="formData[column.field]"
+                      [placeholder]="formFieldSearch[column.field].placeholder || getColumnLabel(column)"
+                      [searchPlaceholder]="formFieldSearch[column.field].searchPlaceholder || 'Ara...'"
+                      [disableClientFilter]="true"
+                      [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
+                      (searchChange)="formFieldSearch[column.field].onSearch($event)">
+                    </ui-select>
+                    <ui-select
+                      *ngIf="column.field !== 'SoundFile' && (!formFieldSearch || !formFieldSearch[column.field])"
+                      [options]="column.options || getColumnOptions(column)"
+                      [(ngModel)]="formData[column.field]"
+                      [placeholder]="getColumnLabel(column)"
+                      [multiple]="column.type === 'enum'"
+                      [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'">
+                    </ui-select>
+                  </ng-container>
                   
                   <!-- Checkbox/Toggle -->
                   <ui-toggle
                     *ngIf="column.type === 'checkbox' || column.type === 'toggle'"
                     [(ngModel)]="formData[column.field]"
                     [label]="''"
-                          [disabled]="column.disabled || false">
+                          [disabled]="getColumnDisabled(column) || false">
                   </ui-toggle>
                   
                   <!-- Textarea -->
@@ -1130,7 +1209,7 @@
                     *ngIf="column.type === 'textarea' || (column.type === 'text' && column.field === 'CardDesc')"
                     [(ngModel)]="formData[column.field]"
                     [placeholder]="getColumnLabel(column)"
-                    [disabled]="column.disabled || column.field === recid || column.field === 'recid'"
+                    [disabled]="getColumnDisabled(column) || column.field === recid || column.field === 'recid'"
                     class="ui-form-textarea"
                     rows="4">
                   </textarea>

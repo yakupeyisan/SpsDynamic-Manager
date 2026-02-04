@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { ToastrService } from 'ngx-toastr';
 
 @Injectable({
   providedIn: 'root'
@@ -16,8 +17,16 @@ export class WebSocketService {
   private reconnectTimer: any = null; // Store reconnect timer/interval to clear if needed
   private reconnectIntervalId: any = null; // Store reconnect interval ID to clear if needed
   private shouldReconnect = true; // Flag to control reconnection
+  private reconnectFailedSubject = new Subject<void>();
+  /** İlk yüklemede false; kullanıcı kırmızı butona basınca true. Sadece true iken 5 deneme + dialog. */
+  private allowReconnectAttempts = false;
+  /** Kaç tick geçti (isConnecting yüzünden return edilse bile artar); 5 tick sonunda dialog. */
+  private reconnectTicks = 0;
 
-  constructor() {
+  constructor(
+    private toastr: ToastrService,
+    private ngZone: NgZone
+  ) {
     this.connect();
   }
 
@@ -40,7 +49,10 @@ export class WebSocketService {
 
     try {
       this.isConnecting = true;
-      
+      if (this.allowReconnectAttempts) {
+        this.toastr.info('Tekrar bağlanmayı deniyor...', 'WebSocket');
+      }
+
       // Use wsUrl if provided, otherwise derive from apiUrl
       let wsUrl: string;
       if (environment.settings[environment.setting as keyof typeof environment.settings].wsUrl) {
@@ -91,15 +103,13 @@ export class WebSocketService {
       this.socket.onclose = (event) => {
         this.isConnecting = false;
         this.connectionStatus.next(false);
-        
-        // Only attempt reconnect if:
-        // 1. shouldReconnect is true
-        // 2. Close code is not 1000 (normal closure) or 1001 (going away)
-        // 3. We haven't exceeded max reconnect attempts
+        // İlk yüklemede yeniden deneme yok; sadece kullanıcı kırmızı butona bastığında 5 deneme
+        if (!this.allowReconnectAttempts) {
+          return;
+        }
         if (this.shouldReconnect && event.code !== 1000 && event.code !== 1001) {
           this.attemptReconnect();
         } else if (event.code === 1000 || event.code === 1001) {
-          // Normal closure - don't reconnect
           this.shouldReconnect = false;
         }
       };
@@ -107,8 +117,7 @@ export class WebSocketService {
       this.isConnecting = false;
       console.error('Error connecting to WebSocket:', error);
       this.connectionStatus.next(false);
-      // Only reconnect if we should
-      if (this.shouldReconnect) {
+      if (this.allowReconnectAttempts && this.shouldReconnect) {
         this.attemptReconnect();
       }
     }
@@ -141,40 +150,38 @@ export class WebSocketService {
     // Don't reconnect if we've exceeded max attempts
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
+      this.ngZone.run(() => this.reconnectFailedSubject.next());
       this.shouldReconnect = false;
       return;
     }
 
     // Start reconnect loop - try every second
     //console.log('WebSocket: Starting reconnect loop (1 attempt per second)');
+    this.reconnectTicks = 0;
     this.reconnectIntervalId = setInterval(() => {
-      // Check if already connected
+      this.reconnectTicks++;
+
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        //console.log('WebSocket: Connection established, stopping reconnect loop');
         this.stopReconnectLoop();
         this.reconnectAttempts = 0;
+        this.reconnectTicks = 0;
         return;
       }
 
-      // Check if we should continue reconnecting
-      if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
-          this.shouldReconnect = false;
-        }
+      // 5 tick geçtiyse (isConnecting yüzünden return olsa bile) dialog tetikle
+      if (this.reconnectTicks >= this.maxReconnectAttempts) {
+        console.warn('WebSocket: Max reconnect attempts reached. Stopping reconnection.');
+        this.shouldReconnect = false;
+        this.ngZone.run(() => this.reconnectFailedSubject.next());
         this.stopReconnectLoop();
         return;
       }
 
-      // Don't reconnect if already connecting
       if (this.isConnecting) {
         return;
       }
 
       this.reconnectAttempts++;
-      //console.log(`WebSocket: Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-      
-      // Try to connect
       this.connect();
     }, this.reconnectInterval);
   }
@@ -321,10 +328,27 @@ export class WebSocketService {
   }
 
   /**
+   * Emits when reconnect failed after max attempts (e.g. to show restart dialog).
+   */
+  getReconnectFailed(): Observable<void> {
+    return this.reconnectFailedSubject.asObservable();
+  }
+
+  /**
    * Check if WebSocket is connected
    */
   isConnected(): boolean {
     return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Kullanıcı kırmızı butona bastığında: 5 kere bağlanmayı dene, bağlanamazsa dialog tetiklenir.
+   */
+  reconnect(): void {
+    this.allowReconnectAttempts = true;
+    this.shouldReconnect = true;
+    this.reconnectAttempts = 0;
+    this.connect();
   }
 
   /**

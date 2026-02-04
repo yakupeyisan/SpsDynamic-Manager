@@ -18,6 +18,7 @@ import { TabsComponent } from '../tabs/tabs.component';
 import { TabItemComponent } from '../tabs/tab-item.component';
 import { AdvancedFilter, FilterCondition, FilterOperator, FILTER_OPERATORS } from './filter.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TablerIconsModule } from 'angular-tabler-icons';
 import { ButtonComponent } from '../button/button.component';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
@@ -165,7 +166,7 @@ export interface TableColumn {
   joinTable?: string | string[]; // Join table name(s) - column will be shown when this join is selected
   load?: TableColumnLoad; // Load options from remote URL for list/enum/select types
   fullWidth?: boolean; // Make field take full width in form (spans all columns in grid layout)
-  disabled?: boolean; // Disable field in form
+  disabled?: boolean | ((formData?: any) => boolean); // Disable field in form (can be function for dynamic disable)
   currencyPrefix?: string; // Currency prefix (e.g., '$', '€', '₺') - overrides global setting
   currencySuffix?: string; // Currency suffix (e.g., ' TL', ' USD') - overrides global setting
   currencyPrecision?: number; // Number of decimal places for currency (default: 2) - overrides global setting
@@ -231,7 +232,7 @@ export interface ToolbarConfig {
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, TablerIconsModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -347,7 +348,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() formLoadUrl?: string; // URL to load form data for edit mode
   @Input() formLoadRequest?: (recid: any, parentFormData?: any) => any; // Function to build request body for form load (parentFormData is available for nested grids)
   @Input() formDataMapper?: (apiRecord: any) => any; // Function to map API response to form data
-  @Input() imageUploadUrl?: string; // URL for image upload
+  @Input() imageUploadUrl?: string; // URL for image upload (when not using imageAsBase64Field)
+  @Input() imageUploadPayloadType?: 'form' | 'json-base64'; // 'form' = FormData, 'json-base64' = { EmployeeID, ImageData }
+  @Input() imageAsBase64Field?: string; // When set (e.g. 'Picture'), embed image as base64 in form payload on save – no separate upload
   @Input() imageField?: string; // Field name for image
   @Input() imagePreviewUrl?: (filename: string) => string; // Function to generate image preview URL
   @Input() onSave?: (data: any, isEdit: boolean, http?: any) => Observable<any>; // Callback function to save form data (http is optional for nested grids)
@@ -358,7 +361,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() currencyPrefix?: string = '$'; // Global currency prefix (default: '$')
   @Input() currencySuffix?: string = ''; // Global currency suffix (default: '')
   @Input() currencyPrecision?: number = 2; // Global currency precision/decimal places (default: 2)
-  
+  /** Per-field searchable select: options + onSearch callback (e.g. Personel with /api/Employees/find). When set for a field, ui-select uses disableClientFilter and searchChange. */
+  @Input() formFieldSearch?: Record<string, { options: { label: string; value: any }[]; onSearch: (term: string) => void; placeholder?: string; searchPlaceholder?: string; loading?: boolean }>;
+
   @Output() rowClick = new EventEmitter<{ row: TableRow; columnIndex?: number }>();
   @Output() rowDblClick = new EventEmitter<TableRow>();
   @Output() rowSelect = new EventEmitter<TableRow[]>();
@@ -393,7 +398,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   /** When false, reload does not scroll table to top (e.g. for live-updating grids). */
   @Input() scrollToTopOnReload: boolean = true;
   @Input() toolbar?: ToolbarConfig; // Custom toolbar configuration (w2ui style)
-  
+  /** Optional function to add CSS class(es) to each row (e.g. for success/error highlighting). */
+  @Input() getRowClass?: (row: TableRow) => string | string[] | Record<string, boolean> | null;
+
   @Output() toolbarClick = new EventEmitter<{ item: ToolbarItem; event: MouseEvent }>();
 
   @ViewChild('tableWrapper', { static: false }) tableWrapperRef?: ElementRef<HTMLDivElement>;
@@ -3051,7 +3058,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return;
     }
 
-    const filters = this.pendingReportFilter.conditions.map((cond: any) => {
+    // Excel export ile birebir aynı: transformFilterForApi ile searchField kullan
+    const transformedFilter = this.transformFilterForApi(this.pendingReportFilter);
+    const conditions = transformedFilter?.conditions ?? this.pendingReportFilter.conditions;
+
+    const filters = conditions.map((cond: any) => {
       const col = this.displayColumns.find((c) => (c.searchField || c.field) === cond.field || c.field === cond.field);
       const result: any = { field: cond.field, operator: cond.operator, value: cond.value, type: cond.type };
       if (col?.label || col?.text) result.label = col.label || col.text;
@@ -3075,7 +3086,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         record: {
           Name: this.reportName.trim(),
           Grid: cfg.grid,
-          Logic: this.pendingReportFilter.logic,
+          Logic: transformedFilter?.logic ?? this.pendingReportFilter.logic,
           Url: cfg.url,
           Filters: JSON.stringify(filters),
           Maps: JSON.stringify(maps),
@@ -3443,7 +3454,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
   
   /**
-   * Open form in add mode
+   * Open form in add mode (called by parent e.g. (add) handler or custom button).
+   * Do not emit add here to avoid loop: parent (add)="onTableAdd()" -> openAddForm() -> add.emit() -> onTableAdd() -> ...
+   * The add event is only emitted from onAdd() when the toolbar Add button is clicked.
    */
   openAddForm() {
     this.isEditMode = false;
@@ -3461,7 +3474,6 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }, 0);
     
     this.cdr.markForCheck();
-    this.add.emit();
   }
 
   /**
@@ -3675,6 +3687,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
    * Close form modal
    */
   closeFormModal() {
+    // Stop sound playback if playing
+    if (this.formAudio) {
+      this.formAudio.pause();
+      this.formAudio.currentTime = 0;
+      this.formAudio = null;
+    }
+    this.formPlayingSoundUrl = null;
+
     // First set showFormPage to false to prevent form from reopening
     this.showFormPage = false;
     this.showFormModal = false;
@@ -4126,49 +4146,104 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.isLoading = true;
     this.cdr.markForCheck();
     
-    // If image file is selected, upload it first
+    // If image file is selected: embed as base64 in form payload or upload separately
     if (this.selectedImageFile) {
-      // Unsubscribe from previous subscription if exists
+      if (this.imageAsBase64Field) {
+        // Embed image as base64 in form data (e.g. Picture) and save with create/update
+        if (this.imageUploadSubscription) {
+          this.imageUploadSubscription.unsubscribe();
+        }
+        this.imageUploadSubscription = this.readFileAsBase64(this.selectedImageFile).subscribe({
+          next: (base64) => {
+            submitData[this.imageAsBase64Field!] = base64;
+            this.saveFormData(submitData);
+          },
+          error: (error) => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+            console.error('Error reading image:', error);
+            this.saveFormData(submitData);
+          }
+        });
+        return;
+      }
+      // Separate image upload (imageUploadUrl)
+      const isJsonBase64 = this.imageUploadPayloadType === 'json-base64';
+      const employeeId = submitData['EmployeeID'] ?? submitData['recid'] ?? this.editingRecordId;
+      if (isJsonBase64 && (employeeId == null || employeeId === '')) {
+        this.saveFormData(submitData);
+        return;
+      }
       if (this.imageUploadSubscription) {
         this.imageUploadSubscription.unsubscribe();
       }
-      
-      this.imageUploadSubscription = this.uploadImageFile(this.selectedImageFile).subscribe({
+      this.imageUploadSubscription = this.uploadImageFile(this.selectedImageFile, isJsonBase64 ? employeeId : undefined).subscribe({
         next: (imageResponse) => {
-          // Add image field to submit data
           if (this.imageField && imageResponse && imageResponse.filename) {
             submitData[this.imageField] = imageResponse.filename;
           }
-          
-          // Save form data
           this.saveFormData(submitData);
         },
         error: (error) => {
           this.isLoading = false;
           this.cdr.markForCheck();
           console.error('Error uploading image:', error);
-          // Still try to save form data without image
           this.saveFormData(submitData);
         }
       });
     } else {
-      // Save form data without image upload
       this.saveFormData(submitData);
     }
   }
   
+  /** Read file as base64 string (data URL suffix only). */
+  private readFileAsBase64(file: File): Observable<string> {
+    return new Observable<string>(observer => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+        observer.next(base64);
+        observer.complete();
+      };
+      reader.onerror = () => {
+        observer.error(reader.error);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  
   /**
-   * Upload image file
+   * Upload image file (when imageUploadUrl is used, not imageAsBase64Field).
    */
-  private uploadImageFile(file: File): Observable<any> {
+  private uploadImageFile(file: File, employeeId?: number): Observable<any> {
     if (!this.imageUploadUrl) {
-      // If no imageUploadUrl provided, return null
       return of(null);
+    }
+    
+    if (this.imageUploadPayloadType === 'json-base64' && employeeId != null) {
+      return new Observable<any>(observer => {
+        this.readFileAsBase64(file).subscribe({
+          next: (base64) => {
+            const body = { EmployeeID: employeeId, ImageData: base64 };
+            this.http.post(this.imageUploadUrl!, body).pipe(
+              catchError(error => {
+                console.error('Error uploading image:', error);
+                return of(null);
+              })
+            ).subscribe({
+              next: (res) => observer.next(res),
+              error: (err) => observer.error(err),
+              complete: () => observer.complete()
+            });
+          },
+          error: (err) => observer.error(err)
+        });
+      });
     }
     
     const formData = new FormData();
     formData.append('file', file);
-    
     return this.http.post(this.imageUploadUrl, formData).pipe(
       catchError(error => {
         console.error('Error uploading image:', error);
@@ -4385,6 +4460,67 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   /**
+   * Whether a form column is disabled (supports boolean or (formData) => boolean)
+   */
+  getColumnDisabled(column: TableColumn): boolean {
+    if (!column) return false;
+    if (typeof column.disabled === 'function') {
+      try {
+        return column.disabled(this.formData || {});
+      } catch {
+        return false;
+      }
+    }
+    return !!column.disabled;
+  }
+
+  /**
+   * Ses dosyası oynatma URL'si: api/Sounds/{filename}
+   */
+  getSoundPlayUrl(filename: string | null | undefined): string {
+    if (!filename || typeof filename !== 'string') return '';
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    return `${apiUrl}/api/Sounds/${encodeURIComponent(filename.trim())}`;
+  }
+
+  private formAudio: HTMLAudioElement | null = null;
+  formPlayingSoundUrl: string | null = null;
+
+  playSoundFile(filename: string | null | undefined): void {
+    const url = this.getSoundPlayUrl(filename);
+    if (!url) return;
+    if (this.formPlayingSoundUrl === url) {
+      if (this.formAudio) {
+        this.formAudio.pause();
+        this.formAudio.currentTime = 0;
+      }
+      this.formAudio = null;
+      this.formPlayingSoundUrl = null;
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.formAudio) {
+      this.formAudio.pause();
+      this.formAudio.currentTime = 0;
+    }
+    this.formAudio = new Audio(url);
+    this.formPlayingSoundUrl = url;
+    this.cdr.markForCheck();
+    this.formAudio.play().catch(() => {
+      this.formPlayingSoundUrl = null;
+      this.cdr.markForCheck();
+    });
+    this.formAudio.onended = () => {
+      this.formPlayingSoundUrl = null;
+      this.cdr.markForCheck();
+    };
+  }
+
+  isPlayingSound(filename: string | null | undefined): boolean {
+    return !!filename && this.getSoundPlayUrl(filename) === this.formPlayingSoundUrl;
+  }
+
+  /**
    * Get translated column label
    */
   getColumnLabel(column: TableColumn): string {
@@ -4576,19 +4712,27 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   /**
    * Update record(s) (w2ui compatible)
+   * When dataSource is used, updates internalData in place (no reload).
    * @param recid Record ID or null to update all records
    * @param updates Object with fields to update
    * @returns true if successful
    */
   set(recid: any, updates: Partial<TableRow>): boolean {
+    const source = this.dataSource ? this.internalData : this.data;
+    const recidField = this.recid || 'id';
+
     if (recid == null) {
-      // Update all records
-      this.data = this.data.map(record => ({ ...record, ...updates }));
+      const mapped = source.map(record => ({ ...record, ...updates }));
+      if (this.dataSource) {
+        this.internalData = mapped;
+        this.cdr.markForCheck();
+      } else {
+        this.data = mapped;
+      }
       return true;
     }
 
-    const recidField = this.recid || 'id';
-    const index = this.data.findIndex(record => {
+    const index = source.findIndex(record => {
       const id = record['recid'] || record[recidField] || record['id'];
       return id === recid;
     });
@@ -4597,11 +4741,17 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       return false;
     }
 
-    this.data = [
-      ...this.data.slice(0, index),
-      { ...this.data[index], ...updates },
-      ...this.data.slice(index + 1)
+    const next = [
+      ...source.slice(0, index),
+      { ...source[index], ...updates },
+      ...source.slice(index + 1)
     ];
+    if (this.dataSource) {
+      this.internalData = next;
+      this.cdr.markForCheck();
+    } else {
+      this.data = next;
+    }
 
     return true;
   }
@@ -5834,6 +5984,9 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     } else {
       actualUrl = load.url;
     }
+    if (!actualUrl || actualUrl === '') {
+      return;
+    }
     
     // If data is a function, check if required formData values are available
     if (typeof load.data === 'function') {
@@ -5850,6 +6003,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       const source = dynamicData?.source;
       // Also check formData for Source field
       const sourceFromFormData = this.formData?.['Source'];
+      const sourceTypeFromFormData = this.formData?.['SourceType'];
       
       // For Field dropdown, check if Source is available
       if (column.field === 'Field') {
@@ -5857,14 +6011,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
           console.warn(`[loadColumnOption] ${column.field} - Source not found in formData, skipping`);
           return;
         }
-        // Use sourceFromFormData for cache key
         cacheKey = `${column.field}_${actualUrl}_${sourceFromFormData}`;
-        //console.log(`[loadColumnOption] ${column.field} - Loading with Source: ${sourceFromFormData}, cacheKey: ${cacheKey}`);
+      } else if (column.field === 'SourceID' && sourceTypeFromFormData) {
+        cacheKey = `${column.field}_${actualUrl}_${sourceTypeFromFormData}`;
       } else if (employeeId != null && employeeId !== undefined) {
-        // For other fields that require EmployeeID
         cacheKey = `${column.field}_${actualUrl}_${employeeId}`;
       } else {
-        // Fallback
         cacheKey = `${column.field}_${actualUrl}`;
       }
       data = dynamicData;
@@ -6011,28 +6163,45 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
     // If column has load configuration, check cache first
     if (actualColumn.load && actualColumn.load.url) {
+      // Resolve URL the same way as loadColumnOption (critical for dynamic URL to match cache key)
+      let actualUrl: string;
+      if (typeof actualColumn.load.url === 'function') {
+        actualUrl = actualColumn.load.url(this.formData);
+        if (!actualUrl || actualUrl === '') {
+          return [];
+        }
+      } else {
+        actualUrl = actualColumn.load.url;
+      }
       // Build cache key same way as loadColumnOption
-      let cacheKey = `${actualColumn.field}_${actualColumn.load.url}`;
+      let cacheKey: string;
       if (typeof actualColumn.load.data === 'function') {
         const dynamicData = actualColumn.load.data(this.formData);
         const employeeId = dynamicData?.EmployeeID;
-        
-        // If EmployeeID is required but not available, return empty array (don't load)
-        if (employeeId == null || employeeId === undefined) {
-          return [];
+        const sourceFromFormData = this.formData?.['Source'];
+        const sourceTypeFromFormData = this.formData?.['SourceType'];
+        if (actualColumn.field === 'Field') {
+          if (sourceFromFormData == null || sourceFromFormData === undefined || sourceFromFormData === '') {
+            return [];
+          }
+          cacheKey = `${actualColumn.field}_${actualUrl}_${sourceFromFormData}`;
+        } else if (actualColumn.field === 'SourceID') {
+          if (!sourceTypeFromFormData) return [];
+          cacheKey = `${actualColumn.field}_${actualUrl}_${sourceTypeFromFormData}`;
+        } else if (employeeId != null && employeeId !== undefined) {
+          cacheKey = `${actualColumn.field}_${actualUrl}_${employeeId}`;
+        } else {
+          cacheKey = `${actualColumn.field}_${actualUrl}`;
         }
-        
-        cacheKey = `${actualColumn.field}_${actualColumn.load.url}_${employeeId}`;
+      } else {
+        cacheKey = `${actualColumn.field}_${actualUrl}`;
       }
       
       // First check cache (even if empty, to prevent duplicate requests)
       if (this.columnOptionsCache.has(cacheKey)) {
         const cachedOptions = this.columnOptionsCache.get(cacheKey);
-        // Update column.options from cache to ensure consistency
         if (cachedOptions && cachedOptions.length > 0) {
-          // Create new array reference to trigger change detection
           actualColumn.options = [...cachedOptions];
-          // Also update the passed column reference if different
           if (column !== actualColumn) {
             column.options = [...cachedOptions];
           }
@@ -6041,20 +6210,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
       
       if (actualColumn.options && Array.isArray(actualColumn.options) && actualColumn.options.length > 0) {
-        // Also cache it for next time
         this.columnOptionsCache.set(cacheKey, actualColumn.options);
         return actualColumn.options;
       }
       
-      // Check if already loading - if yes, return empty array to prevent duplicate requests
       if (this.columnOptionsLoading.get(cacheKey)) {
         return [];
       }
       
-      // Load if not cached and not currently loading
-      // Use the actual column from formFields if available
-      this.loadColumnOption(actualColumn);
-      return []; // Return empty array while loading
+      // Do NOT call loadColumnOption from here - it triggers change detection and can cause
+      // "Maximum call stack size exceeded". Loading is started by loadFormFieldOptions /
+      // loadDynamicFieldOptions when the form opens.
+      return [];
     }
 
     // If column has static options, return them
@@ -6090,43 +6257,51 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         ...this.getEditableColumns()
       ];
       
-      // Filter columns that have load.data as function
+      // Filter columns that have load (url as function = dynamic URL, or load.data as function)
       const dynamicColumns = allColumns.filter(col => 
         col.load && 
-        typeof col.load.data === 'function' &&
+        (typeof col.load.url === 'function' || typeof col.load.data === 'function') &&
         col.field
       );
       
       // Load options for each dynamic column
       dynamicColumns.forEach(column => {
-        // Check if formData has required values (e.g., EmployeeID for SubscriptionCard, Source for Field)
-        const dynamicData = column.load!.data!(this.formData);
+        const dynamicData = column.load!.data ? (typeof column.load!.data === 'function' ? column.load!.data!(this.formData) : column.load!.data) : {};
         const employeeId = dynamicData?.EmployeeID;
         const source = this.formData?.['Source'];
+        const sourceType = this.formData?.['SourceType'];
         
-        // Get actual URL (might be a function)
         let actualUrl: string;
         if (typeof column.load!.url === 'function') {
           actualUrl = column.load!.url(this.formData);
         } else {
-          actualUrl = column.load!.url;
+          actualUrl = column.load!.url || '';
         }
+        if (!actualUrl && column.field !== 'SourceID') return;
         
-        // For Field dropdown, check if Source is available
-        if (column.field === 'Field') {
-          if (source != null && source !== undefined) {
-            // Build cache key to check if already loaded for this Source
-            const cacheKey = `${column.field}_${actualUrl}_${source}`;
-            
-            // Only load if not already cached
+        // For SourceID dropdown (Alarm form), require SourceType
+        if (column.field === 'SourceID') {
+          if (sourceType) {
+            const cacheKey = `${column.field}_${actualUrl}_${sourceType}`;
             if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
-              // Clear column.options to force reload
               column.options = undefined;
-              // Load options
               this.loadColumnOption(column);
             }
           }
-        } else if (employeeId != null && employeeId !== undefined) {
+          return;
+        }
+        // For Field dropdown, check if Source is available
+        if (column.field === 'Field') {
+          if (source != null && source !== undefined) {
+            const cacheKey = `${column.field}_${actualUrl}_${source}`;
+            if (!this.columnOptionsCache.has(cacheKey) && !this.columnOptionsLoading.get(cacheKey)) {
+              column.options = undefined;
+              this.loadColumnOption(column);
+            }
+          }
+          return;
+        }
+        if (employeeId != null && employeeId !== undefined) {
           // For other fields that require EmployeeID
           // Build cache key to check if already loaded for this EmployeeID
           const cacheKey = `${column.field}_${actualUrl}_${employeeId}`;
@@ -6157,40 +6332,69 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // If Source field changed, immediately reload Field options
     if (fieldName === 'Source' && previousValue !== value && value != null && value !== undefined && value !== '') {
-      //console.log(`[onFormFieldChange] Source changed from ${previousValue} to ${value}, reloading Field options`);
-      
-      // Find Field column
       let fieldColumn = this.formFields?.find(col => col.field === 'Field');
       if (!fieldColumn) {
         fieldColumn = this.getEditableColumns().find(col => col.field === 'Field');
       }
-      
       if (fieldColumn && fieldColumn.load) {
-        // Clear all Field caches
-        const cacheKeysToDelete: string[] = [];
         this.columnOptionsCache.forEach((val, key) => {
-          if (key.startsWith('Field_')) {
-            cacheKeysToDelete.push(key);
-          }
+          if (key.startsWith('Field_')) this.columnOptionsCache.delete(key);
         });
-        cacheKeysToDelete.forEach(key => this.columnOptionsCache.delete(key));
-        
-        // Clear loading states
         this.columnOptionsLoading.forEach((val, key) => {
-          if (key.startsWith('Field_')) {
-            this.columnOptionsLoading.delete(key);
-          }
+          if (key.startsWith('Field_')) this.columnOptionsLoading.delete(key);
         });
-        
-        // Clear Field value and options
         this.formData['Field'] = null;
         fieldColumn.options = undefined;
-        
-        // Reload Field options with new Source
-        setTimeout(() => {
-          this.loadColumnOption(fieldColumn!);
-        }, 50);
+        setTimeout(() => this.loadColumnOption(fieldColumn!), 50);
       }
+    }
+    
+    // If SourceType changed (Alarm form), reload SourceID options and clear SourceID
+    if (fieldName === 'SourceType' && previousValue !== value) {
+      let sourceIdColumn = this.formFields?.find(col => col.field === 'SourceID');
+      if (!sourceIdColumn) {
+        sourceIdColumn = this.getEditableColumns().find(col => col.field === 'SourceID');
+      }
+      this.formData['SourceID'] = null;
+      if (this.formData['SourceName'] !== undefined) this.formData['SourceName'] = null;
+      if (sourceIdColumn && sourceIdColumn.load) {
+        this.columnOptionsCache.forEach((val, key) => {
+          if (key.startsWith('SourceID_')) this.columnOptionsCache.delete(key);
+        });
+        this.columnOptionsLoading.forEach((val, key) => {
+          if (key.startsWith('SourceID_')) this.columnOptionsLoading.delete(key);
+        });
+        sourceIdColumn.options = undefined;
+        if (value) {
+          setTimeout(() => this.loadColumnOption(sourceIdColumn!), 50);
+        }
+      }
+    }
+
+    // If SourceID changed (Alarm form), set SourceName to the selected option's text for submit
+    if (fieldName === 'SourceID') {
+      if (value != null && value !== '') {
+        let sourceIdColumn = this.formFields?.find(col => col.field === 'SourceID');
+        if (!sourceIdColumn) {
+          sourceIdColumn = this.getEditableColumns().find(col => col.field === 'SourceID');
+        }
+        if (sourceIdColumn) {
+          const options = this.getColumnOptions(sourceIdColumn);
+          const selected = options.find((opt: TableColumnOption) => opt.value === value || opt.value == value);
+          const sourceName = selected?.label ?? '';
+          this.formData['SourceName'] = sourceName;
+          this.onFormDataChange({ [fieldName]: value, SourceName: sourceName });
+          this.cdr.markForCheck();
+          return;
+        }
+      } else {
+        this.formData['SourceName'] = null;
+      }
+    }
+    
+    // If EmployeeScope changed to ALL (Alarm form), clear EmployeeID
+    if (fieldName === 'EmployeeScope' && value === 'ALL') {
+      this.formData['EmployeeID'] = null;
     }
     
     // Trigger onFormDataChange with the changed field

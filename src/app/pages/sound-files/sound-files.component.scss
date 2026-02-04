@@ -1,0 +1,264 @@
+.sound-files-page {
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 64px);
+
+  .main-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    .card-header {
+      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+      color: white;
+      padding: 24px 32px;
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+
+        .page-title {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0;
+          font-size: 24px;
+          font-weight: 600;
+
+          mat-icon {
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+          }
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+
+          .add-btn mat-icon {
+            margin-right: 8px;
+          }
+        }
+      }
+    }
+
+    .card-content {
+      padding: 24px;
+    }
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    gap: 16px;
+    color: #64748b;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+
+    .empty-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+    }
+
+    .empty-text {
+      color: #64748b;
+      font-size: 16px;
+      margin: 0 0 20px 0;
+    }
+
+    button mat-icon {
+      margin-right: 8px;
+    }
+  }
+
+  .sound-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .sound-card {
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    mat-card-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px !important;
+    }
+
+    .sound-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .sound-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: #1e293b;
+      }
+
+      .sound-url {
+        font-size: 12px;
+        color: #64748b;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 100%;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .sound-file-info {
+        font-size: 12px;
+        color: #64748b;
+      }
+    }
+
+    .sound-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+
+      button.playing {
+        background: rgba(14, 165, 233, 0.15);
+        color: #0ea5e9;
+      }
+    }
+  }
+
+  .form-card.ses-kaydetme-form {
+    margin-top: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+
+    mat-card-header {
+      padding: 16px 16px 0;
+      display: block;
+
+      mat-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      mat-card-subtitle {
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 12px;
+      }
+    }
+
+    mat-card-content {
+      padding: 16px !important;
+    }
+
+    .form-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 20px;
+
+      .full-width {
+        width: 100%;
+      }
+
+      .mic-record-field {
+        .file-label {
+          display: block;
+          font-size: 12px;
+          color: rgba(0, 0, 0, 0.6);
+          margin-bottom: 8px;
+        }
+        .mic-record-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+          button mat-icon {
+            margin-right: 8px;
+          }
+        }
+        .recording-duration {
+          font-size: 18px;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
+          color: #dc2626;
+        }
+        .recording-badge {
+          font-size: 13px;
+          color: #64748b;
+        }
+        .mic-error {
+          font-size: 12px;
+          color: #dc2626;
+          margin: 8px 0 0;
+        }
+      }
+
+      .file-field {
+        .file-label {
+          display: block;
+          font-size: 12px;
+          color: rgba(0, 0, 0, 0.6);
+          margin-bottom: 8px;
+        }
+        .file-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .file-input-hidden {
+          position: absolute;
+          width: 0;
+          height: 0;
+          opacity: 0;
+          overflow: hidden;
+        }
+        .file-name {
+          font-size: 14px;
+          color: #64748b;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .file-hint {
+          font-size: 12px;
+          color: #64748b;
+          margin: 8px 0 0;
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+  }
+}

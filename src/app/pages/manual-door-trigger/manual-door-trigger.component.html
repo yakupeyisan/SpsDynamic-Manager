@@ -3,38 +3,93 @@
     <div class="row">
       <div class="col-12">
         <div class="door-trigger-container" [style.height]="gridHeight">
-          <!-- Left Panel: Doors Grid -->
+          <!-- Left Panel: Tab panel (Kapılar, Inputlar, Outputlar) -->
           <div class="door-trigger-panel">
-            <div class="door-trigger-panel-header">
-              <h4 class="door-trigger-panel-title">Kapılar</h4>
-            </div>
-            <div class="door-trigger-panel-body">
-              <ui-data-table
-                #doorsGrid
-                [id]="'doors-grid'"
-                [columns]="doorsTableColumns"
-                [dataSource]="doorsDataSource"
-                [selectable]="true"
-                [pagination]="true"
-                [pageSize]="100"
-                [limit]="-1"
-                [height]="gridHeight"
-                [recid]="'SerialNumber'"
-                [selectType]="'row'"
-                [multiSelect]="true"
-                [showRefresh]="true"
-                [searchable]="true"
-                [advancedFilter]="true"
-                [showFooter]="true"
-                [toolbar]="doorsTableToolbarConfig"
-                [searchPlaceholder]="'Ara Tüm Alanlar'"
-                (rowSelect)="onDoorSelect($event)">
-              </ui-data-table>
+            <div class="door-trigger-panel-body door-trigger-tabs-wrapper">
+              <ui-tabs
+                [(activeTab)]="activeTab"
+                variant="default"
+                (activeTabChange)="activeTab = $event">
+                <ui-tab-item label="Kapılar">
+                  <div class="door-trigger-tab-content">
+                    <ui-data-table
+                      #doorsGrid
+                      [id]="'doors-grid'"
+                      [columns]="doorsTableColumns"
+                      [dataSource]="doorsDataSource"
+                      [selectable]="true"
+                      [pagination]="true"
+                      [pageSize]="100"
+                      [limit]="-1"
+                      [height]="tabGridHeight"
+                      [recid]="'SerialNumber'"
+                      [selectType]="'row'"
+                      [multiSelect]="true"
+                      [showRefresh]="true"
+                      [searchable]="true"
+                      [advancedFilter]="true"
+                      [showFooter]="true"
+                      [toolbar]="doorsTableToolbarConfig"
+                      [searchPlaceholder]="'Ara Tüm Alanlar'"
+                      [getRowClass]="getDoorRowClass"
+                      (rowSelect)="onDoorSelect($event)">
+                    </ui-data-table>
+                  </div>
+                </ui-tab-item>
+                <ui-tab-item label="Inputlar">
+                  <div class="door-trigger-tab-content">
+                    <ui-data-table
+                      #inputsGrid
+                      [id]="'inputs-grid'"
+                      [columns]="inputsTableColumns"
+                      [dataSource]="inputsDataSource"
+                      [selectable]="true"
+                      [selectType]="'row'"
+                      [multiSelect]="true"
+                      [pagination]="true"
+                      [pageSize]="100"
+                      [limit]="-1"
+                      [height]="tabGridHeight"
+                      [recid]="'SerialNumber'"
+                      [showRefresh]="true"
+                      [searchable]="true"
+                      [advancedFilter]="true"
+                      [showFooter]="true"
+                      [toolbar]="inputsOutputsToolbarConfig"
+                      [searchPlaceholder]="'Ara Tüm Alanlar'">
+                    </ui-data-table>
+                  </div>
+                </ui-tab-item>
+                <ui-tab-item label="Outputlar">
+                  <div class="door-trigger-tab-content">
+                    <ui-data-table
+                      #outputsGrid
+                      [id]="'outputs-grid'"
+                      [columns]="outputsTableColumns"
+                      [dataSource]="outputsDataSource"
+                      [selectable]="true"
+                      [selectType]="'row'"
+                      [multiSelect]="true"
+                      [pagination]="true"
+                      [pageSize]="100"
+                      [limit]="-1"
+                      [height]="tabGridHeight"
+                      [recid]="'SerialNumber'"
+                      [showRefresh]="true"
+                      [searchable]="true"
+                      [advancedFilter]="true"
+                      [showFooter]="true"
+                      [toolbar]="inputsOutputsToolbarConfig"
+                      [searchPlaceholder]="'Ara Tüm Alanlar'">
+                    </ui-data-table>
+                  </div>
+                </ui-tab-item>
+              </ui-tabs>
             </div>
           </div>
 
-          <!-- Right Panel: Form -->
-          <div class="door-trigger-panel">
+          <!-- Right Panel: Form (Input sekmesinde pasif) -->
+          <div class="door-trigger-panel" [class.panel-disabled]="isOperationsPanelDisabled">
             <div class="door-trigger-panel-header">
               <h4 class="door-trigger-panel-title">İşlem Ayarları</h4>
             </div>
@@ -53,6 +108,7 @@
                       [(ngModel)]="formData.processType"
                       [options]="processTypeOptions"
                       [placeholder]="'İşlem tipi seçiniz...'"
+                      [disabled]="isOperationsPanelDisabled"
                       (ngModelChange)="onProcessTypeChange($event)">
                     </ui-select>
                   </ui-form-field>
@@ -65,7 +121,7 @@
                       type="number"
                       [(ngModel)]="formData.processTickM"
                       [placeholder]="'Dakika'"
-                      [disabled]="formData.processType !== '**'"
+                      [disabled]="isOperationsPanelDisabled || formData.processType !== '**'"
                       [min]="0">
                     </ui-input>
                   </ui-form-field>
@@ -78,7 +134,7 @@
                       type="number"
                       [(ngModel)]="formData.processTick"
                       [placeholder]="'Saniye'"
-                      [disabled]="formData.processType !== '**'"
+                      [disabled]="isOperationsPanelDisabled || formData.processType !== '**'"
                       [min]="0">
                     </ui-input>
                   </ui-form-field>
@@ -111,6 +167,7 @@
                     <ui-button 
                       variant="secondary" 
                       size="md"
+                      [disabled]="isOperationsPanelDisabled"
                       (clicked)="resetForm()">
                       <i class="ti ti-refresh me-2"></i>
                       Sıfırla
@@ -120,7 +177,7 @@
                       variant="primary" 
                       size="md"
                       (clicked)="onSave()"
-                      [disabled]="selectedDoors.length === 0">
+                      [disabled]="isOperationsPanelDisabled || selectedDoors.length === 0">
                       <i class="ti ti-check me-2"></i>
                       Kaydet
                     </ui-button>

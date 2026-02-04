@@ -28,6 +28,7 @@ import { catchError } from 'rxjs/operators';
 import { of, Subscription } from 'rxjs';
 import { PendingClaimsService } from 'src/app/services/pending-claims.service';
 import { RequestClaimsDialogComponent } from 'src/app/dialogs/request-claims-dialog/request-claims-dialog.component';
+import { WebSocketService } from 'src/app/services/websocket.service';
 
 interface notifications {
   id: number;
@@ -64,6 +65,7 @@ interface apps {
     MaterialModule,
   ],
   templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss'],
   encapsulation: ViewEncapsulation.None,
 })
 export class HeaderComponent implements OnInit, OnDestroy {
@@ -86,6 +88,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Pending claims
   pendingClaimsCount = 0;
   private pendingClaimsSub?: Subscription;
+
+  // WebSocket status (green = connected, red = disconnected)
+  wsConnected = false;
+  private wsStatusSub?: Subscription;
 
   toggleCollpase() {
     this.isCollapse = !this.isCollapse; // Toggle visibility
@@ -125,7 +131,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private router: Router,
     private http: HttpClient,
     private toastr: ToastrService,
-    public pendingClaimsService: PendingClaimsService
+    public pendingClaimsService: PendingClaimsService,
+    private wsService: WebSocketService
   ) {
     translate.setDefaultLang('tr');
     // Set initial language based on current translate service
@@ -145,10 +152,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.pendingClaimsSub = this.pendingClaimsService.pendingClaims$.subscribe(() => {
       this.pendingClaimsCount = this.pendingClaimsService.count;
     });
+    // WebSocket connection status
+    this.wsConnected = this.wsService.isConnected();
+    this.wsStatusSub = this.wsService.getConnectionStatus().subscribe(connected => {
+      this.wsConnected = connected;
+    });
   }
 
   ngOnDestroy(): void {
     this.pendingClaimsSub?.unsubscribe();
+    this.wsStatusSub?.unsubscribe();
+  }
+
+  onWebSocketReconnect(): void {
+    this.wsService.reconnect();
+    this.toastr.info('WebSocket yeniden bağlanıyor...', 'Bağlantı');
   }
 
   openPendingClaimsDialog(): void {

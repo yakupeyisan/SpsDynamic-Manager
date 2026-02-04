@@ -22,7 +22,7 @@ import {
   GridResponse,
   ColumnType
 } from 'src/app/components/data-table/data-table.component';
-import { WebSocketService } from 'src/app/services/websocket.service';
+import { LiveViewStorageService } from 'src/app/services/live-view-storage.service';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { SelectComponent } from 'src/app/components/select/select.component';
 
@@ -48,9 +48,8 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   
-  // Live view state
+  // Live view state (synced from LiveViewStorageService)
   isLiveViewEnabled: boolean = false;
-  recordCount: number = 1;
   recordHeight: number = 100;
   
   // Filter modal
@@ -108,16 +107,16 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     }
   ];
   
-  // WebSocket subscription
-  private wsSubscription?: Subscription;
-  private connectionStatusSubscription?: Subscription;
+  // Subscriptions to storage service (for UI updates only; storage runs in service)
+  private storedRecordsSubscription?: Subscription;
+  private isActiveSubscription?: Subscription;
   
-  // Throttle grid reload when WS messages arrive rapidly
+  // Throttle grid reload when new records arrive
   private reloadThrottleMs = 150;
   private lastReloadAt = 0;
   private pendingReloadId: ReturnType<typeof setTimeout> | null = null;
   
-  // Data source - empty initially, will be populated by WebSocket
+  // Data source - synced from LiveViewStorageService (shows stored records when returning to page)
   liveViewRecords: any[] = [];
   
   // Data source function for table
@@ -174,98 +173,53 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     public translate: TranslateService,
     private cdr: ChangeDetectorRef,
-    private wsService: WebSocketService
+    private liveViewStorage: LiveViewStorageService
   ) {}
 
   ngOnInit(): void {
     this.loadLiveViewSettings();
+    // Load stored records (e.g. when returning to live view page)
+    this.liveViewRecords = this.liveViewStorage.getStoredRecords();
+    this.isLiveViewEnabled = this.liveViewStorage.getIsActive();
+    this.currentReaderList = this.liveViewStorage.getCurrentReaderList();
+    // Subscribe to storage updates (new records arrive even when user was on another page)
+    this.storedRecordsSubscription = this.liveViewStorage.getStoredRecords$().subscribe(records => {
+      this.liveViewRecords = records;
+      this.scheduleReload();
+    });
+    this.isActiveSubscription = this.liveViewStorage.getIsActive$().subscribe(active => {
+      this.isLiveViewEnabled = active;
+      this.cdr.detectChanges();
+    });
   }
 
   ngOnDestroy(): void {
     this.clearReloadThrottle();
-    if (this.wsSubscription) {
-      this.wsSubscription.unsubscribe();
+    if (this.storedRecordsSubscription) {
+      this.storedRecordsSubscription.unsubscribe();
     }
-    if (this.connectionStatusSubscription) {
-      this.connectionStatusSubscription.unsubscribe();
+    if (this.isActiveSubscription) {
+      this.isActiveSubscription.unsubscribe();
     }
-    // Note: We don't disconnect WebSocketService as it's a global service used by other components
+    // Do NOT call liveViewStorage.stopLiveView() here so background storage continues when user navigates away
   }
 
   /**
-   * Toggle live view on/off
+   * Toggle live view on/off. When on, storage service stores messages in background (even when user leaves page).
    */
   toggleLiveView(enabled: boolean): void {
     this.isLiveViewEnabled = enabled;
-    
     if (enabled) {
-      this.startLiveView();
+      let readerList: number[] = this.currentReaderList;
+      if (readerList.length === 0 && this.selectedTerminals?.length > 0) {
+        readerList = this.selectedTerminals.map((t: any) =>
+          parseInt(t.SerialNumber || t.serialNumber || '0')
+        ).filter((num: number) => !isNaN(num) && num > 0);
+      }
+      this.liveViewStorage.startLiveView(readerList.length ? readerList : this.currentReaderList);
     } else {
-      this.stopLiveView();
+      this.liveViewStorage.stopLiveView();
     }
-  }
-
-  /**
-   * Start live view with WebSocket connection
-   */
-  private startLiveView(): void {
-    // Use stored readerList if available, otherwise get from selectedTerminals
-    let readerList: number[] = this.currentReaderList;
-    
-    if (readerList.length === 0 && this.selectedTerminals && this.selectedTerminals.length > 0) {
-      // Fallback: Use terminals from selectedTerminals
-      readerList = this.selectedTerminals.map((terminal: any) => {
-        return parseInt(terminal.SerialNumber || terminal.serialNumber || '0');
-      }).filter((num: number) => !isNaN(num) && num > 0);
-    }
-    
-    this.connectWebSocket(readerList);
-  }
-
-  /**
-   * Connect to WebSocket
-   */
-  private connectWebSocket(readerList: number[]): void {
-    //console.log('Connecting WebSocket with readerList:', readerList);
-    
-    // Send clientconnect message to WebSocket
-    this.wsService.sendMessage({
-      type: 'clientconnect',
-      readerList: readerList
-    });
-    
-    // Subscribe to messages – new format: { Type: "live", Status, Message, Data }
-    this.wsSubscription = this.wsService.getMessages().subscribe((data: any) => {
-      if (data?.Type !== 'live' || !data?.Data) return;
-
-      const d = data.Data;
-      const message = data.Status === false ? (data.Message || '') : (d.Message || '');
-      const record: any = {
-        ...d,
-        Id: this.recordCount++,
-        Message: message,
-        LiveStatus: data.Status
-      };
-
-      this.liveViewRecords.unshift(record);
-
-      if (this.liveViewRecords.length > 50) {
-        this.liveViewRecords = this.liveViewRecords.slice(0, 50);
-      }
-
-      this.scheduleReload();
-    });
-    
-    // Subscribe to connection status
-    this.connectionStatusSubscription = this.wsService.getConnectionStatus().subscribe((connected: boolean) => {
-      if (!connected && this.isLiveViewEnabled) {
-        // Automatically close toggle when connection is lost
-        this.isLiveViewEnabled = false;
-        this.stopLiveView();
-        this.toastr.warning('WebSocket bağlantısı kesildi. Canlı izleme durduruldu.', 'Bağlantı Hatası');
-        this.cdr.detectChanges();
-      }
-    });
   }
 
   /**
@@ -297,21 +251,6 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     if (this.pendingReloadId) {
       clearTimeout(this.pendingReloadId);
       this.pendingReloadId = null;
-    }
-  }
-
-  /**
-   * Stop live view
-   */
-  private stopLiveView(): void {
-    this.clearReloadThrottle();
-    if (this.wsSubscription) {
-      this.wsSubscription.unsubscribe();
-      this.wsSubscription = undefined;
-    }
-    if (this.connectionStatusSubscription) {
-      this.connectionStatusSubscription.unsubscribe();
-      this.connectionStatusSubscription = undefined;
     }
   }
 
@@ -487,18 +426,12 @@ export class LiveViewComponent implements OnInit, OnDestroy {
       this.showFilterModal = false;
       this.cdr.detectChanges();
       
-      // Send to WebSocket (like old system: toggleWebsocket(true, datas))
-      if (this.isLiveViewEnabled) {
-        // Stop current connection and restart with new readerList
-        this.stopLiveView();
-        setTimeout(() => {
-          this.connectWebSocket(this.currentReaderList);
-        }, 500);
+      // Start/restart live view with new readerList (storage service keeps storing in background)
+      if (this.liveViewStorage.getIsActive()) {
+        this.liveViewStorage.startLiveView(this.currentReaderList);
       } else {
-        // Even if live view is not enabled, send to WebSocket and enable toggle
-        // This automatically enables live view when WebSocket connects
-        this.isLiveViewEnabled = true; // Automatically enable toggle
-        this.connectWebSocket(this.currentReaderList);
+        this.isLiveViewEnabled = true;
+        this.liveViewStorage.startLiveView(this.currentReaderList);
         this.toastr.success(`${this.currentReaderList.length} terminal için filtre uygulandı ve canlı izleme başlatıldı`, 'Başarılı');
       }
     });
