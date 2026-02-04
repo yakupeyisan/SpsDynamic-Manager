@@ -31,3 +31,30 @@
     box-shadow: 0 0 0 6px rgba(244, 67, 54, 0);
   }
 }
+
+/* Alarm popup button badge (same pattern as pending-claims) */
+.alarm-popup-btn {
+  .alarm-popup-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    color: #fff;
+    background-color: #ed6c02;
+    border-radius: 9px;
+  }
+}
+
+.alarm-popup-menu {
+  max-height: 360px;
+  .alarm-popup-list {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+}

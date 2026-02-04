@@ -112,3 +112,30 @@ html .topbar {
     box-sizing: border-box;
   }
 }
+
+// Alarm popup badge (WS isPopUp uyarıları)
+.alarm-popup-btn {
+  position: relative;
+  .alarm-popup-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    color: #fff;
+    background-color: #ed6c02;
+    border-radius: 9px;
+  }
+}
+.alarm-popup-menu {
+  max-height: 360px;
+  .alarm-popup-list {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+}

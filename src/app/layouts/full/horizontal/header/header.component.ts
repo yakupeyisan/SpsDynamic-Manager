@@ -17,6 +17,8 @@ import { catchError } from 'rxjs/operators';
 import { of, Subscription } from 'rxjs';
 import { PendingClaimsService } from 'src/app/services/pending-claims.service';
 import { RequestClaimsDialogComponent } from 'src/app/dialogs/request-claims-dialog/request-claims-dialog.component';
+import { AlarmPopupService, AlarmPopupItem } from 'src/app/services/alarm-popup.service';
+import { AlarmPopupDialogComponent } from 'src/app/dialogs/alarm-popup-dialog/alarm-popup-dialog.component';
 
 interface notifications {
   id: number;
@@ -62,6 +64,10 @@ export class AppHorizontalHeaderComponent implements OnInit, OnDestroy {
   // Pending claims
   pendingClaimsCount = 0;
   private pendingClaimsSub?: Subscription;
+
+  // Alarm popup (WS isPopUp mesajları)
+  alarmPopupList: AlarmPopupItem[] = [];
+  private alarmPopupSub?: Subscription;
 
   public selectedLanguage: any = {
     language: 'Türkçe',
@@ -110,7 +116,8 @@ export class AppHorizontalHeaderComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private toastr: ToastrService,
     private router: Router,
-    public pendingClaimsService: PendingClaimsService
+    public pendingClaimsService: PendingClaimsService,
+    public alarmPopupService: AlarmPopupService
   ) {
     translate.setDefaultLang('en');
   }
@@ -119,10 +126,27 @@ export class AppHorizontalHeaderComponent implements OnInit, OnDestroy {
     this.pendingClaimsSub = this.pendingClaimsService.pendingClaims$.subscribe(() => {
       this.pendingClaimsCount = this.pendingClaimsService.count;
     });
+    this.alarmPopupList = this.alarmPopupService.list;
+    this.alarmPopupSub = this.alarmPopupService.list$.subscribe(list => {
+      this.alarmPopupList = list;
+    });
   }
 
   ngOnDestroy(): void {
     this.pendingClaimsSub?.unsubscribe();
+    this.alarmPopupSub?.unsubscribe();
+  }
+
+  openAlarmPopupDialog(item: AlarmPopupItem): void {
+    this.dialog.open(AlarmPopupDialogComponent, {
+      width: '480px',
+      data: item,
+      disableClose: false
+    });
+  }
+
+  clearAlarmPopups(): void {
+    this.alarmPopupService.clear();
   }
 
   openPendingClaimsDialog(): void {

@@ -1,7 +1,59 @@
 <!-- LiveView Component Template -->
 <div class="live-view-page">
-  <div class="container-fluid">
-    <!-- Data Table Section -->
+  <!-- Sayfa açıldığında gösterilen bağlantı modalı: terminal grubu seçip Bağlan -->
+  <ui-modal
+    [show]="showConnectForm"
+    [title]="'Geçişleri İzle - Terminal Seçin'"
+    [size]="'lg'"
+    [closable]="false"
+    [showFooter]="true"
+    [backdropClose]="false"
+    [hideSidebarWhenOpen]="false">
+    <div class="filter-modal-content">
+      <p class="text-muted mb-3">İzlemek istediğiniz terminal grubunu seçin ve Bağlan'a tıklayın.</p>
+      <div class="form-group">
+        <label>Grup:</label>
+        <ui-select
+          [(ngModel)]="selectedLiveViewSettingId"
+          [options]="liveViewSettings"
+          [placeholder]="'Grup seçiniz...'"
+          (ngModelChange)="onLiveViewSettingChange()">
+        </ui-select>
+      </div>
+      <div class="form-group" *ngIf="selectedTerminals.length > 0">
+        <label>Seçili Terminaller ({{ selectedTerminals.length }}):</label>
+        <div class="terminals-list-container">
+          <ui-data-table
+            [id]="'connect-terminals-grid'"
+            [columns]="terminalsTableColumns"
+            [dataSource]="terminalsDataSource"
+            [selectable]="false"
+            [pagination]="true"
+            [pageSize]="10"
+            [height]="'280px'"
+            [recid]="'ReaderID'"
+            [showRefresh]="false"
+            [showFooter]="true"
+            [toolbar]="terminalsTableToolbarConfig">
+          </ui-data-table>
+        </div>
+      </div>
+      <div class="form-group" *ngIf="selectedLiveViewSettingId && selectedTerminals.length === 0">
+        <div class="alert alert-info">
+          <i class="ti ti-info-circle me-2"></i>
+          Bu grup için terminal bulunamadı.
+        </div>
+      </div>
+    </div>
+    <div slot="footer" class="modal-footer">
+      <button type="button" class="btn btn-primary" (click)="onConnect()" [disabled]="selectedTerminals.length === 0">
+        Bağlan
+      </button>
+    </div>
+  </ui-modal>
+
+  <!-- Grid: sadece Bağlan'dan sonra -->
+  <div class="container-fluid" *ngIf="!showConnectForm">
     <div class="row">
       <div class="col-12">
         <ui-data-table

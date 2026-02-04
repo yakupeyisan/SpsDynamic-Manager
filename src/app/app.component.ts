@@ -9,6 +9,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { WebSocketRestartDialogComponent } from './dialogs/websocket-restart-dialog/websocket-restart-dialog.component';
+import { AlarmPopupService } from './services/alarm-popup.service';
 import { catchError } from 'rxjs/operators';
 import { of, Subscription } from 'rxjs';
 
@@ -21,12 +22,14 @@ import { of, Subscription } from 'rxjs';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'SpsDynamic';
   private reconnectFailedSub?: Subscription;
+  private wsMessagesSub?: Subscription;
 
   constructor(
     private translate: TranslateService,
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) private platformId: Object,
     private wsService: WebSocketService,
+    private alarmPopupService: AlarmPopupService,
     private dialog: MatDialog,
     private http: HttpClient,
     private toastr: ToastrService,
@@ -52,10 +55,33 @@ export class AppComponent implements OnInit, OnDestroy {
         this.ngZone.run(() => this.openWebSocketRestartDialog());
       }, 150);
     });
+
+    // WebSocket'ten gelen mesajlarda isPopUp true ise alarm popup listesine ekle; SoundFile varsa sesi oynat
+    this.wsMessagesSub = this.wsService.getMessages().subscribe((data: Record<string, unknown>) => {
+      if (!data) return;
+      const isAlarm = (data['isPopUp'] === true || data['isPopUp'] === 1) || data['AlarmEventID'] != null;
+      if (isAlarm && (data['isPopUp'] === true || data['isPopUp'] === 1)) {
+        this.ngZone.run(() => this.alarmPopupService.add(data));
+      }
+      if (isAlarm && data['SoundFile']) {
+        const file = String(data['SoundFile']).trim();
+        if (file) this.ngZone.run(() => this.playAlarmSound(file));
+      }
+    });
+  }
+
+  /** Gelen alarmın ses dosyasını otomatik oynat (api/Sounds/{filename}) */
+  private playAlarmSound(filename: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    const url = `${apiUrl}/api/Sounds/${encodeURIComponent(filename)}`;
+    const audio = new Audio(url);
+    audio.play().catch(() => {});
   }
 
   ngOnDestroy(): void {
     this.reconnectFailedSub?.unsubscribe();
+    this.wsMessagesSub?.unsubscribe();
   }
 
   private openWebSocketRestartDialog(): void {

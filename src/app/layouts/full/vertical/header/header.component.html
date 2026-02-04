@@ -63,6 +63,42 @@
     <span class="pending-claims-badge">{{ pendingClaimsCount }}</span>
   </button>
 
+  <!-- --------------------------------------------------------------- -->
+  <!--  Alarm Popup Button (WS isPopUp uyarıları) -->
+  <!-- --------------------------------------------------------------- -->
+  <button 
+    *ngIf="alarmPopupList.length > 0"
+    mat-icon-button 
+    [matMenuTriggerFor]="alarmPopupMenu" 
+    matTooltip="Alarm uyarıları"
+    class="d-flex align-items-center justify-content-center position-relative alarm-popup-btn">
+    <mat-icon>notifications_active</mat-icon>
+    <span class="alarm-popup-badge">{{ alarmPopupList.length }}</span>
+  </button>
+  <mat-menu #alarmPopupMenu="matMenu" class="topbar-dd cardWithShadow alarm-popup-menu">
+    <div class="d-flex align-items-center p-x-32 p-y-16 b-b-1">
+      <h6 class="f-s-16 f-w-600 m-0">Alarm Uyarıları</h6>
+      <span class="m-l-auto">
+        <button mat-button color="warn" (click)="clearAlarmPopups()">Tümünü temizle</button>
+      </span>
+    </div>
+    <div class="alarm-popup-list p-y-8">
+      @for (item of alarmPopupList; track item.id) {
+      <button mat-menu-item class="p-x-30 p-y-12" (click)="openAlarmPopupDialog(item)">
+        <div class="d-flex align-items-center w-100">
+          <span class="flex-shrink-0 text-warning bg-light-warning rounded-circle icon-48 d-flex align-items-center justify-content-center">
+            <mat-icon class="icon-20 d-flex">notification_important</mat-icon>
+          </span>
+          <div class="m-l-16 w-100 text-start">
+            <span class="d-block f-s-14 f-w-500 text-truncate">{{ alarmPopupService.getItemTitle(item) }}</span>
+            <span class="d-block f-s-12 text-muted">{{ item.receivedAt | date:'short':'':'tr' }}</span>
+          </div>
+        </div>
+      </button>
+      }
+    </div>
+  </mat-menu>
+
   <div class="d-none d-lg-flex">
     <!-- --------------------------------------------------------------- -->
     <!--  Links -->

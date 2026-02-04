@@ -46,7 +46,20 @@ export const navItems: NavItem[] = [
   {
     displayName: 'Canlı İzleme',
     iconName: 'mdi:eye',
-    route: '/LiveView',
+    children: [
+      {
+        displayName: 'Geçiş ve Alarmları İzle',
+        route: '/AllView',
+      },
+      {
+        displayName: 'Geçişleri İzle',
+        route: '/LiveView',
+      },
+      {
+        displayName: 'Alarmları İzle',
+        route: '/AlarmsView',
+      }
+    ],
   },
   {
     displayName: 'Tanımlar',

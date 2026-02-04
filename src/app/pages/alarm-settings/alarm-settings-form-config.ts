@@ -32,8 +32,8 @@ const employeeScopeOptions = [
 
 // Olay sonucu: true->Başarılı, false->Başarısız
 const eventResultOptions = [
-  { label: 'Başarılı', value: 'true' },
-  { label: 'Başarısız', value: 'false' }
+  { label: 'Başarılı - Açık', value: 'true' },
+  { label: 'Başarısız - Kapalı', value: 'false' }
 ];
 
 export const formFields: TableColumn[] = [
@@ -134,12 +134,7 @@ export const formFields: TableColumn[] = [
     field: 'isPopUp',
     label: 'Popup Göster',
     text: 'Popup Göster',
-    type: 'list' as ColumnType,
-    fullWidth: false,
-    options: [
-      { label: 'Aktif', value: true },
-      { label: 'Pasif', value: false }
-    ]
+    type: 'toggle' as ColumnType,
   },
   {
     field: 'TimeZoneID',

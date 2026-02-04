@@ -18,7 +18,9 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() backdropClose: boolean = true;
   @Input() showFooter: boolean = true;
   @Input() allowFullscreen: boolean = true; // Allow fullscreen toggle
-  
+  /** false ise body'e modal-open eklenmez, sidebar görünür kalır */
+  @Input() hideSidebarWhenOpen: boolean = true;
+
   @Output() showChange = new EventEmitter<boolean>();
   @Output() closed = new EventEmitter<void>();
   @Output() opened = new EventEmitter<void>();
@@ -93,7 +95,9 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     if (this.show) {
       this.preventBodyScroll();
-      document.body.classList.add('modal-open');
+      if (this.hideSidebarWhenOpen) {
+        document.body.classList.add('modal-open');
+      }
     }
   }
 
@@ -104,7 +108,9 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy() {
     this.cleanupResizeObserver();
     this.restoreBodyScroll();
-    document.body.classList.remove('modal-open');
+    if (this.hideSidebarWhenOpen) {
+      document.body.classList.remove('modal-open');
+    }
   }
 
   private setupResizeObserver() {
@@ -133,8 +139,9 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showChange.emit(true);
     this.opened.emit();
     this.preventBodyScroll();
-    // Add class to body to hide sidebar when modal is open
-    document.body.classList.add('modal-open');
+    if (this.hideSidebarWhenOpen) {
+      document.body.classList.add('modal-open');
+    }
     // Setup resize observer after modal is shown
     setTimeout(() => {
       this.setupResizeObserver();
@@ -149,8 +156,9 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
       this.closed.emit();
       this.cleanupResizeObserver();
       this.restoreBodyScroll();
-      // Remove class from body when modal is closed
-      document.body.classList.remove('modal-open');
+      if (this.hideSidebarWhenOpen) {
+        document.body.classList.remove('modal-open');
+      }
     }
   }
 

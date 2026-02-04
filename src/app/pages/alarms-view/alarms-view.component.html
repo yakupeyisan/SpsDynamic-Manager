@@ -1,0 +1,95 @@
+<div class="alarms-view-page">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <ui-data-table
+          [id]="'alarms-view-grid'"
+          [showFooter]="true"
+          [page]="1"
+          [columns]="tableColumns"
+          [dataSource]="tableDataSource"
+          [canViewDeleted]="false"
+          [formFields]="formFields"
+          [formTabs]="formTabs"
+          [formLoadUrl]="formLoadUrl"
+          [formFullscreen]="true"
+          [formLoadRequest]="formLoadRequest"
+          [formDataMapper]="formDataMapper"
+          [onSave]="onSave"
+          [onFormChange]="onFormChange"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [limit]="100"
+          [height]="'calc(100vh - 100px)'"
+          [recordHeight]="36"
+          [showEmptyRows]="true"
+          [fixedBody]="true"
+          [advancedFilter]="true"
+          [showRefresh]="true"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder') || 'Ara...'"
+          [recid]="'AlarmEventID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [multiSort]="true"
+          [keyboard]="true"
+          [liveSearch]="true"
+          [nestedFields]="true"
+          [columnTooltip]="'top'"
+          [toolbar]="tableToolbarConfig"
+          (rowClick)="onTableRowClick($event)"
+          (rowDblClick)="onTableRowDblClick($event)"
+          (rowSelect)="onTableRowSelect($event)"
+          (advancedFilterChange)="onAdvancedFilterChange($event)"
+          (refresh)="onTableRefresh()"
+          (delete)="onTableDelete($event)"
+          (add)="onTableAdd()"
+          (edit)="onTableEdit($event)">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toplu Onay Modal -->
+<ui-modal
+  [show]="showBulkApproveModal"
+  [title]="'Toplu Alarm Onayı'"
+  [size]="'md'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkApproveModalChange($event)">
+  <div class="bulk-approve-content">
+    <p class="bulk-approve-info">
+      <strong>{{ pendingApprovalRows.length }}</strong> adet alarm onaylanacak. Açıklama yazabilirsiniz (isteğe bağlı).
+    </p>
+    <div class="bulk-approve-warning" *ngIf="selectedAlarmRows.length > pendingApprovalRows.length">
+      Seçili {{ selectedAlarmRows.length - pendingApprovalRows.length }} kayıt zaten onaylı olduğu için atlanacak.
+    </div>
+    <div class="form-group">
+      <label>Açıklama</label>
+      <textarea
+        class="form-control"
+        [(ngModel)]="bulkApproveNote"
+        rows="3"
+        placeholder="Onay açıklaması (isteğe bağlı)"></textarea>
+    </div>
+  </div>
+  <div slot="footer" class="bulk-approve-modal-footer">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      (click)="closeBulkApproveModal()"
+      [disabled]="isApproving">
+      Vazgeç
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="onConfirmBulkApprove()"
+      [disabled]="isApproving">
+      <span *ngIf="isApproving" class="spinner-border spinner-border-sm me-2"></span>
+      Onayla
+    </button>
+  </div>
+</ui-modal>

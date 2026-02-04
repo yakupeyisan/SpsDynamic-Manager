@@ -1,0 +1,134 @@
+<div class="all-view-page">
+  <!-- Bağlantı modalı: sadece terminal grubu (canlı izleme ile birebir aynı) -->
+  <ui-modal
+    [show]="showConnectForm"
+    [title]="'Geçiş ve Alarmları İzle - Terminal Seçin'"
+    [size]="'lg'"
+    [closable]="false"
+    [showFooter]="true"
+    [backdropClose]="false"
+    [hideSidebarWhenOpen]="false">
+    <div class="filter-modal-content">
+      <p class="text-muted mb-3">İzlemek istediğiniz terminal grubunu seçin ve Bağlan'a tıklayın. Tüm alarmlar otomatik izlenecektir.</p>
+      <div class="form-group">
+        <label>Grup:</label>
+        <ui-select
+          [(ngModel)]="selectedLiveViewSettingId"
+          [options]="liveViewSettings"
+          [placeholder]="'Grup seçiniz...'"
+          (ngModelChange)="onLiveViewSettingChange()">
+        </ui-select>
+      </div>
+      <div class="form-group" *ngIf="selectedTerminals.length > 0">
+        <label>Seçili Terminaller ({{ selectedTerminals.length }}):</label>
+        <div class="terminals-list-container">
+          <ui-data-table
+            [id]="'all-view-connect-terminals-grid'"
+            [columns]="terminalsTableColumns"
+            [dataSource]="terminalsDataSource"
+            [selectable]="false"
+            [pagination]="true"
+            [pageSize]="10"
+            [height]="'280px'"
+            [recid]="'ReaderID'"
+            [showRefresh]="false"
+            [showFooter]="true"
+            [toolbar]="terminalsTableToolbarConfig">
+          </ui-data-table>
+        </div>
+      </div>
+      <div class="form-group" *ngIf="selectedLiveViewSettingId && selectedTerminals.length === 0">
+        <div class="alert alert-info">
+          <i class="ti ti-info-circle me-2"></i>
+          Bu grup için terminal bulunamadı.
+        </div>
+      </div>
+      <div *ngIf="loadingSettings" class="mt-2 text-muted">Yükleniyor...</div>
+    </div>
+    <div slot="footer" class="modal-footer">
+      <ui-button
+        [disabled]="loadingSettings || connecting || selectedTerminals.length === 0"
+        (clicked)="onConnect()">
+        {{ connecting ? 'Bağlanıyor...' : 'Bağlan' }}
+      </ui-button>
+    </div>
+  </ui-modal>
+
+  <!-- İki grid: sadece bağlandıktan sonra -->
+  <div class="container-fluid" *ngIf="!showConnectForm">
+    <div class="row">
+      <div class="col-12">
+        <div class="grid-section">
+          <h3 class="section-title">Geçiş Kayıtları</h3>
+          <ui-data-table
+            #accessGrid
+            [id]="'all-view-access-grid'"
+            [showFooter]="true"
+            [page]="1"
+            [columns]="accessTableColumns"
+            [dataSource]="accessDataSource"
+            [canViewDeleted]="false"
+            [pagination]="false"
+            [height]="'320px'"
+            [recordHeight]="48"
+            [showEmptyRows]="false"
+            [fixedBody]="true"
+            [advancedFilter]="false"
+            [showRefresh]="true"
+            [showLoadingOnReload]="false"
+            [scrollToTopOnReload]="false"
+            [searchPlaceholder]="'Ara...'"
+            [recid]="'Id'"
+            [multiSort]="false"
+            [keyboard]="true"
+            [liveSearch]="true"
+            [nestedFields]="true"
+            [columnTooltip]="'top'"
+            [toolbar]="accessToolbarConfig"
+            (refresh)="onAccessRefresh()"
+            (rowClick)="onAccessRowClick($event)"
+            (delete)="onAccessDelete($event)"
+            (add)="onAccessAdd()"
+            (edit)="onAccessEdit($event)">
+          </ui-data-table>
+        </div>
+
+        <div class="grid-section">
+          <h3 class="section-title">Alarm Kayıtları</h3>
+          <ui-data-table
+            #alarmGrid
+            [id]="'all-view-alarm-grid'"
+            [showFooter]="true"
+            [page]="1"
+            [columns]="alarmTableColumns"
+            [dataSource]="alarmDataSource"
+            [canViewDeleted]="false"
+            [pagination]="true"
+            [pageSize]="50"
+            [limit]="50"
+            [height]="'320px'"
+            [recordHeight]="36"
+            [showEmptyRows]="true"
+            [fixedBody]="true"
+            [advancedFilter]="true"
+            [showRefresh]="true"
+            [searchPlaceholder]="translate.instant('table.searchPlaceholder') || 'Ara...'"
+            [recid]="'AlarmEventID'"
+            [multiSort]="true"
+            [keyboard]="true"
+            [liveSearch]="true"
+            [nestedFields]="true"
+            [columnTooltip]="'top'"
+            [toolbar]="alarmToolbarConfig"
+            (refresh)="onAlarmRefresh()"
+            (rowClick)="onAlarmRowClick($event)"
+            (delete)="onAlarmDelete($event)"
+            (add)="onAlarmAdd()"
+            (edit)="onAlarmEdit($event)"
+            (advancedFilterChange)="onAlarmFilterChange($event)">
+          </ui-data-table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -405,7 +405,11 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
 
   @ViewChild('tableWrapper', { static: false }) tableWrapperRef?: ElementRef<HTMLDivElement>;
   @ViewChild('savedSearchContainer', { static: false }) savedSearchContainerRef?: ElementRef<HTMLElement>;
+  @ViewChild('optionsMenuWrapper', { static: false }) optionsMenuWrapperRef?: ElementRef<HTMLElement>;
   @ViewChildren(DataTableComponent) nestedGrids?: QueryList<DataTableComponent>;
+
+  /** Fixed positioning for options panels so they are not clipped by grid overflow (AllView vb.) */
+  optionsPanelOverlayStyle: { top: string; left: string; maxHeight: string } = { top: '0', left: '0', maxHeight: '70vh' };
 
   selectedRows: Set<any> = new Set();
   currentPage: number = 1;
@@ -767,6 +771,36 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.refresh.emit();
   }
 
+  /**
+   * Prepend record(s) to internal data when using dataSource (e.g. live WebSocket events).
+   * Does nothing if dataSource is not set.
+   */
+  prependRecordsToInternal(records: TableRow | TableRow[]): void {
+    if (!this.dataSource) return;
+    const list = Array.isArray(records) ? records : [records];
+    const recidField = this.recid || 'id';
+    for (const rec of list) {
+      if (!rec['recid'] && rec[recidField] != null) {
+        rec['recid'] = rec[recidField];
+      }
+    }
+    this.internalData = [...list, ...this.internalData];
+    this.internalTotal = Math.max(0, (this.internalTotal ?? 0) + list.length);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Return whether a record with the given recid exists in current grid data (internalData when using dataSource).
+   */
+  hasRecordWithRecid(recid: any): boolean {
+    const recidField = this.recid || 'id';
+    const source = this.dataSource ? this.internalData : this.data;
+    return source.some(record => {
+      const id = record['recid'] ?? record[recidField] ?? record['id'];
+      return id === recid;
+    });
+  }
+
   ngDoCheck(): void {
     // Lifecycle hook for custom change detection
     // Currently no custom change detection needed
@@ -1102,6 +1136,21 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       };
       this.cdr.markForCheck();
     }
+  }
+
+  /** Position options panel overlay with fixed so it is not clipped by grid overflow */
+  updateOptionsPanelOverlayPosition(): void {
+    const el = this.optionsMenuWrapperRef?.nativeElement;
+    if (!el?.getBoundingClientRect) return;
+    const rect = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - 24;
+    const maxH = Math.min(spaceBelow, 600, window.innerHeight * 0.7);
+    this.optionsPanelOverlayStyle = {
+      top: `${rect.bottom + 4}px`,
+      left: `${rect.left}px`,
+      maxHeight: `${Math.max(200, maxH)}px`
+    };
+    this.cdr.markForCheck();
   }
 
   /**
@@ -5051,6 +5100,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.showOptionsMenu = false;
     this.showJoinOptionsPanel = true;
     this.showFilterPanel = false; // Close filter panel when join options opens
+    this.showColumnVisibilityPanel = false;
+    this.showDefaultSearchFieldsPanel = false;
+    this.showSearchableColumnsPanel = false;
+    setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
 
@@ -5473,7 +5526,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.showDefaultSearchFieldsPanel = true;
     this.showFilterPanel = false;
     this.showJoinOptionsPanel = false;
+    this.showColumnVisibilityPanel = false;
+    this.showSearchableColumnsPanel = false;
     this.preventBodyScroll();
+    setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
 
@@ -5587,6 +5643,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.showJoinOptionsPanel = false;
     this.showDefaultSearchFieldsPanel = false;
     this.preventBodyScroll();
+    setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
 
@@ -5696,6 +5753,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.showDefaultSearchFieldsPanel = false;
     this.showColumnVisibilityPanel = false;
     this.preventBodyScroll();
+    setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
 

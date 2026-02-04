@@ -1,0 +1,14 @@
+.all-view-page {
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #374151;
+  }
+  .grid-section {
+    margin-bottom: 24px;
+  }
+  .grid-section:last-child {
+    margin-bottom: 0;
+  }
+}

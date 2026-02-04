@@ -29,6 +29,8 @@ import { of, Subscription } from 'rxjs';
 import { PendingClaimsService } from 'src/app/services/pending-claims.service';
 import { RequestClaimsDialogComponent } from 'src/app/dialogs/request-claims-dialog/request-claims-dialog.component';
 import { WebSocketService } from 'src/app/services/websocket.service';
+import { AlarmPopupService, AlarmPopupItem } from 'src/app/services/alarm-popup.service';
+import { AlarmPopupDialogComponent } from 'src/app/dialogs/alarm-popup-dialog/alarm-popup-dialog.component';
 
 interface notifications {
   id: number;
@@ -93,6 +95,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   wsConnected = false;
   private wsStatusSub?: Subscription;
 
+  // Alarm popup (WS isPopUp mesajları)
+  alarmPopupList: AlarmPopupItem[] = [];
+  private alarmPopupSub?: Subscription;
+
   toggleCollpase() {
     this.isCollapse = !this.isCollapse; // Toggle visibility
   }
@@ -132,7 +138,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private toastr: ToastrService,
     public pendingClaimsService: PendingClaimsService,
-    private wsService: WebSocketService
+    private wsService: WebSocketService,
+    public alarmPopupService: AlarmPopupService
   ) {
     translate.setDefaultLang('tr');
     // Set initial language based on current translate service
@@ -157,11 +164,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.wsStatusSub = this.wsService.getConnectionStatus().subscribe(connected => {
       this.wsConnected = connected;
     });
+    // Alarm popup listesi (header badge + menü)
+    this.alarmPopupList = this.alarmPopupService.list;
+    this.alarmPopupSub = this.alarmPopupService.list$.subscribe(list => {
+      this.alarmPopupList = list;
+    });
   }
 
   ngOnDestroy(): void {
     this.pendingClaimsSub?.unsubscribe();
     this.wsStatusSub?.unsubscribe();
+    this.alarmPopupSub?.unsubscribe();
+  }
+
+  openAlarmPopupDialog(item: AlarmPopupItem): void {
+    this.dialog.open(AlarmPopupDialogComponent, {
+      width: '480px',
+      data: item,
+      disableClose: false
+    });
+  }
+
+  clearAlarmPopups(): void {
+    this.alarmPopupService.clear();
   }
 
   onWebSocketReconnect(): void {

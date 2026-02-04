@@ -48,11 +48,14 @@ export class LiveViewComponent implements OnInit, OnDestroy {
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
   
+  // Sayfa açıldığında bağlantı modalı göster (terminal seçip Bağlan'a basana kadar grid gizli)
+  showConnectForm: boolean = true;
+  
   // Live view state (synced from LiveViewStorageService)
   isLiveViewEnabled: boolean = false;
   recordHeight: number = 100;
   
-  // Filter modal
+  // Filter modal (Ayarlar > Filtrele ile açılır)
   showFilterModal: boolean = false;
   showRowSizeModal: boolean = false;
   liveViewSettings: any[] = [];
@@ -178,7 +181,7 @@ export class LiveViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadLiveViewSettings();
-    // Load stored records (e.g. when returning to live view page)
+    // Sayfa açıldığında bağlantı modalı göster (showConnectForm = true varsayılan)
     this.liveViewRecords = this.liveViewStorage.getStoredRecords();
     this.isLiveViewEnabled = this.liveViewStorage.getIsActive();
     this.currentReaderList = this.liveViewStorage.getCurrentReaderList();
@@ -434,6 +437,45 @@ export class LiveViewComponent implements OnInit, OnDestroy {
         this.liveViewStorage.startLiveView(this.currentReaderList);
         this.toastr.success(`${this.currentReaderList.length} terminal için filtre uygulandı ve canlı izleme başlatıldı`, 'Başarılı');
       }
+    });
+  }
+
+  /**
+   * Sayfa açıldığında gösterilen popup'ta "Bağlan" tıklanınca: terminal grubunu yükle, canlı izlemeyi başlat, modalı kapat.
+   */
+  onConnect(): void {
+    if (!this.selectedLiveViewSettingId) {
+      this.toastr.warning('Lütfen bir terminal grubu seçin', 'Uyarı');
+      return;
+    }
+    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Terminals/GetSelectedByLiveViewSettingId`, {
+      LiveViewSettingId: this.selectedLiveViewSettingId
+    }).pipe(
+      map((response: any) => {
+        let terminals: any[] = [];
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          terminals = response.data.data;
+        } else if (response.records && Array.isArray(response.records)) {
+          terminals = response.records;
+        } else if (response.data && Array.isArray(response.data)) {
+          terminals = response.data;
+        } else if (Array.isArray(response)) {
+          terminals = response;
+        }
+        this.selectedTerminals = terminals || [];
+        return terminals.map((t: any) => parseInt(t.SerialNumber || t.serialNumber || '0', 10)).filter((n: number) => !isNaN(n) && n > 0);
+      }),
+      catchError(() => {
+        this.toastr.error('Terminal listesi yüklenirken hata oluştu', 'Hata');
+        return of([]);
+      })
+    ).subscribe(readerList => {
+      this.currentReaderList = readerList || [];
+      this.showConnectForm = false;
+      this.isLiveViewEnabled = true;
+      this.liveViewStorage.startLiveView(this.currentReaderList);
+      this.toastr.success(`${this.currentReaderList.length} terminal için canlı izleme başlatıldı`, 'Başarılı');
+      this.cdr.detectChanges();
     });
   }
 

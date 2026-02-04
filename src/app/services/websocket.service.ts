@@ -291,6 +291,12 @@ export class WebSocketService {
           type: 'clientconnect',
           readerList: message.readerList
         };
+      } else if (message.type === 'alarmconnect' && message.alarmList) {
+        // Special handling for alarmconnect - send as is with alarmList at top level
+        messageToSend = {
+          type: 'alarmconnect',
+          alarmList: message.alarmList
+        };
       } else if (message.type) {
         // Has type, use as is or wrap data
         messageToSend = {

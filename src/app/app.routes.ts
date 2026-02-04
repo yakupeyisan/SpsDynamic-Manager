@@ -121,6 +121,28 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'AlarmsView',
+        loadComponent: () =>
+          import('./pages/alarms-view/alarms-view.component').then(
+            (m) => m.AlarmsViewComponent
+          ),
+        data: {
+          title: 'Alarmları İzle',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'AllView',
+        loadComponent: () =>
+          import('./pages/all-view/all-view.component').then(
+            (m) => m.AllViewComponent
+          ),
+        data: {
+          title: 'Geçiş ve Alarmları İzle',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'Card',
         loadComponent: () =>
           import('./pages/card/card.component').then(
