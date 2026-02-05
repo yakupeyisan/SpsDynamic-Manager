@@ -137,6 +137,10 @@
       align-items: stretch;
     }
   }
+
+  &.summary-card-clickable {
+    cursor: pointer;
+  }
 }
 
 // Tablet ve küçük ekranlar için responsive düzenlemeler

@@ -37,6 +37,7 @@
           [nestedFields]="true"
           [columnTooltip]="'top'"
           [toolbar]="tableToolbarConfig"
+          [getRowStyle]="getAlarmRowStyle"
           (rowClick)="onTableRowClick($event)"
           (rowDblClick)="onTableRowDblClick($event)"
           (rowSelect)="onTableRowSelect($event)"

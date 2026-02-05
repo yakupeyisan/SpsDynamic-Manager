@@ -400,6 +400,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   @Input() toolbar?: ToolbarConfig; // Custom toolbar configuration (w2ui style)
   /** Optional function to add CSS class(es) to each row (e.g. for success/error highlighting). */
   @Input() getRowClass?: (row: TableRow) => string | string[] | Record<string, boolean> | null;
+  /** Satır bazlı inline stil (örn. alarm rengi: { 'background-color': row['Color'] }) */
+  @Input() getRowStyle?: (row: TableRow) => { [key: string]: string } | null;
 
   @Output() toolbarClick = new EventEmitter<{ item: ToolbarItem; event: MouseEvent }>();
 
@@ -1143,11 +1145,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     const el = this.optionsMenuWrapperRef?.nativeElement;
     if (!el?.getBoundingClientRect) return;
     const rect = el.getBoundingClientRect();
+    const panelWidth = 400;
+    const padding = 8;
+    const viewportW = window.innerWidth;
+    // Panelin sağ kenarını butonun sağ kenarına hizala (sola doğru açılsın, ekrandan taşmasın)
+    let left = rect.right - panelWidth;
+    if (left < padding) left = padding;
+    if (left + panelWidth > viewportW - padding) left = viewportW - panelWidth - padding;
     const spaceBelow = window.innerHeight - rect.bottom - 24;
     const maxH = Math.min(spaceBelow, 600, window.innerHeight * 0.7);
     this.optionsPanelOverlayStyle = {
       top: `${rect.bottom + 4}px`,
-      left: `${rect.left}px`,
+      left: `${left}px`,
       maxHeight: `${Math.max(200, maxH)}px`
     };
     this.cdr.markForCheck();

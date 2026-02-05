@@ -13,6 +13,14 @@ const eventResultOptions = [
   { label: 'Başarısız', value: 'false' }
 ];
 
+const colorOptions: { label: string; value: string }[] = [
+  { label: 'Transparent', value: '' },
+  { label: 'Yeşil', value: '#22c55e' },
+  { label: 'Kırmızı', value: '#ef4444' },
+  { label: 'Mavi', value: '#3b82f6' },
+  { label: 'Sarı', value: '#eab308' }
+];
+
 export const tableColumns: TableColumn[] = [
   {
     field: 'AlarmID',
@@ -120,6 +128,24 @@ export const tableColumns: TableColumn[] = [
     size: '200px',
     searchable: 'text',
     resizable: true
+  },
+  {
+    field: 'Color',
+    label: 'Renk',
+    text: 'Renk',
+    type: 'list' as ColumnType,
+    sortable: true,
+    width: '100px',
+    size: '100px',
+    searchable: 'text',
+    resizable: true,
+    options: colorOptions,
+    render: (record: any) => {
+      const hex = record?.Color;
+      if (hex == null || hex === '') return '';
+      const opt = colorOptions.find(o => o.value === hex);
+      return opt ? opt.label : hex;
+    }
   },
   {
     field: 'SoundFile',

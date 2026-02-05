@@ -20,7 +20,8 @@ import {
   TableColumn, 
   ToolbarConfig, 
   GridResponse,
-  ColumnType
+  ColumnType,
+  TableRow
 } from 'src/app/components/data-table/data-table.component';
 import { LiveViewStorageService } from 'src/app/services/live-view-storage.service';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
@@ -43,7 +44,7 @@ import { SelectComponent } from 'src/app/components/select/select.component';
   styleUrls: ['./live-view.component.scss']
 })
 export class LiveViewComponent implements OnInit, OnDestroy {
-  @ViewChild(DataTableComponent) dataTableComponent?: DataTableComponent;
+  @ViewChild('liveViewGrid') dataTableComponent?: DataTableComponent;
   
   // Table configuration
   tableColumns: TableColumn[] = tableColumns;
@@ -171,6 +172,12 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** Geçiş kaydında LiveStatus false ise (reddedildi) satır arka planı kırmızı */
+  getAccessRowStyle = (row: TableRow): { [key: string]: string } | null => {
+    if (row?.['LiveStatus'] === false) return { 'background-color': '#ef4444', color: '#fff' };
+    return null;
+  };
+
   constructor(
     private http: HttpClient,
     private toastr: ToastrService,
@@ -181,10 +188,13 @@ export class LiveViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadLiveViewSettings();
-    // Sayfa açıldığında bağlantı modalı göster (showConnectForm = true varsayılan)
     this.liveViewRecords = this.liveViewStorage.getStoredRecords();
     this.isLiveViewEnabled = this.liveViewStorage.getIsActive();
     this.currentReaderList = this.liveViewStorage.getCurrentReaderList();
+    // Geçiş grubu daha önce seçilip bağlanmışsa formu gösterme (sayfaya geri dönüldüğünde)
+    if (this.liveViewStorage.getIsActive() && this.currentReaderList.length > 0) {
+      this.showConnectForm = false;
+    }
     // Subscribe to storage updates (new records arrive even when user was on another page)
     this.storedRecordsSubscription = this.liveViewStorage.getStoredRecords$().subscribe(records => {
       this.liveViewRecords = records;

@@ -59,7 +59,6 @@
     <div class="row">
       <div class="col-12">
         <div class="grid-section">
-          <h3 class="section-title">Geçiş Kayıtları</h3>
           <ui-data-table
             #accessGrid
             [id]="'all-view-access-grid'"
@@ -85,6 +84,7 @@
             [nestedFields]="true"
             [columnTooltip]="'top'"
             [toolbar]="accessToolbarConfig"
+            [getRowStyle]="getAccessRowStyle"
             (refresh)="onAccessRefresh()"
             (rowClick)="onAccessRowClick($event)"
             (delete)="onAccessDelete($event)"
@@ -94,7 +94,6 @@
         </div>
 
         <div class="grid-section">
-          <h3 class="section-title">Alarm Kayıtları</h3>
           <ui-data-table
             #alarmGrid
             [id]="'all-view-alarm-grid'"
@@ -120,6 +119,7 @@
             [nestedFields]="true"
             [columnTooltip]="'top'"
             [toolbar]="alarmToolbarConfig"
+            [getRowStyle]="getAlarmRowStyle"
             (refresh)="onAlarmRefresh()"
             (rowClick)="onAlarmRowClick($event)"
             (delete)="onAlarmDelete($event)"

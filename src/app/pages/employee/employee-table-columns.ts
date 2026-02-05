@@ -19,6 +19,18 @@ export const tableColumns: TableColumn[] = [
     tooltip: 'Employee ID'
   },
   { 
+    field: 'ReferanceID', 
+    label: 'Referans ID', 
+    text: 'Referans ID',
+    type: 'int', 
+    sortable: true, 
+    width: '100px', 
+    size: '100px',
+    searchable: 'int',
+    resizable: true,
+    tooltip: 'Referance ID'
+  },
+  { 
     field: 'PictureID', 
     label: 'Resim', 
     text: 'Resim',

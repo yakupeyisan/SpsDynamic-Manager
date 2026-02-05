@@ -101,6 +101,15 @@ export class AlarmsViewComponent implements OnInit, OnDestroy {
 
   onFormChange = (_formData: any): void => {};
 
+  /** Alarm satırına Color alanına göre arka plan rengi uygula */
+  getAlarmRowStyle = (row: TableRow): { [key: string]: string } | null => {
+    const color = row?.['Color'];
+    if (typeof color !== 'string' || !color.trim()) return null;
+    const hex = color.trim();
+    if (!/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/.test(hex)) return null;
+    return { 'background-color': hex.startsWith('#') ? hex : `#${hex}` };
+  };
+
   constructor(
     private http: HttpClient,
     private toastr: ToastrService,

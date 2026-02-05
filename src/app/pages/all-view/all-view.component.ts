@@ -114,6 +114,21 @@ export class AllViewComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** Geçiş kaydında Status false ise (reddedildi) satır arka planı kırmızı */
+  getAccessRowStyle = (row: TableRow): { [key: string]: string } | null => {
+    if (row?.['LiveStatus'] === false) return { 'background-color': '#ef4444', color: '#fff' };
+    return null;
+  };
+
+  /** Alarm satırına Color alanına göre arka plan rengi uygula */
+  getAlarmRowStyle = (row: TableRow): { [key: string]: string } | null => {
+    const color = row?.['Color'];
+    if (typeof color !== 'string' || !color.trim()) return null;
+    const hex = color.trim();
+    if (!/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/.test(hex)) return null;
+    return { 'background-color': hex.startsWith('#') ? hex : `#${hex}` };
+  };
+
   terminalsDataSource = (params: any): Observable<GridResponse> =>
     of({ status: 'success' as const, total: this.selectedTerminals.length, records: this.selectedTerminals } as GridResponse);
 
@@ -140,6 +155,14 @@ export class AllViewComponent implements OnInit, OnDestroy {
       this.alarmGridComponent?.reload();
       this.cdr.markForCheck();
     });
+    // Geçiş grubu daha önce seçilip bağlanmışsa formu gösterme (sayfaya geri dönüldüğünde)
+    const readerList = this.liveViewStorage.getCurrentReaderList();
+    if (this.liveViewStorage.getIsActive() && readerList.length > 0) {
+      this.showConnectForm = false;
+      this.currentReaderList = readerList;
+      this.subscribeAccessRecords();
+      this.subscribeAlarmMessages();
+    }
   }
 
   ngOnDestroy(): void {

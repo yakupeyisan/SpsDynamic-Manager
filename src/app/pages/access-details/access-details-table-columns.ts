@@ -200,13 +200,26 @@ export const tableColumns: TableColumn[] = [
     searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupReaders.Terminal.ReaderName',
     label: 'Kapı', 
     text: 'Kapı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: false, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const name = item?.ReaderName ?? item?.Name ?? item?.DoorName ?? '';
+          return { id: name, text: name || '(boş)' };
+        });
+      }
+    },
     render: (record: TableRow) => {
       // Try to get door/reader name from AccessGroupReaders
       if (record['EmployeeAccessGroups'] && Array.isArray(record['EmployeeAccessGroups'])) {

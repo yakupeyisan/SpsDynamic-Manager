@@ -36,6 +36,15 @@ const eventResultOptions = [
   { label: 'Başarısız - Kapalı', value: 'false' }
 ];
 
+// Renk seçenekleri (API'ye hex string gönderilir, Color sütununa yazılır; boş = şeffaf)
+const colorOptions = [
+  { label: 'Transparent', value: '' },
+  { label: 'Yeşil', value: '#22c55e' },
+  { label: 'Kırmızı', value: '#ef4444' },
+  { label: 'Mavi', value: '#3b82f6' },
+  { label: 'Sarı', value: '#eab308' }
+];
+
 export const formFields: TableColumn[] = [
   {
     field: 'AlarmID',
@@ -112,6 +121,14 @@ export const formFields: TableColumn[] = [
     fullWidth: true
   },
   {
+    field: 'Color',
+    label: 'Renk',
+    text: 'Renk',
+    type: 'list' as ColumnType,
+    fullWidth: true,
+    options: colorOptions
+  },
+  {
     field: 'SoundFile',
     label: 'Ses Dosyası',
     text: 'Ses Dosyası',
@@ -178,7 +195,7 @@ export const formFields: TableColumn[] = [
 export const formTabs: FormTab[] = [
   {
     label: 'Alarm Bilgileri',
-    fields: ['AlarmID', 'SourceType', 'SourceID', 'EmployeeScope', 'EmployeeID', 'EventResult', 'Description', 'SoundFile', 'isPopUp', 'TimeZoneID', 'SchedulerTaskId']
+    fields: ['AlarmID', 'SourceType', 'SourceID', 'EmployeeScope', 'EmployeeID', 'EventResult', 'Description', 'Color', 'SoundFile', 'isPopUp', 'TimeZoneID', 'SchedulerTaskId']
   }
 ];
 

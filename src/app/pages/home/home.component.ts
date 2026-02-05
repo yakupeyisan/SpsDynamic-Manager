@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
@@ -42,7 +43,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   subscriptionPersonCount: number = 0;
   totalFirstMealCount: number = 0;
   totalSecondMealCount: number = 0;
-  
+  alarmCount: number = 0;
+
   sendingMail: boolean = false;
   sendingSms: boolean = false;
 
@@ -51,7 +53,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   constructor(
     private toastr: ToastrService,
-    private http: HttpClient
+    private http: HttpClient,
+    private router: Router
   ) {
     this.apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
   }
@@ -94,7 +97,8 @@ export class HomeComponent implements OnInit, OnDestroy {
           pendingMailCount: 0,
           pendingSmsCount: 0,
           last7DaysSuccessfulLoad: 0,
-          last7DaysFailedLoad: 0
+          last7DaysFailedLoad: 0,
+          alarmCount: 0
         });
       })
     ).subscribe({
@@ -118,6 +122,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.pendingSmsCount = data.pendingSmsCount || 0;
         this.last7DaysSuccessfulLoad = (data.last7DaysSuccessfulLoad || 0) / 100; // Convert from kuruş to TL
         this.last7DaysFailedLoad = (data.last7DaysFailedLoad || 0) / 100; // Convert from kuruş to TL
+        this.alarmCount = data.alarmCount ?? 0;
       },
       error: (error) => {
         console.error('Error loading statistics:', error);
@@ -193,6 +198,12 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.sendingSms = false;
       }
     });
+  }
+
+  navigateToAlarmsView(): void {
+    if (this.alarmCount > 0) {
+      this.router.navigate(['/AlarmsView']);
+    }
   }
 
   ngOnDestroy(): void {

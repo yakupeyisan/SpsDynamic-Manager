@@ -200,7 +200,7 @@
       
       <!-- Options Menu Button (Right Side) -->
       <div class="ui-toolbar-right">
-        <div class="ui-options-menu-wrapper">
+        <div class="ui-options-menu-wrapper" #optionsMenuWrapper>
           <button 
             class="ui-options-menu-btn" 
             (click)="toggleOptionsMenu($event)"
@@ -243,7 +243,7 @@
           </div>
 
           <!-- Join Options Panel Overlay -->
-          <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay">
+          <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay ui-join-options-overlay-fixed" [ngStyle]="optionsPanelOverlayStyle">
             <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
               <div class="ui-join-options-header">
                 <h3>{{ translate.instant('joinOptions.title') }}</h3>
@@ -270,7 +270,7 @@
           </div>
 
           <!-- Default Search Fields Panel Overlay -->
-          <div *ngIf="showDefaultSearchFieldsPanel" class="ui-join-options-overlay">
+          <div *ngIf="showDefaultSearchFieldsPanel" class="ui-join-options-overlay ui-join-options-overlay-fixed" [ngStyle]="optionsPanelOverlayStyle">
             <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
               <div class="ui-join-options-header">
                 <h3>{{ translate.instant('options.defaultSearchFields') || 'Arama Varsayılan Alanları' }}</h3>
@@ -300,7 +300,7 @@
           </div>
 
           <!-- Column Visibility Panel Overlay -->
-          <div *ngIf="showColumnVisibilityPanel" class="ui-join-options-overlay">
+          <div *ngIf="showColumnVisibilityPanel" class="ui-join-options-overlay ui-join-options-overlay-fixed" [ngStyle]="optionsPanelOverlayStyle">
             <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
               <div class="ui-join-options-header">
                 <h3>{{ translate.instant('options.columnVisibility') || 'Kolon Görünürlüğü' }}</h3>
@@ -330,7 +330,7 @@
           </div>
 
           <!-- Searchable Columns Panel Overlay -->
-          <div *ngIf="showSearchableColumnsPanel" class="ui-join-options-overlay">
+          <div *ngIf="showSearchableColumnsPanel" class="ui-join-options-overlay ui-join-options-overlay-fixed" [ngStyle]="optionsPanelOverlayStyle">
             <div class="ui-join-options-panel" (click)="$event.stopPropagation()">
               <div class="ui-join-options-header">
                 <h3>{{ translate.instant('options.searchableColumns') || 'Aramada Görünecek Kolonlar' }}</h3>
@@ -512,6 +512,7 @@
           [class.ui-table-row-even]="i % 2 === 0"
           [class.ui-table-row-odd]="i % 2 === 1"
           [ngClass]="getRowClass ? getRowClass(row) : null"
+          [ngStyle]="getRowStyle ? getRowStyle(row) : null"
           (dblclick)="onRowDblClick(row, $event)"
           (contextmenu)="onRowContextMenu(row, $event)"
           (mousedown)="onRowMouseDown(row, $event)"

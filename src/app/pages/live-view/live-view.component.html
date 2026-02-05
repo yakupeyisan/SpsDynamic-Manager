@@ -57,6 +57,7 @@
     <div class="row">
       <div class="col-12">
         <ui-data-table
+          #liveViewGrid
           [id]="'live-view-grid'"
           [showFooter]="true"
           [page]="1"
@@ -87,6 +88,7 @@
           [nestedFields]="true"
           [columnTooltip]="'top'"
           [toolbar]="tableToolbarConfig"
+          [getRowStyle]="getAccessRowStyle"
           (rowClick)="onTableRowClick($event)"
           (rowDblClick)="onTableRowDblClick($event)"
           (rowSelect)="onTableRowSelect($event)"

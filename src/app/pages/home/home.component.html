@@ -7,9 +7,9 @@
     </button>
   </div>
 
-  <!-- Kişi İstatistikleri -->
+  <!-- Kişi/Alarm İstatistikleri -->
   <div class="m-b-32">
-    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Kişi İstatistikleri</h3>
+    <h3 class="m-b-16 f-s-18 f-w-600 text-muted">Kişi/Alarm İstatistikleri</h3>
     <div class="row stats-grid">
       <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
         <mat-card class="summary-card">
@@ -26,28 +26,25 @@
       </div>
 
       <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
-        <mat-card class="summary-card">
-          <mat-card-content class="d-flex align-items-center">
-            <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-16">
-              <i-tabler name="user-check" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+        <mat-card class="summary-card summary-card-double">
+          <mat-card-content>
+            <div class="d-flex align-items-center m-b-10">
+              <div class="summary-icon bg-success d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="user-check" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Yasaklı Olmayan</h6>
+                <h5 class="m-0 f-s-18 text-success f-w-600">{{ notBannedPersonCount | number }}</h5>
+              </div>
             </div>
-            <div class="flex-1">
-              <h6 class="m-b-4 f-s-13">Yasaklı Olmayan</h6>
-              <h4 class="m-0 f-s-24 text-success">{{ notBannedPersonCount | number }}</h4>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
-        <mat-card class="summary-card">
-          <mat-card-content class="d-flex align-items-center">
-            <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-16">
-              <i-tabler name="user-x" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
-            </div>
-            <div class="flex-1">
-              <h6 class="m-b-4 f-s-13">Yasaklı</h6>
-              <h4 class="m-0 f-s-24 text-error">{{ bannedPersonCount | number }}</h4>
+            <div class="d-flex align-items-center">
+              <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-12" style="width: 40px; height: 40px;">
+                <i-tabler name="user-x" class="text-white" style="width: 20px; height: 20px;"></i-tabler>
+              </div>
+              <div class="flex-1">
+                <h6 class="m-0 f-s-12 text-muted">Yasaklı</h6>
+                <h5 class="m-0 f-s-18 text-error f-w-600">{{ bannedPersonCount | number }}</h5>
+              </div>
             </div>
           </mat-card-content>
         </mat-card>
@@ -73,6 +70,23 @@
                 <h6 class="m-0 f-s-12 text-muted">Kafeterya Pasif</h6>
                 <h5 class="m-0 f-s-18 text-warning f-w-600">{{ inactiveCafeteriaStatusCount | number }}</h5>
               </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12 m-b-16">
+        <mat-card
+          class="summary-card"
+          [class.summary-card-clickable]="alarmCount > 0"
+          (click)="navigateToAlarmsView()">
+          <mat-card-content class="d-flex align-items-center">
+            <div class="summary-icon bg-error d-flex align-items-center justify-content-center m-r-16">
+              <i-tabler name="bell" class="text-white" style="width: 24px; height: 24px;"></i-tabler>
+            </div>
+            <div class="flex-1">
+              <h6 class="m-b-4 f-s-13">Onay Bekleyen Alarm Sayısı</h6>
+              <h4 class="m-0 f-s-24" [class.text-error]="alarmCount > 0">{{ alarmCount | number }}</h4>
             </div>
           </mat-card-content>
         </mat-card>

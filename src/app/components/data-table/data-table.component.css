@@ -3,7 +3,8 @@
   background-color: var(--ui-white);
   border: 1px solid var(--ui-border-color);
   border-radius: var(--ui-border-radius);
-  overflow: hidden;
+  /* overflow: visible so options panels (Aramada Görünecek Kolonlar vb.) are not clipped when grid height is small (AllView) */
+  overflow: visible;
   position: relative;
 }
 
@@ -201,6 +202,15 @@
   max-width: calc(90vw - 20px);
   display: flex;
   flex-direction: column;
+}
+
+/* Fixed positioning so panel is not clipped by grid overflow (e.g. AllView with small height) */
+.ui-join-options-overlay-fixed {
+  position: fixed !important;
+  right: auto !important;
+  top: 0;
+  left: 0;
+  max-height: 70vh;
 }
 
 /* Join Options Panel */
