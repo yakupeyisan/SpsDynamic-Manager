@@ -7,7 +7,7 @@ const apiUrl = environment.settings[environment.setting as keyof typeof environm
 export const tableColumns: TableColumn[] = [
   { 
     field: 'Company', 
-    searchField: 'Company.PdksCompanyID',
+    searchField: 'Employee.Company.PdksCompanyID',
     label: 'Firma Adı', 
     text: 'Firma Adı',
     type: 'enum' as ColumnType, 
@@ -31,12 +31,12 @@ export const tableColumns: TableColumn[] = [
       }
     },
     render: (record: TableRow) => {
-      return record['Company']?.PdksCompanyName || '';
+      return (record['Employee'] as any)?.Company?.PdksCompanyName ?? record['Company']?.PdksCompanyName ?? '';
     }
   },
   { 
     field: 'Kadro', 
-    searchField: 'Kadro.PdksStaffID',
+    searchField: 'Employee.Kadro.PdksStaffID',
     label: 'Kadro Adı', 
     text: 'Kadro Adı',
     type: 'enum' as ColumnType, 
@@ -60,12 +60,12 @@ export const tableColumns: TableColumn[] = [
       }
     },
     render: (record: TableRow) => {
-      return record['Kadro']?.Name || '';
+      return (record['Employee'] as any)?.Kadro?.Name ?? record['Kadro']?.Name ?? '';
     }
   },
   { 
     field: 'Department', 
-    searchField: 'EmployeeDepartments.Department.DepartmentID',
+    searchField: 'Employee.EmployeeDepartments.Department.DepartmentID',
     label: 'Bölüm', 
     text: 'Bölüm',
     type: 'enum' as ColumnType, 
@@ -89,8 +89,9 @@ export const tableColumns: TableColumn[] = [
       }
     },
     render: (record: TableRow) => {
-      if (record['EmployeeDepartments'] && Array.isArray(record['EmployeeDepartments']) && record['EmployeeDepartments'].length > 0) {
-        return record['EmployeeDepartments']
+      const deps = (record['Employee'] as any)?.EmployeeDepartments ?? record['EmployeeDepartments'];
+      if (deps && Array.isArray(deps) && deps.length > 0) {
+        return deps
           .map((ed: any) => ed['Department']?.DepartmentName)
           .filter(Boolean)
           .join(', ') || '';
@@ -99,7 +100,7 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'IdentificationNumber', 
+    field: 'Employee.IdentificationNumber', 
     label: 'Kimlik Numarası', 
     text: 'Kimlik Numarası',
     type: 'text' as ColumnType, 
@@ -111,7 +112,8 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
-    field: 'Name', 
+    field: 'Employee.Name', 
+    searchField: 'Employee.Name',
     label: 'Adı', 
     text: 'Adı',
     type: 'text' as ColumnType, 
@@ -120,10 +122,12 @@ export const tableColumns: TableColumn[] = [
     size: '120px',
     min: 20,
     searchable: 'text' as ColumnType,
-    resizable: true
+    resizable: true,
+    render: (record: TableRow) => (record['Employee'] as any)?.Name ?? record['Name'] ?? ''
   },
   { 
-    field: 'SurName', 
+    field: 'Employee.SurName', 
+    searchField: 'Employee.SurName',
     label: 'Soyad', 
     text: 'Soyad',
     type: 'text' as ColumnType, 
@@ -132,41 +136,12 @@ export const tableColumns: TableColumn[] = [
     size: '120px',
     min: 20,
     searchable: 'text' as ColumnType,
-    resizable: true
-  },
-  { 
-    field: 'cardOwnerName', 
-    label: 'Kart Sahibi', 
-    text: 'Kart Sahibi',
-    type: 'text' as ColumnType, 
-    sortable: true, 
-    width: '150px', 
-    size: '150px',
-    min: 20,
-    searchable: 'text' as ColumnType,
     resizable: true,
-    render: (record: TableRow) => {
-      // Try to get card owner name from Cards array
-      if (record['Cards'] && Array.isArray(record['Cards']) && record['Cards'].length > 0) {
-        const firstCard = record['Cards'][0];
-        // Try different possible field names for card owner
-        return firstCard['OwnerName'] || 
-               firstCard['CardOwnerName'] || 
-               firstCard['Owner']?.Name || 
-               firstCard['CardOwner']?.Name ||
-               (firstCard['Owner'] && typeof firstCard['Owner'] === 'string' ? firstCard['Owner'] : '') ||
-               '';
-      }
-      // Fallback: try direct field access
-      return record['cardOwnerName'] || 
-             record['CardOwnerName'] || 
-             record['OwnerName'] || 
-             '';
-    }
+    render: (record: TableRow) => (record['Employee'] as any)?.SurName ?? record['SurName'] ?? ''
   },
   { 
-    field: 'AccessGroup', 
-    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupID',
+    field: 'AccessGroupName', 
+    searchField: 'AccessGroupID',
     label: 'Yetki Adı', 
     text: 'Yetki Adı',
     type: 'enum' as ColumnType, 
@@ -190,18 +165,19 @@ export const tableColumns: TableColumn[] = [
       }
     },
     render: (record: TableRow) => {
-      if (record['EmployeeAccessGroups'] && Array.isArray(record['EmployeeAccessGroups']) && record['EmployeeAccessGroups'].length > 0) {
-        return record['EmployeeAccessGroups']
-          .map((eag: any) => eag['AccessGroup']?.AccessGroupName || eag['AccessGroup']?.Name)
-          .filter(Boolean)
-          .join(', ') || '';
+      if (record['AccessGroupName'] != null && record['AccessGroupName'] !== '') {
+        return String(record['AccessGroupName']);
+      }
+      const eag = (record['Employee'] as any)?.EmployeeAccessGroups;
+      if (eag && Array.isArray(eag) && eag.length > 0) {
+        return eag.map((x: any) => x['AccessGroup']?.AccessGroupName || x['AccessGroup']?.Name).filter(Boolean).join(', ') || '';
       }
       return '';
     }
   },
   { 
-    field: 'Door', 
-    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupReaders.Terminal.ReaderID',
+    field: 'ReaderName',
+    searchField: 'ReaderID',
     label: 'Kapı', 
     text: 'Kapı',
     type: 'enum' as ColumnType, 
@@ -226,19 +202,19 @@ export const tableColumns: TableColumn[] = [
       }
     },
     render: (record: TableRow) => {
-      // Try to get door/reader name from AccessGroupReaders
+      if (record['ReaderName'] != null && record['ReaderName'] !== '') {
+        return String(record['ReaderName']);
+      }
       if (record['EmployeeAccessGroups'] && Array.isArray(record['EmployeeAccessGroups'])) {
         const readers: string[] = [];
-        record['EmployeeAccessGroups'].forEach((eag: any) => {
+        (record['EmployeeAccessGroups'] as any[]).forEach((eag: any) => {
           const accessGroup = eag['AccessGroup'];
-          if (accessGroup && accessGroup['AccessGroupReaders'] && Array.isArray(accessGroup['AccessGroupReaders'])) {
-            accessGroup['AccessGroupReaders'].forEach((agr: any) => {
+          if (accessGroup?.AccessGroupReaders && Array.isArray(accessGroup.AccessGroupReaders)) {
+            accessGroup.AccessGroupReaders.forEach((agr: any) => {
               const terminal = agr['Terminal'];
               if (terminal) {
                 const readerName = terminal['ReaderName'] || terminal['Name'];
-                if (readerName && !readers.includes(readerName)) {
-                  readers.push(readerName);
-                }
+                if (readerName && !readers.includes(readerName)) readers.push(readerName);
               }
             });
           }
@@ -249,8 +225,8 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'TimeZone', 
-    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupReaders.TimeZone.TimeZoneName',
+    field: 'TimeZoneName',
+    searchField: 'TimeZoneID',
     label: 'Zaman Dilimi Adı', 
     text: 'Zaman Dilimi Adı',
     type: 'text' as ColumnType, 
@@ -261,19 +237,19 @@ export const tableColumns: TableColumn[] = [
     searchable: 'text' as ColumnType,
     resizable: true,
     render: (record: TableRow) => {
-      // Try to get timezone name from AccessGroupReaders
+      if (record['TimeZoneName'] != null && record['TimeZoneName'] !== '') {
+        return String(record['TimeZoneName']);
+      }
       if (record['EmployeeAccessGroups'] && Array.isArray(record['EmployeeAccessGroups'])) {
         const timeZones: string[] = [];
-        record['EmployeeAccessGroups'].forEach((eag: any) => {
+        (record['EmployeeAccessGroups'] as any[]).forEach((eag: any) => {
           const accessGroup = eag['AccessGroup'];
-          if (accessGroup && accessGroup['AccessGroupReaders'] && Array.isArray(accessGroup['AccessGroupReaders'])) {
-            accessGroup['AccessGroupReaders'].forEach((agr: any) => {
+          if (accessGroup?.AccessGroupReaders && Array.isArray(accessGroup.AccessGroupReaders)) {
+            accessGroup.AccessGroupReaders.forEach((agr: any) => {
               const timeZone = agr['TimeZone'];
               if (timeZone) {
-                const timeZoneName = timeZone['TimeZoneName'] || timeZone['Name'];
-                if (timeZoneName && !timeZones.includes(timeZoneName)) {
-                  timeZones.push(timeZoneName);
-                }
+                const name = timeZone['TimeZoneName'] || timeZone['Name'];
+                if (name && !timeZones.includes(name)) timeZones.push(name);
               }
             });
           }
@@ -285,7 +261,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'CustomField07', 
-    searchField: 'CustomField.CustomField07',
+    searchField: 'Employee.CustomField.CustomField07',
     label: 'Görevi', 
     text: 'Görevi',
     type: 'text' as ColumnType, 
@@ -296,7 +272,7 @@ export const tableColumns: TableColumn[] = [
     searchable: 'text' as ColumnType,
     resizable: true,
     render: (record: TableRow) => {
-      return record['CustomField']?.CustomField07 || '';
+      return (record['Employee'] as any)?.CustomField?.CustomField07 ?? record['CustomField']?.CustomField07 ?? '';
     }
   }
 ];
