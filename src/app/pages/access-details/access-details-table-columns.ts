@@ -7,7 +7,8 @@ const apiUrl = environment.settings[environment.setting as keyof typeof environm
 export const tableColumns: TableColumn[] = [
   { 
     field: 'Company', 
-    searchField: 'Employee.Company.PdksCompanyID',
+    searchField: 'Employee.CompanyId',
+    exportDisplayField: 'Employee.Company.PdksCompanyName',
     label: 'Firma Adı', 
     text: 'Firma Adı',
     type: 'enum' as ColumnType, 
@@ -36,7 +37,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Kadro', 
-    searchField: 'Employee.Kadro.PdksStaffID',
+    searchField: 'Employee.KadroId',
+    exportDisplayField: 'Employee.Kadro.Name',
     label: 'Kadro Adı', 
     text: 'Kadro Adı',
     type: 'enum' as ColumnType, 
@@ -65,7 +67,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Department', 
-    searchField: 'Employee.EmployeeDepartments.Department.DepartmentID',
+    searchField: 'Employee.DepartmentId',
+    exportDisplayField: 'Employee.EmployeeDepartments.Department.DepartmentName',
     label: 'Bölüm', 
     text: 'Bölüm',
     type: 'enum' as ColumnType, 
@@ -101,6 +104,8 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Employee.IdentificationNumber', 
+    searchField: 'Employee.IdentificationNumber',
+    exportDisplayField: 'Employee.IdentificationNumber',
     label: 'Kimlik Numarası', 
     text: 'Kimlik Numarası',
     type: 'text' as ColumnType, 
@@ -109,11 +114,13 @@ export const tableColumns: TableColumn[] = [
     size: '130px',
     min: 20,
     searchable: 'text' as ColumnType,
-    resizable: true
+    resizable: true,
+    render: (record: TableRow) => (record['Employee'] as any)?.IdentificationNumber ?? record['IdentificationNumber'] ?? ''
   },
   { 
     field: 'Employee.Name', 
     searchField: 'Employee.Name',
+    exportDisplayField: 'Employee.Name',
     label: 'Adı', 
     text: 'Adı',
     type: 'text' as ColumnType, 
@@ -128,6 +135,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'Employee.SurName', 
     searchField: 'Employee.SurName',
+    exportDisplayField: 'Employee.SurName',
     label: 'Soyad', 
     text: 'Soyad',
     type: 'text' as ColumnType, 
@@ -178,6 +186,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'ReaderName',
     searchField: 'ReaderID',
+    exportDisplayField: 'ReaderName',
     label: 'Kapı', 
     text: 'Kapı',
     type: 'enum' as ColumnType, 
@@ -262,6 +271,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'CustomField07', 
     searchField: 'Employee.CustomField.CustomField07',
+    exportDisplayField: 'Employee.CustomField.CustomField07',
     label: 'Görevi', 
     text: 'Görevi',
     type: 'text' as ColumnType, 

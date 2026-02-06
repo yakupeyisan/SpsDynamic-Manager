@@ -135,6 +135,10 @@
 
 .ui-select-tag-label {
   font-weight: var(--ui-font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 104px;
 }
 
 .ui-select-tag-remove {
