@@ -19,6 +19,12 @@ export const joinOptions: JoinOption[] = [
     label: 'Ziyaret Edilen Kişi',
     nested: false,
     default: true
+  },
+  {
+    key: 'CreatedEmployee',
+    label: 'Oluşturan Kişi',
+    nested: false,
+    default: true
   }
 ];
 
@@ -33,7 +39,7 @@ export const columnGroups: TableColumnGroup[] = [
     text: 'Ziyaret Edilen'
   },
   {
-    span: 6,
+    span: 8,
     text: 'Diğer'
   }
 ];

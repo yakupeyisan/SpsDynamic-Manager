@@ -12,7 +12,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './task-schedulers-config';
 import { tableColumns } from './task-schedulers-table-columns';
 import { formFields as baseFormFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './task-schedulers-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab } from 'src/app/components/data-table/data-table.component';
+import { DataTableComponent, TableColumn, ToolbarConfig, ToolbarItem, GridResponse, JoinOption, FormTab } from 'src/app/components/data-table/data-table.component';
 
 type RepeatType = 'Daily' | 'Weekly' | 'Monthly' | 'OneTime' | string;
 type MonthlyType = 'Daily' | 'Time' | string;
@@ -83,7 +83,16 @@ export class TaskSchedulersComponent implements OnInit {
 
   get tableToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        {
+          id: 'toolabara-copy',
+          type: 'button',
+          text: 'Kopyala',
+          icon: 'plus',
+          tooltip: 'Ekleme formunu aç (birebir aynı)',
+          onClick: (_event: MouseEvent, _item: ToolbarItem) => this.onTableCopy(),
+        },
+      ],
       show: {
         reload: true,
         columns: true,
@@ -259,6 +268,22 @@ export class TaskSchedulersComponent implements OnInit {
     this.applyRepeatTypeRules('');
     this.applySchedulerTypeRules('');
     this.dataTableComponent?.openAddForm();
+  }
+
+  onTableCopy(): void {
+    const record = this.dataTableComponent?.getSelectedRecord();
+    if (!record) {
+      this.toastr.warning(this.translate.instant('common.selectRow') ?? 'Kopyalamak için bir satır seçin.', this.translate.instant('common.warning') ?? 'Uyarı');
+      return;
+    }
+    this.currentFormData = { ...record };
+    const repeatType = this.currentFormData?.RepeatType as RepeatType;
+    this.applyRepeatTypeRules(repeatType);
+    if (repeatType === 'Monthly') {
+      this.applyMonthlyTypeRules(this.currentFormData?.MonthlyType as MonthlyType);
+    }
+    this.applySchedulerTypeRules(this.currentFormData?.Type as SchedulerType);
+    this.dataTableComponent?.openAddForm(record);
   }
 
   onTableEdit(event: any): void {

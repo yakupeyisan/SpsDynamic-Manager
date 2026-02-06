@@ -7,7 +7,7 @@ const apiUrl = environment.settings[environment.setting as keyof typeof environm
 export const tableColumns: TableColumn[] = [
   { 
     field: 'Company', 
-    searchField: 'Company.PdksCompanyName',
+    searchField: 'Company.PdksCompanyID',
     label: 'Firma Adı', 
     text: 'Firma Adı',
     type: 'enum' as ColumnType, 
@@ -23,10 +23,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.PdksCompanyName ?? item?.CompanyName ?? item?.Name ?? '',
-          text: item?.PdksCompanyName ?? item?.CompanyName ?? item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.PdksCompanyID ?? item?.CompanyID ?? item?.ID ?? '';
+          const text = item?.PdksCompanyName ?? item?.CompanyName ?? item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => {
@@ -35,7 +36,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Kadro', 
-    searchField: 'Kadro.Name',
+    searchField: 'Kadro.PdksStaffID',
     label: 'Kadro Adı', 
     text: 'Kadro Adı',
     type: 'enum' as ColumnType, 
@@ -51,10 +52,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.Name ?? '',
-          text: item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.PdksStaffID ?? item?.ID ?? '';
+          const text = item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => {
@@ -63,7 +65,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Department', 
-    searchField: 'EmployeeDepartments.Department.DepartmentName',
+    searchField: 'EmployeeDepartments.Department.DepartmentID',
     label: 'Bölüm', 
     text: 'Bölüm',
     type: 'enum' as ColumnType, 
@@ -79,10 +81,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.DepartmentName ?? item?.Name ?? '',
-          text: item?.DepartmentName ?? item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.DepartmentID ?? item?.ID ?? '';
+          const text = item?.DepartmentName ?? item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => {
@@ -163,7 +166,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'AccessGroup', 
-    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupName',
+    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupID',
     label: 'Yetki Adı', 
     text: 'Yetki Adı',
     type: 'enum' as ColumnType, 
@@ -179,10 +182,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.AccessGroupName ?? item?.Name ?? '',
-          text: item?.AccessGroupName ?? item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.AccessGroupID ?? item?.ID ?? '';
+          const text = item?.AccessGroupName ?? item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => {
@@ -197,7 +201,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Door', 
-    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupReaders.Terminal.ReaderName',
+    searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupReaders.Terminal.ReaderID',
     label: 'Kapı', 
     text: 'Kapı',
     type: 'enum' as ColumnType, 
@@ -215,8 +219,9 @@ export const tableColumns: TableColumn[] = [
       map: (data: any) => {
         const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
         return (records || []).map((item: any) => {
+          const id = item?.ReaderID ?? item?.ID ?? item?.TerminalID ?? '';
           const name = item?.ReaderName ?? item?.Name ?? item?.DoorName ?? '';
-          return { id: name, text: name || '(boş)' };
+          return { id: String(id), text: name || '(boş)' };
         });
       }
     },

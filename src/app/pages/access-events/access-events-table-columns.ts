@@ -101,10 +101,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.PdksCompanyID ?? item?.id,
-          text: item?.PdksCompanyName ?? item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.PdksCompanyID ?? item?.CompanyID ?? item?.ID ?? item?.id ?? '';
+          const text = item?.PdksCompanyName ?? item?.CompanyName ?? item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => {
@@ -123,7 +124,7 @@ export const tableColumns: TableColumn[] = [
     size: '150px',
     min: 20,
     searchable: 'enum' as ColumnType,
-    searchField: 'Employee.Kadro.ID',
+    searchField: 'Employee.Kadro.PdksStaffID',
     resizable: true,
     load: {
       url: `${apiUrl}/api/PdksStaffs`,
@@ -131,10 +132,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.ID ?? item?.id,
-          text: item?.Name ?? ''
-        }));
+        return (data?.records || []).map((item: any) => {
+          const id = item?.PdksStaffID ?? item?.ID ?? item?.id ?? '';
+          const text = item?.Name ?? '';
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => record['Employee']?.Kadro?.Name ?? ''
@@ -241,7 +243,7 @@ export const tableColumns: TableColumn[] = [
     size: '200px',
     min: 20,
     searchable: 'enum' as ColumnType,
-    searchField: 'DeviceSerial',
+    searchField: 'ReaderID',
     resizable: true,
     exportDisplayField: 'Location',
     load: {
@@ -250,10 +252,12 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        return (data?.records || []).map((item: any) => ({
-          id: item?.SerialNumber ?? item?.DeviceSerial ?? item?.ReaderID ?? item?.Id ?? item?.id,
-          text: item?.ReaderName ?? item?.Name ?? String(item?.SerialNumber ?? item?.ReaderID ?? '')
-        }));
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const id = item?.ReaderID ?? item?.ID ?? item?.TerminalID ?? item?.Id ?? item?.id ?? '';
+          const text = item?.ReaderName ?? item?.Name ?? item?.DoorName ?? String(item?.SerialNumber ?? item?.ReaderID ?? '');
+          return { id: String(id), text: text || '(boş)' };
+        });
       }
     },
     render: (record: TableRow) => (record['Terminals'] as any)?.ReaderName ?? record['ReaderName'] ?? String(record['Location'] ?? '')

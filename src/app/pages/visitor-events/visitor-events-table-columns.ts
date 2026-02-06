@@ -172,7 +172,33 @@ export const tableColumns: TableColumn[] = [
       return visited?.['Mail'] || '';
     }
   },
-  // Diğer group (6 columns)
+  // Diğer group (includes Created Employee)
+  { 
+    field: 'CreatedEmployee.Name', 
+    label: 'Oluşturan Adı', 
+    text: 'Oluşturan Adı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    joinTable: 'CreatedEmployee',
+    render: (record: TableRow) => (record['CreatedEmployee'] as any)?.Name ?? ''
+  },
+  { 
+    field: 'CreatedEmployee.SurName', 
+    label: 'Oluşturan Soyadı', 
+    text: 'Oluşturan Soyadı',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    joinTable: 'CreatedEmployee',
+    render: (record: TableRow) => (record['CreatedEmployee'] as any)?.SurName ?? ''
+  },
   { 
     field: 'ID', 
     label: 'ID', 

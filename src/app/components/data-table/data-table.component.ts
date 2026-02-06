@@ -2824,13 +2824,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }
 
     return this.activeFilter.conditions.map((condition, index) => {
-      // Find the column for this field
-      const column = this.displayColumns.find(col => {
-        const fieldToMatch = col.searchField || col.field;
-        return fieldToMatch === condition.field;
-      });
+      // Find the column by field or searchField so we show column label (e.g. "Departman") not raw path
+      const column = this.displayColumns.find(col =>
+        col.field === condition.field || (col.searchField != null && col.searchField === condition.field)
+      );
 
-      // Get column label
+      // Get column label (e.g. "Departman") for display in filter tag
       const label = column ? this.getColumnLabel(column) : condition.field;
 
       return {
@@ -3427,6 +3426,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return this.selectedRows.size === 1;
   }
 
+  /**
+   * Returns the first selected row, or null if none or multiple selected.
+   */
+  getSelectedRecord(): TableRow | null {
+    if (this.selectedRows.size !== 1) return null;
+    const selectedId = Array.from(this.selectedRows)[0];
+    const dataSource = this.dataSource ? this.filteredData : this.data;
+    return dataSource.find((row: TableRow) => this.getRowId(row) === selectedId) ?? null;
+  }
+
   onAdd() {
     this.isEditMode = false;
     this.editingRecordId = null;
@@ -3435,6 +3444,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.showFormPage = true; // Show full page form instead of modal
+    // Load options for list/select fields (e.g. Kart Tipi, Kafeterya Grup in nested card form)
+    setTimeout(() => {
+      this.loadFormFieldOptions();
+    }, 0);
     this.cdr.markForCheck();
     this.add.emit();
   }
@@ -3513,24 +3526,35 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   
   /**
    * Open form in add mode (called by parent e.g. (add) handler or custom button).
-   * Do not emit add here to avoid loop: parent (add)="onTableAdd()" -> openAddForm() -> add.emit() -> onTableAdd() -> ...
-   * The add event is only emitted from onAdd() when the toolbar Add button is clicked.
+   * If initialData is provided (e.g. from selected row for "copy"), form is pre-filled with that data
+   * and primary key fields are cleared so the record is saved as new.
    */
-  openAddForm() {
+  openAddForm(initialData?: TableRow) {
     this.isEditMode = false;
     this.editingRecordId = null;
-    this.formData = {};
-    this.initializeFormData();
+    if (initialData && typeof initialData === 'object') {
+      this.formData = { ...initialData };
+      const recidField = this.recid || 'recid';
+      const idKeys = [recidField, 'recid', 'id', 'Id', 'ID'];
+      idKeys.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(this.formData, key)) {
+          delete this.formData[key];
+        }
+      });
+    } else {
+      this.formData = {};
+      this.initializeFormData();
+    }
     this.selectedImageFile = null;
     this.imagePreview = null;
     this.showFormPage = true; // Show full page form instead of modal
     this.isFormFullscreen = this.formFullscreen ?? true; // Initialize fullscreen state
-    
+
     // Load options for all columns with load configuration
     setTimeout(() => {
       this.loadFormFieldOptions();
     }, 0);
-    
+
     this.cdr.markForCheck();
   }
 

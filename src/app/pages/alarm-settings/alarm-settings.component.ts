@@ -13,7 +13,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './alarm-settings-config';
 import { tableColumns } from './alarm-settings-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './alarm-settings-form-config';
-import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab } from 'src/app/components/data-table/data-table.component';
+import { DataTableComponent, TableColumn, ToolbarConfig, ToolbarItem, GridResponse, JoinOption, FormTab } from 'src/app/components/data-table/data-table.component';
 
 @Component({
   selector: 'app-alarm-settings',
@@ -76,7 +76,19 @@ export class AlarmSettingsComponent implements OnInit, OnDestroy {
   };
 
   get tableToolbarConfig(): ToolbarConfig {
-    return { items: [], show: { reload: true, columns: true, search: true, add: true, edit: true, delete: true, save: false } };
+    return {
+      items: [
+        {
+          id: 'toolabara-copy',
+          type: 'button',
+          text: 'Kopyala',
+          icon: 'plus',
+          tooltip: 'Ekleme formunu aç (birebir aynı)',
+          onClick: (_event: MouseEvent, _item: ToolbarItem) => this.onTableCopy()
+        }
+      ],
+      show: { reload: true, columns: true, search: true, add: true, edit: true, delete: true, save: false }
+    };
   }
 
   onSave = (data: any, isEdit: boolean): Observable<any> => {
@@ -223,6 +235,24 @@ export class AlarmSettingsComponent implements OnInit, OnDestroy {
     this.employees = [];
     this.cdr.markForCheck();
     if (this.dataTableComponent) { this.dataTableComponent.openAddForm(); }
+  }
+
+  onTableCopy(): void {
+    const record = this.dataTableComponent?.getSelectedRecord();
+    if (!record) {
+      this.toastr.warning(this.translate.instant('common.selectRow') ?? 'Kopyalamak için bir satır seçin.', this.translate.instant('common.warning') ?? 'Uyarı');
+      return;
+    }
+    const emp = record?.['Employee'];
+    const employeeId = record?.['EmployeeID'] ?? emp?.['EmployeeID'];
+    if (emp && employeeId != null && employeeId !== '') {
+      const label = [emp.Name, emp.SurName].filter(Boolean).join(' ').trim() || String(employeeId);
+      this.employees = [{ label, value: employeeId }];
+    } else {
+      this.employees = [];
+    }
+    this.cdr.markForCheck();
+    this.dataTableComponent?.openAddForm(record);
   }
 
   onTableEdit(event: any): void {
