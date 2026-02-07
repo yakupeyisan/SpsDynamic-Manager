@@ -46,6 +46,9 @@ export class AppNavItemComponent implements OnChanges {
   disabled: any = false;
   twoLines: any = false;
   @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
+  @HostBinding('class.nav-item-depth-2') get isDepth2(): boolean {
+    return this.depth === 2;
+  }
   @Input() item: NavItem | any;
   @Input() depth: any;
 

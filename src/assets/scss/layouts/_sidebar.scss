@@ -241,6 +241,17 @@
   }
 }
 
+/* Üçüncü kademe: üst boşluk + sola girinti (ikinci kademeden görsel ayrım) */
+.sidebar-list app-nav-item.nav-item-depth-2 {
+  margin-top: 10px;
+  .menu-list-item {
+    padding-inline-start: 32px !important;
+  }
+}
+.sidebar-list app-nav-item.nav-item-depth-2 + app-nav-item.nav-item-depth-2 {
+  margin-top: 0;
+}
+
 .sidebar-list .top-parent .menu-list-item.activemenu {
   background-color: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
  
