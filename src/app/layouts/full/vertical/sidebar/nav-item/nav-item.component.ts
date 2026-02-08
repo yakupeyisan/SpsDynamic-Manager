@@ -42,10 +42,10 @@ export class AppNavItemComponent implements OnChanges {
   @Output() toggleMobileLink: any = new EventEmitter<void>();
   @Output() notify: EventEmitter<boolean> = new EventEmitter<boolean>();
   @Input() selectedIcon: string;
-  expanded: any = false;
+  private _expanded = false;
   disabled: any = false;
   twoLines: any = false;
-  @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
+  @HostBinding('attr.aria-expanded') get ariaExpanded() { return this.expanded; }
   @HostBinding('class.nav-item-depth-2') get isDepth2(): boolean {
     return this.depth === 2;
   }
@@ -58,11 +58,25 @@ export class AppNavItemComponent implements OnChanges {
     }
   }
 
+  /** For top-level (depth 0) with children: accordion - only one open, use service */
+  get expanded(): boolean {
+    if (this.depth === 0 && this.item?.children?.length) {
+      return this.navService.expandedNavKey() === this.item.displayName || this.isChildActive(this.item);
+    }
+    return this._expanded;
+  }
+  set expanded(v: boolean) {
+    this._expanded = v;
+  }
+
   ngOnChanges() {
     const url = this.navService.currentUrl();
-    if (this.item.route && url) {
+    if (this.item?.route && url) {
       this.expanded = url.indexOf(`/${this.item.route}`) === 0;
-      this.ariaExpanded = this.expanded;
+    }
+    // Top-level with active child: set as expanded in service so others close
+    if (this.depth === 0 && this.item?.children?.length && this.isChildActive(this.item)) {
+      this.navService.expandedNavKey.set(this.item.displayName);
     }
   }
 
@@ -71,7 +85,12 @@ export class AppNavItemComponent implements OnChanges {
       this.router.navigate([item.route]);
     }
     if (item.children && item.children.length) {
-      this.expanded = !this.expanded;
+      if (this.depth === 0) {
+        const willExpand = this.navService.expandedNavKey() !== item.displayName;
+        this.navService.expandedNavKey.set(willExpand ? (item.displayName ?? '') : null);
+      } else {
+        this.expanded = !this.expanded;
+      }
     }
     //scroll
     window.scroll({
