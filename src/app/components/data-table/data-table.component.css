@@ -134,6 +134,13 @@
   overflow-y: auto;
 }
 
+/* Fixed positioning so dropdown is not clipped by toolbar overflow */
+.ui-toolbar-menu-dropdown-fixed {
+  position: fixed !important;
+  margin-top: 4px;
+  z-index: 10001;
+}
+
 .ui-toolbar-menu-item {
   display: flex;
   align-items: center;

@@ -149,6 +149,51 @@
     }
   }
 
+  .modal-form-content {
+    padding: 0 0 16px;
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0 0 20px 0;
+    }
+
+    .form-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .full-width { width: 100%; }
+
+      .mic-record-field .file-label,
+      .file-field .file-label {
+        display: block;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 8px;
+      }
+      .mic-record-row, .file-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        button mat-icon { margin-right: 8px; }
+      }
+      .recording-duration { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: #dc2626; }
+      .recording-badge { font-size: 13px; color: #64748b; }
+      .mic-error { font-size: 12px; color: #dc2626; margin: 8px 0 0; }
+      .file-input-hidden { position: absolute; width: 0; height: 0; opacity: 0; overflow: hidden; }
+      .file-name { font-size: 14px; color: #64748b; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .file-hint { font-size: 12px; color: #64748b; margin: 8px 0 0; }
+    }
+  }
+
+  .modal-form-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
   .form-card.ses-kaydetme-form {
     margin-top: 24px;
     border-radius: 8px;

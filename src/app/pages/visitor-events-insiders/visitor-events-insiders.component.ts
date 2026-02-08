@@ -1,5 +1,5 @@
 // VisitorEvents-Insiders Component (İçerideki Ziyaretçiler)
-import { Component, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -69,6 +69,14 @@ export class VisitorEventsInsidersComponent {
   showEntryModal = false;
   showMovementDetailsModal = false;
   isSubmitting = false;
+
+  /** Visitor grid height - 100% fills container; emptyRowsCount uses wrapper's actual height */
+  readonly entryModalGridHeight = '100%';
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.cdr.markForCheck();
+  }
   selectedVisitId: number | null = null;
 
   // Select options

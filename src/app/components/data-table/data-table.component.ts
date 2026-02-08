@@ -507,6 +507,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
 
   // Toolbar menu state
   openMenuId: string | null = null;
+  toolbarMenuDropdownStyle: { top: string; left: string } | null = null;
   private menuClickHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(
@@ -644,6 +645,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   }
 
   ngAfterViewInit(): void {
+    // When height is % or calc, emptyRowsCount needs tableWrapperRef.clientHeight - trigger CD after layout
+    if (this.fixedBody && this.showEmptyRows && this.height && (this.height.includes('%') || this.height.includes('calc'))) {
+      setTimeout(() => this.cdr.markForCheck(), 0);
+    }
     // Load saved join options from localStorage if grid has ID
     if (this.id) {
       this.loadJoinOptionsFromStorage();
@@ -914,6 +919,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     let heightValue: number;
     if (this.height) {
       heightValue = parseInt(this.height, 10);
+      if (isNaN(heightValue) && this.tableWrapperRef?.nativeElement) {
+        // height is calc(...) or 100% - use actual wrapper height
+        heightValue = this.tableWrapperRef.nativeElement.clientHeight;
+      }
     } else {
       // Default: calc(100vh - 280px) - use viewport height
       heightValue = typeof window !== 'undefined' ? window.innerHeight - 280 : 600;
@@ -923,9 +932,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       return 0;
     }
     
-    // Subtract header height (approximately 50px for search + 50px for table header)
-    const availableHeight = heightValue - 100;
-    const rowsThatFit = Math.floor(availableHeight / this.effectiveRecordHeight);
+    // Subtract thead height only (table wrapper contains table; toolbar is outside)
+    const theadHeight = 50;
+    const availableHeight = Math.max(0, heightValue - theadHeight);
+    const rowsThatFit = Math.ceil(availableHeight / this.effectiveRecordHeight);
     const actualRows = this.filteredData.length;
     
     // Return number of empty rows needed to fill the space
@@ -2764,6 +2774,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     this.showFilterPanel = false;
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.fixedBody && this.showEmptyRows && this.height && (this.height.includes('%') || this.height.includes('calc'))) {
+      this.cdr.markForCheck();
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
     const target = event.target as HTMLElement;
@@ -4562,14 +4579,19 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     if (this.openMenuId === menuId) {
       // Close current menu
       this.openMenuId = null;
+      this.toolbarMenuDropdownStyle = null;
     } else {
       // Open new menu (closes previous one if open)
       this.openMenuId = menuId;
+      const btn = event.currentTarget as HTMLElement;
+      const rect = btn.getBoundingClientRect();
+      this.toolbarMenuDropdownStyle = { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
       // Close menu when clicking outside
       setTimeout(() => {
         this.menuClickHandler = (e: MouseEvent) => {
           if (!(e.target as HTMLElement).closest('.ui-toolbar-menu-wrapper')) {
             this.openMenuId = null;
+            this.toolbarMenuDropdownStyle = null;
             this.cdr.detectChanges();
             if (this.menuClickHandler) {
               document.removeEventListener('click', this.menuClickHandler);
@@ -4593,6 +4615,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     
     // Close menu
     this.openMenuId = null;
+    this.toolbarMenuDropdownStyle = null;
     
     // Clean up click handler
     if (this.menuClickHandler) {

@@ -3,6 +3,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
@@ -27,7 +28,7 @@ interface SoundFilesResponse {
 @Component({
   selector: 'app-sound-files',
   standalone: true,
-  imports: [MaterialModule, CommonModule, FormsModule, TranslateModule],
+  imports: [MaterialModule, CommonModule, FormsModule, TranslateModule, ModalComponent],
   templateUrl: './sound-files.component.html',
   styleUrls: ['./sound-files.component.scss']
 })
@@ -124,6 +125,12 @@ export class SoundFilesComponent implements OnInit {
     this.formFile = null;
     this.microphoneError = null;
     this.cdr.markForCheck();
+  }
+
+  onModalShowChange(show: boolean): void {
+    if (!show) {
+      this.cancelForm();
+    }
   }
 
   onFileSelected(event: Event): void {

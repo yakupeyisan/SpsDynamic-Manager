@@ -57,9 +57,11 @@
   <div class="entry-modal">
     <div class="entry-modal-left">
       <div class="entry-modal-title">Ziyaretçi Listesi</div>
+      <div class="entry-modal-grid-wrapper">
       <ui-data-table
         #visitorTable
         [id]="'visitor-grid'"
+        [height]="entryModalGridHeight"
         [showFooter]="true"
         [page]="1"
         [columns]="visitorTableColumns"
@@ -89,6 +91,7 @@
         [columnTooltip]="'top'"
         [toolbar]="visitorTableToolbarConfig">
       </ui-data-table>
+      </div>
     </div>
 
     <div class="entry-modal-right">
