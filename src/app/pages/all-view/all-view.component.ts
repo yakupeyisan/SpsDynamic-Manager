@@ -69,6 +69,15 @@ export class AllViewComponent implements OnInit, OnDestroy {
   accessRecords: any[] = [];
   currentReaderList: number[] = [];
 
+  showFilterModal = false;
+  showRowSizeModal = false;
+  accessRecordHeight = 100;
+  newRowSize = 100;
+
+  /** Ekran yüksekliğinin yarısı kadar grid alanı (toolbar/padding için pay bırakılır) */
+  accessGridHeight = 'calc(50vh - 356px)';
+  alarmGridHeight = 'calc(50vh - 356px)';
+
   accessDataSource = (params: any): Observable<GridResponse> =>
     of({
       status: 'success' as const,
@@ -102,7 +111,23 @@ export class AllViewComponent implements OnInit, OnDestroy {
 
   get accessToolbarConfig(): ToolbarConfig {
     return {
-      items: [],
+      items: [
+        { type: 'break' as const, id: 'break-operations' },
+        {
+          id: 'recordSize',
+          type: 'button' as const,
+          text: 'Satır Yüksekliği',
+          tooltip: 'Satır yüksekliğini değiştir',
+          onClick: (event: MouseEvent, item: any) => this.onSetRowSize(event, item)
+        },
+        {
+          id: 'filterRecord',
+          type: 'button' as const,
+          text: 'Filtrele',
+          tooltip: 'Terminal gruplarını seç',
+          onClick: (event: MouseEvent, item: any) => this.onFilterByGroup(event, item)
+        }
+      ],
       show: { reload: true, columns: true, search: true, add: false, edit: false, delete: false, save: false }
     };
   }
@@ -330,9 +355,56 @@ export class AllViewComponent implements OnInit, OnDestroy {
   }
 
   onAccessRowClick(_e: any): void {}
+  onAccessRowDblClick(_e: any): void {}
+  onAccessRowSelect(_e: any): void {}
+  onAccessFilterChange(_e: any): void {}
   onAccessDelete(_e: any): void {}
   onAccessAdd(): void {}
   onAccessEdit(_e: any): void {}
+
+  onSetRowSize(_event: MouseEvent, _item: any): void {
+    this.newRowSize = this.accessRecordHeight;
+    this.showRowSizeModal = true;
+  }
+
+  onApplyRowSize(): void {
+    if (this.newRowSize >= 40 && this.newRowSize <= 200) {
+      this.accessRecordHeight = this.newRowSize;
+      this.accessGridComponent?.reload();
+    }
+    this.showRowSizeModal = false;
+  }
+
+  onCloseRowSizeModal(): void {
+    this.showRowSizeModal = false;
+  }
+
+  onFilterByGroup(_event: MouseEvent, _item: any): void {
+    this.selectedLiveViewSettingId = null;
+    this.selectedTerminals = [];
+    this.showFilterModal = true;
+  }
+
+  onApplyFilter(): void {
+    if (!this.selectedLiveViewSettingId || this.selectedTerminals.length === 0) {
+      this.toastr.warning('Lütfen bir grup seçin', 'Uyarı');
+      return;
+    }
+    const readerList = this.selectedTerminals
+      .map((t: any) => parseInt(t.SerialNumber || t.serialNumber || '0', 10))
+      .filter((n: number) => !Number.isNaN(n) && n > 0);
+    this.currentReaderList = readerList;
+    this.liveViewStorage.startLiveView(readerList);
+    this.showFilterModal = false;
+    this.cdr.markForCheck();
+    this.toastr.success(`${readerList.length} terminal için filtre uygulandı`, 'Başarılı');
+  }
+
+  onCloseFilterModal(): void {
+    this.showFilterModal = false;
+    this.selectedLiveViewSettingId = null;
+    this.selectedTerminals = [];
+  }
 
   onAlarmRowClick(_e: any): void {}
   onAlarmDelete(_e: any): void {}

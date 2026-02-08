@@ -52,7 +52,7 @@
     </div>
   </ui-modal>
 
-  <!-- Grid: sadece Bağlan'dan sonra -->
+  <!-- Grid: AccessZones tarzı - sadece Bağlan'dan sonra -->
   <div class="container-fluid" *ngIf="!showConnectForm">
     <div class="row">
       <div class="col-12">
@@ -65,19 +65,19 @@
           [dataSource]="tableDataSource"
           [canViewDeleted]="false"
           [selectable]="true"
-          [pagination]="false"
+          [pagination]="true"
+          [pageSize]="10"
           [recordHeight]="recordHeight"
-          [showEmptyRows]="false"
+          [showEmptyRows]="true"
           [fixedBody]="true"
-          [advancedFilter]="false"
+          [advancedFilter]="true"
           [showRefresh]="true"
           [showLoadingOnReload]="false"
-          [scrollToTopOnReload]="false"
-          [searchPlaceholder]="'Ara...'"
+          [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
           [recid]="'Id'"
           [selectType]="'row'"
-          [multiSelect]="false"
-          [multiSort]="false"
+          [multiSelect]="true"
+          [multiSort]="true"
           [keyboard]="true"
           [liveSearch]="true"
           [reorderColumns]="false"

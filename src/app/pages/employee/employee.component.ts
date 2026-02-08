@@ -198,8 +198,8 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     );
   };
 
-  // Transfer from Visitor modal - grid fills available space (100% of flex container)
-  transferFromVisitorGridHeight = '100%';
+  // Transfer from Visitor modal - grid yüksekliği viewport ile sınırlı (taşma olmaz)
+  transferFromVisitorGridHeight = 'calc(70vh - 140px)';
 
   // Transfer from Visitor modal - table columns (Kişi no, TC Kimlik No, Adı, Soyadı)
   visitorWithDeletedTableColumns: TableColumn[] = [

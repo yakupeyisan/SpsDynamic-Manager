@@ -99,6 +99,36 @@
       color: #495057;
     }
     
+    .form-control {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #212529;
+      background-color: #fff;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      
+      &:focus {
+        outline: none;
+        border-color: #36c76c;
+        box-shadow: 0 0 0 3px rgba(54, 199, 108, 0.2);
+      }
+      
+      &[type="number"] {
+        -moz-appearance: textfield;
+        
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      }
+    }
+    
     .terminals-list-container {
       border: 1px solid #e9ecef;
       border-radius: 4px;
@@ -121,6 +151,13 @@
         }
       }
     }
+  }
+}
+
+// Satır yüksekliği modalı - son form grubunda alt boşluğu kaldır
+.row-size-modal-content {
+  .form-group:last-child {
+    margin-bottom: 0;
   }
 }
 

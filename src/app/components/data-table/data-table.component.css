@@ -87,6 +87,16 @@
   min-width: 150px;
 }
 
+/* CDK Overlay ile açılan options menü (overflow/transform içinde de görünür) */
+.ui-options-dropdown-cdk {
+  background: var(--ui-white);
+  border: 1px solid var(--ui-border-color);
+  border-radius: var(--ui-border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  padding: 4px 0;
+}
+
 .ui-options-menu-item {
   display: block;
   width: 100%;
@@ -1170,7 +1180,8 @@
 .ui-filter-overlay {
   position: absolute;
   top: calc(100% + 1px);
-  left: 10px;
+  left: auto;
+  right: 0;
   background-color: var(--ui-white);
   border: 1px solid var(--ui-border-color);
   border-top: none;
@@ -1184,6 +1195,18 @@
   max-width: calc(90vw - 20px);
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .ui-filter-overlay {
+    transform: translateX(-65%);
+    right: auto;
+  }
+}
+
+@keyframes ui-filter-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .ui-filter-overlay-content {

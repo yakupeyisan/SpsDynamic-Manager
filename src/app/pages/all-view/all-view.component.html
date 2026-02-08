@@ -54,46 +54,56 @@
     </div>
   </ui-modal>
 
-  <!-- İki grid: sadece bağlandıktan sonra -->
-  <div class="container-fluid" *ngIf="!showConnectForm">
+  <!-- İki grid: sadece bağlandıktan sonra - Geçişler 50vh, Alarm 50vh -->
+  <div class="container-fluid all-view-grids" *ngIf="!showConnectForm">
     <div class="row">
       <div class="col-12">
-        <div class="grid-section">
+        <div class="grid-section grid-section-access">
           <ui-data-table
             #accessGrid
             [id]="'all-view-access-grid'"
+            [height]="accessGridHeight"
             [showFooter]="true"
             [page]="1"
             [columns]="accessTableColumns"
             [dataSource]="accessDataSource"
             [canViewDeleted]="false"
-            [pagination]="false"
-            [height]="'320px'"
-            [recordHeight]="48"
-            [showEmptyRows]="false"
+            [selectable]="true"
+            [pagination]="true"
+            [pageSize]="10"
+            [recordHeight]="accessRecordHeight"
+            [showEmptyRows]="true"
             [fixedBody]="true"
-            [advancedFilter]="false"
+            [advancedFilter]="true"
             [showRefresh]="true"
             [showLoadingOnReload]="false"
-            [scrollToTopOnReload]="false"
-            [searchPlaceholder]="'Ara...'"
+            [searchPlaceholder]="translate.instant('table.searchPlaceholder')"
             [recid]="'Id'"
-            [multiSort]="false"
+            [selectType]="'row'"
+            [multiSelect]="true"
+            [multiSort]="true"
             [keyboard]="true"
             [liveSearch]="true"
+            [reorderColumns]="false"
+            [reorderRows]="false"
+            [lineNumbers]="false"
+            [expandColumn]="false"
             [nestedFields]="true"
             [columnTooltip]="'top'"
             [toolbar]="accessToolbarConfig"
             [getRowStyle]="getAccessRowStyle"
-            (refresh)="onAccessRefresh()"
             (rowClick)="onAccessRowClick($event)"
+            (rowDblClick)="onAccessRowDblClick($event)"
+            (rowSelect)="onAccessRowSelect($event)"
+            (advancedFilterChange)="onAccessFilterChange($event)"
+            (refresh)="onAccessRefresh()"
             (delete)="onAccessDelete($event)"
             (add)="onAccessAdd()"
             (edit)="onAccessEdit($event)">
           </ui-data-table>
         </div>
 
-        <div class="grid-section">
+        <div class="grid-section grid-section-alarm">
           <ui-data-table
             #alarmGrid
             [id]="'all-view-alarm-grid'"
@@ -105,7 +115,7 @@
             [pagination]="true"
             [pageSize]="50"
             [limit]="50"
-            [height]="'320px'"
+            [height]="alarmGridHeight"
             [recordHeight]="36"
             [showEmptyRows]="true"
             [fixedBody]="true"
@@ -132,3 +142,78 @@
     </div>
   </div>
 </div>
+
+<!-- Filtre Modal (Geçişler - Terminal gruplarını seç) -->
+<ui-modal
+  [show]="showFilterModal"
+  [title]="'Terminal Gruplarını Seç'"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCloseFilterModal()">
+  <div class="filter-modal-content">
+    <div class="form-group">
+      <label>Grup:</label>
+      <ui-select
+        [(ngModel)]="selectedLiveViewSettingId"
+        [options]="liveViewSettings"
+        [placeholder]="'Grup seçiniz...'"
+        (ngModelChange)="onLiveViewSettingChange()">
+      </ui-select>
+    </div>
+    <div class="form-group" *ngIf="selectedTerminals.length > 0">
+      <label>Seçili Terminaller ({{ selectedTerminals.length }}):</label>
+      <div class="terminals-list-container">
+        <ui-data-table
+          [id]="'all-view-filter-terminals-grid'"
+          [columns]="terminalsTableColumns"
+          [dataSource]="terminalsDataSource"
+          [selectable]="false"
+          [pagination]="true"
+          [pageSize]="10"
+          [height]="'300px'"
+          [recid]="'ReaderID'"
+          [showRefresh]="false"
+          [searchable]="false"
+          [showFooter]="true"
+          [toolbar]="terminalsTableToolbarConfig">
+        </ui-data-table>
+      </div>
+    </div>
+    <div class="form-group" *ngIf="selectedLiveViewSettingId && selectedTerminals.length === 0">
+      <div class="alert alert-info">
+        <i class="ti ti-info-circle me-2"></i>
+        Bu grup için terminal bulunamadı.
+      </div>
+    </div>
+  </div>
+  <div slot="footer" class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="onCloseFilterModal()">İptal</button>
+    <button type="button" class="btn btn-primary" (click)="onApplyFilter()" [disabled]="selectedTerminals.length === 0">Tamam</button>
+  </div>
+</ui-modal>
+
+<!-- Satır Yüksekliği Modal (Geçişler grid) -->
+<ui-modal
+  [show]="showRowSizeModal"
+  [title]="'Satır Yüksekliğini Düzenle'"
+  [size]="'sm'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onCloseRowSizeModal()">
+  <div class="row-size-modal-content">
+    <div class="form-group">
+      <label>Satır Yüksekliği:</label>
+      <input
+        type="number"
+        class="form-control"
+        [(ngModel)]="newRowSize"
+        min="40"
+        max="200">
+    </div>
+  </div>
+  <div slot="footer" class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="onCloseRowSizeModal()">İptal</button>
+    <button type="button" class="btn btn-primary" (click)="onApplyRowSize()">Ayarla</button>
+  </div>
+</ui-modal>

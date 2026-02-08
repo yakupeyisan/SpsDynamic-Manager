@@ -410,6 +410,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   @ViewChild('savedSearchContainer', { static: false }) savedSearchContainerRef?: ElementRef<HTMLElement>;
   @ViewChild('optionsMenuWrapper', { static: false }) optionsMenuWrapperRef?: ElementRef<HTMLElement>;
   @ViewChild('filterTrigger', { static: false }) filterTrigger?: CdkOverlayOrigin;
+  @ViewChild('optionsMenuTrigger', { static: false }) optionsMenuTrigger?: CdkOverlayOrigin;
   @ViewChildren(DataTableComponent) nestedGrids?: QueryList<DataTableComponent>;
 
   /** Fixed positioning for options panels so they are not clipped by grid overflow (AllView vb.) */
@@ -793,13 +794,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   }
   
   /**
-   * Reload data from dataSource (w2ui compatible)
+   * Reload data from dataSource (w2ui compatible).
+   * Does not emit refresh to avoid loop when parent (refresh) handler calls reload().
    */
   reload() {
     if (this.dataSource) {
       this.loadDataSource();
     }
-    this.refresh.emit();
   }
 
   /**
@@ -2582,22 +2583,24 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     return value;
   }
   
+  /** PictureID boş: avatar; dolu ama 404: crash-image */
+  private readonly pictureAvatarUrl = 'assets/images/profile/avatar.png';
+  private readonly pictureCrashImageUrl = 'assets/images/profile/crash-image.png';
+
   /**
    * Default render function for picture columns
    */
   private renderPictureColumn(row: TableRow, column: TableColumn): string {
     const pictureId = row[column.field];
+    const imgStyle = 'max-width: 100%; max-height: 100%; width: 15px; height: 15px; object-fit: contain; border-radius: 4px;';
     if (!pictureId) {
-      return '';
+      return `<img src="${this.pictureAvatarUrl}" alt="" style="${imgStyle}" />`;
     }
-    // Construct picture URL
     const pictureUrl = this.buildPictureUrl(pictureId, column);
-    // Escape HTML to prevent XSS
     const div = document.createElement('div');
     div.textContent = pictureUrl;
     const escapedUrl = div.innerHTML;
-    // Return small image HTML
-    return `<img src="${escapedUrl}" alt="Picture" style="width: 15px; height: 15px; object-fit: cover; border-radius: 4px;" />`;
+    return `<img src="${escapedUrl}" alt="Picture" style="${imgStyle}" onerror="this.onerror=null;this.src='${this.pictureCrashImageUrl}'" />`;
   }
   
   /**
@@ -2615,7 +2618,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     }
     
     // Default fallback
-    return `http://localhost/images/${pictureId}`;
+    return environment.settings[environment.setting as keyof typeof environment.settings].apiUrl+`/images/${pictureId}`;
   }
 
   /**
@@ -2774,6 +2777,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     { originX: 'start' as const, originY: 'bottom' as const, overlayX: 'start' as const, overlayY: 'top' as const },
   ];
 
+  /** Options menü (3 nokta) dropdown - butonun altında sağa hizalı */
+  optionsMenuOverlayPositions = [
+    { originX: 'end' as const, originY: 'bottom' as const, overlayX: 'end' as const, overlayY: 'top' as const },
+    { originX: 'end' as const, originY: 'top' as const, overlayX: 'end' as const, overlayY: 'bottom' as const },
+    { originX: 'start' as const, originY: 'bottom' as const, overlayX: 'start' as const, overlayY: 'top' as const },
+  ];
+
   openFilterPanel() {
     this.showFilterPanel = true;
     this.showJoinOptionsPanel = false; // Close join options when filter opens
@@ -2796,8 +2806,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     const target = event.target as HTMLElement;
     if (!target) return;
     
-    // Handle options menu
-    if (!target.closest('.ui-options-menu-wrapper')) {
+    // Handle options menu (trigger veya CDK overlay içindeki dropdown)
+    if (!target.closest('.ui-options-menu-wrapper') && !target.closest('.ui-options-dropdown-cdk')) {
       this.showOptionsMenu = false;
       this.optionsMenuDropdownStyle = null;
     }
@@ -5251,18 +5261,25 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     this.cdr.markForCheck();
   }
 
+  /** Overlay’da resim 404 alınca gösterilecek (PictureID varken hata) */
+  readonly pictureOverlayFallbackUrl = 'assets/images/profile/crash-image.png';
+
+  onPictureOverlayError() {
+    if (this.pictureOverlayUrl !== this.pictureOverlayFallbackUrl) {
+      this.pictureOverlayUrl = this.pictureOverlayFallbackUrl;
+      this.cdr.markForCheck();
+    } else {
+      this.closePictureOverlay();
+    }
+  }
+
   // Join Options Methods
 
   toggleOptionsMenu(event: MouseEvent) {
     event.stopPropagation();
-    if (this.showOptionsMenu) {
-      this.showOptionsMenu = false;
+    this.showOptionsMenu = !this.showOptionsMenu;
+    if (!this.showOptionsMenu) {
       this.optionsMenuDropdownStyle = null;
-    } else {
-      this.showOptionsMenu = true;
-      const btn = event.currentTarget as HTMLElement;
-      const rect = btn.getBoundingClientRect();
-      this.optionsMenuDropdownStyle = { top: `${rect.bottom + 4}px`, left: `${rect.left}px`, right: 'auto' };
     }
     this.cdr.markForCheck();
   }

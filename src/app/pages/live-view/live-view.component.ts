@@ -133,35 +133,31 @@ export class LiveViewComponent implements OnInit, OnDestroy {
     } as GridResponse);
   };
 
-  // Toolbar configuration
+  // Toolbar configuration (AccessZones düzen + İşlemler: Satır Yüksekliği, Filtrele)
   get tableToolbarConfig(): ToolbarConfig {
     return {
       items: [
         {
           type: 'break' as const,
-          id: 'break-settings-menu'
+          id: 'break-operations'
         },
         {
-          id: 'settings',
-          type: 'menu' as const,
-          text: 'Ayarlar',
-          icon: 'fa fa-cog',
-          items: [
-            {
-              id: 'recordSize',
-              text: 'Satır Yüksekliği',
-              onClick: (event: MouseEvent, item: any) => this.onSetRowSize(event, item)
-            },
-            {
-              id: 'filterRecord',
-              text: 'Filtrele',
-              onClick: (event: MouseEvent, item: any) => this.onFilterByGroup(event, item)
-            }
-          ]
+          id: 'recordSize',
+          type: 'button' as const,
+          text: 'Satır Yüksekliği',
+          tooltip: 'Satır yüksekliğini değiştir',
+          onClick: (event: MouseEvent, item: any) => this.onSetRowSize(event, item)
+        },
+        {
+          id: 'filterRecord',
+          type: 'button' as const,
+          text: 'Filtrele',
+          tooltip: 'Terminal gruplarını seç',
+          onClick: (event: MouseEvent, item: any) => this.onFilterByGroup(event, item)
         }
       ],
       show: {
-        reload: false,
+        reload: true,
         columns: true,
         search: true,
         add: false,

@@ -201,10 +201,12 @@
         <div *ngIf="toolbar && toolbar.right" [innerHTML]="toolbar.right"></div>
       </div>
       
-      <!-- Options Menu Button (Right Side) -->
+      <!-- Options Menu Button (Right Side) - CDK Overlay ile açılır (overflow/transform içinde de görünür) -->
       <div class="ui-toolbar-right">
         <div class="ui-options-menu-wrapper" #optionsMenuWrapper>
           <button 
+            cdkOverlayOrigin
+            #optionsMenuTrigger="cdkOverlayOrigin"
             class="ui-options-menu-btn" 
             (click)="toggleOptionsMenu($event)"
             [title]="translate.instant('options.title')"
@@ -215,38 +217,6 @@
               <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
             </svg>
           </button>
-          
-          <!-- Options Dropdown Menu -->
-          <div *ngIf="showOptionsMenu" 
-               class="ui-options-dropdown ui-options-dropdown-fixed" 
-               [ngStyle]="optionsMenuDropdownStyle"
-               (click)="$event.stopPropagation()">
-            <button class="ui-options-menu-item" (click)="openJoinOptionsPanel()">
-              <span>{{ translate.instant('options.title') }}</span>
-            </button>
-            <button 
-              *ngIf="canViewDeleted" 
-              class="ui-options-menu-item" 
-              (click)="toggleShowDeleted()"
-              [class.active]="showDeleted">
-              <span>{{ showDeleted ? translate.instant('options.hideDeleted') : translate.instant('options.showDeleted') }}</span>
-            </button>
-            <button 
-              class="ui-options-menu-item" 
-              (click)="openDefaultSearchFieldsPanel()">
-              <span>{{ translate.instant('options.defaultSearchFields') || 'Arama Varsayılan Alanları' }}</span>
-            </button>
-            <button 
-              class="ui-options-menu-item" 
-              (click)="openColumnVisibilityPanel()">
-              <span>{{ translate.instant('options.columnVisibility') || 'Kolon Görünürlüğü' }}</span>
-            </button>
-            <button 
-              class="ui-options-menu-item" 
-              (click)="openSearchableColumnsPanel()">
-              <span>{{ translate.instant('options.searchableColumns') || 'Aramada Görünecek Kolonlar' }}</span>
-            </button>
-          </div>
 
           <!-- Join Options Panel Overlay -->
           <div *ngIf="showJoinOptionsPanel" class="ui-join-options-overlay ui-join-options-overlay-fixed" [ngStyle]="optionsPanelOverlayStyle">
@@ -368,6 +338,45 @@
       </div>
     </div>
     
+    <!-- Options Menu Dropdown (CDK Overlay - overflow/transform içinde de açılır) -->
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOpen]="showOptionsMenu"
+      [cdkConnectedOverlayOrigin]="optionsMenuTrigger!"
+      [cdkConnectedOverlayPositions]="optionsMenuOverlayPositions"
+      [cdkConnectedOverlayOffsetY]="4"
+      [cdkConnectedOverlayViewportMargin]="8"
+      [cdkConnectedOverlayPush]="true"
+      (detach)="showOptionsMenu = false">
+      <div class="ui-options-dropdown ui-options-dropdown-cdk" (click)="$event.stopPropagation()">
+        <button class="ui-options-menu-item" (click)="openJoinOptionsPanel()">
+          <span>{{ translate.instant('options.title') }}</span>
+        </button>
+        <button 
+          *ngIf="canViewDeleted" 
+          class="ui-options-menu-item" 
+          (click)="toggleShowDeleted()"
+          [class.active]="showDeleted">
+          <span>{{ showDeleted ? translate.instant('options.hideDeleted') : translate.instant('options.showDeleted') }}</span>
+        </button>
+        <button 
+          class="ui-options-menu-item" 
+          (click)="openDefaultSearchFieldsPanel()">
+          <span>{{ translate.instant('options.defaultSearchFields') || 'Arama Varsayılan Alanları' }}</span>
+        </button>
+        <button 
+          class="ui-options-menu-item" 
+          (click)="openColumnVisibilityPanel()">
+          <span>{{ translate.instant('options.columnVisibility') || 'Kolon Görünürlüğü' }}</span>
+        </button>
+        <button 
+          class="ui-options-menu-item" 
+          (click)="openSearchableColumnsPanel()">
+          <span>{{ translate.instant('options.searchableColumns') || 'Aramada Görünecek Kolonlar' }}</span>
+        </button>
+      </div>
+    </ng-template>
+
     <!-- Filter Panel Overlay (CDK Overlay - body'da render, viewport'a göre konumlanır) -->
     <ng-template
       *ngIf="advancedFilter"
@@ -663,7 +672,7 @@
         [src]="pictureOverlayUrl" 
         alt="Picture" 
         style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px;" 
-        (error)="closePictureOverlay()" />
+        (error)="onPictureOverlayError()" />
     </div>
   </ui-modal>
 

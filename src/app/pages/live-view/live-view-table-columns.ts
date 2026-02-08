@@ -24,17 +24,16 @@ export const tableColumns: TableColumn[] = [
     searchable: false,
     resizable: true,
     render: (record: any) => {
-      if (record.PictureID) {
-        // Check if PictureID is already HTML (contains <img tag)
-        if (typeof record.PictureID === 'string' && record.PictureID.includes('<img')) {
-          // Extract src from HTML if needed, or return as-is
-          // For now, return the HTML as-is since it's already formatted
-          return record.PictureID;
-        }
-        // If it's a URL, wrap it in img tag
-        return `<img src="${record.PictureID}" style="height: 80px; width: 80px; object-fit: cover; border-radius: 4px;" />`;
+      const imgStyle = 'height: 80px; width: 80px; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;';
+      const avatarSrc = 'assets/images/profile/avatar.png';
+      const crashImageSrc = 'assets/images/profile/crash-image.png';
+      if (!record.PictureID) {
+        return `<img src="${avatarSrc}" alt="" style="${imgStyle}" />`;
       }
-      return '';
+      if (typeof record.PictureID === 'string' && record.PictureID.includes('<img')) {
+        return record.PictureID;
+      }
+      return `<img src="${record.PictureID}" style="${imgStyle}" onerror="this.onerror=null;this.src='${crashImageSrc}'" />`;
     }
   },
   { 

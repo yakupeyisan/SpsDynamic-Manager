@@ -1,8 +1,9 @@
-// Ziyaretçiden Aktar modal - grid dikeyde ekrana sığar, popup ile büyür/küçülür
+// Ziyaretçiden Aktar modal - grid ekrana sığar, kayıt fazla olsa da modaldan taşmaz
 :host ::ng-deep .ui-modal-body:has(.transfer-from-visitor-modal-content) {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  max-height: calc(100vh - 160px); /* header + padding sınırı */
   overflow: hidden;
   padding: 0;
 }
@@ -12,6 +13,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  max-height: 100%;
   padding: 1rem;
   overflow: hidden;
 
@@ -26,6 +28,7 @@
   ::ng-deep .ui-table-wrapper {
     flex: 1;
     min-height: 0;
+    overflow: auto;
   }
 }
 
