@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, TemplateRef, OnInit, AfterViewInit, DoCheck, OnChanges, OnDestroy, SimpleChanges, HostListener, ViewChild, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OverlayModule, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Observable, of, Subscription } from 'rxjs';
@@ -232,7 +233,7 @@ export interface ToolbarConfig {
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, TablerIconsModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, TablerIconsModule, OverlayModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -408,6 +409,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   @ViewChild('tableWrapper', { static: false }) tableWrapperRef?: ElementRef<HTMLDivElement>;
   @ViewChild('savedSearchContainer', { static: false }) savedSearchContainerRef?: ElementRef<HTMLElement>;
   @ViewChild('optionsMenuWrapper', { static: false }) optionsMenuWrapperRef?: ElementRef<HTMLElement>;
+  @ViewChild('filterTrigger', { static: false }) filterTrigger?: CdkOverlayOrigin;
   @ViewChildren(DataTableComponent) nestedGrids?: QueryList<DataTableComponent>;
 
   /** Fixed positioning for options panels so they are not clipped by grid overflow (AllView vb.) */
@@ -508,6 +510,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   // Toolbar menu state
   openMenuId: string | null = null;
   toolbarMenuDropdownStyle: { top: string; left: string } | null = null;
+  optionsMenuDropdownStyle: { top: string; left: string; right?: string } | null = null;
   private menuClickHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(
@@ -2764,6 +2767,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     }
   }
 
+  /** CDK overlay positions: sağdan hizalı (primary), fallbacks viewport için */
+  filterOverlayPositions = [
+    { originX: 'end' as const, originY: 'bottom' as const, overlayX: 'end' as const, overlayY: 'top' as const },
+    { originX: 'end' as const, originY: 'top' as const, overlayX: 'end' as const, overlayY: 'bottom' as const },
+    { originX: 'start' as const, originY: 'bottom' as const, overlayX: 'start' as const, overlayY: 'top' as const },
+  ];
+
   openFilterPanel() {
     this.showFilterPanel = true;
     this.showJoinOptionsPanel = false; // Close join options when filter opens
@@ -2789,6 +2799,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     // Handle options menu
     if (!target.closest('.ui-options-menu-wrapper')) {
       this.showOptionsMenu = false;
+      this.optionsMenuDropdownStyle = null;
     }
     
     // Handle filter panel
@@ -5244,12 +5255,21 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
 
   toggleOptionsMenu(event: MouseEvent) {
     event.stopPropagation();
-    this.showOptionsMenu = !this.showOptionsMenu;
+    if (this.showOptionsMenu) {
+      this.showOptionsMenu = false;
+      this.optionsMenuDropdownStyle = null;
+    } else {
+      this.showOptionsMenu = true;
+      const btn = event.currentTarget as HTMLElement;
+      const rect = btn.getBoundingClientRect();
+      this.optionsMenuDropdownStyle = { top: `${rect.bottom + 4}px`, left: `${rect.left}px`, right: 'auto' };
+    }
     this.cdr.markForCheck();
   }
 
   openJoinOptionsPanel() {
     this.showOptionsMenu = false;
+    this.optionsMenuDropdownStyle = null;
     this.showJoinOptionsPanel = true;
     this.showFilterPanel = false; // Close filter panel when join options opens
     this.showColumnVisibilityPanel = false;
@@ -5267,7 +5287,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
 
   toggleShowDeleted() {
     this.showDeleted = !this.showDeleted;
-    this.showOptionsMenu = false; // Close options menu
+    this.showOptionsMenu = false;
+    this.optionsMenuDropdownStyle = null;
     
     // Save to localStorage if grid has ID
     if (this.id) {
@@ -5675,6 +5696,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    */
   openDefaultSearchFieldsPanel(): void {
     this.showOptionsMenu = false;
+    this.optionsMenuDropdownStyle = null;
     this.showDefaultSearchFieldsPanel = true;
     this.showFilterPanel = false;
     this.showJoinOptionsPanel = false;
@@ -5790,6 +5812,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    */
   openColumnVisibilityPanel(): void {
     this.showOptionsMenu = false;
+    this.optionsMenuDropdownStyle = null;
     this.showColumnVisibilityPanel = true;
     this.showFilterPanel = false;
     this.showJoinOptionsPanel = false;
@@ -5899,6 +5922,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    */
   openSearchableColumnsPanel(): void {
     this.showOptionsMenu = false;
+    this.optionsMenuDropdownStyle = null;
     this.showSearchableColumnsPanel = true;
     this.showFilterPanel = false;
     this.showJoinOptionsPanel = false;

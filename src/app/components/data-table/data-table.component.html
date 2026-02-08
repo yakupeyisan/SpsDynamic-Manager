@@ -67,7 +67,7 @@
             </div>
           </div>
         </div>
-        <button *ngIf="advancedFilter" class="ui-filter-icon-outer" (click)="openFilterPanel()" [title]="translate.instant('table.advancedFilter')">
+        <button *ngIf="advancedFilter" cdkOverlayOrigin #filterTrigger="cdkOverlayOrigin" class="ui-filter-icon-outer" (click)="openFilterPanel()" [title]="translate.instant('table.advancedFilter')">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -217,7 +217,10 @@
           </button>
           
           <!-- Options Dropdown Menu -->
-          <div *ngIf="showOptionsMenu" class="ui-options-dropdown" (click)="$event.stopPropagation()">
+          <div *ngIf="showOptionsMenu" 
+               class="ui-options-dropdown ui-options-dropdown-fixed" 
+               [ngStyle]="optionsMenuDropdownStyle"
+               (click)="$event.stopPropagation()">
             <button class="ui-options-menu-item" (click)="openJoinOptionsPanel()">
               <span>{{ translate.instant('options.title') }}</span>
             </button>
@@ -365,27 +368,37 @@
       </div>
     </div>
     
-    <!-- Filter Panel Overlay -->
-    <div *ngIf="showFilterPanel && advancedFilter" class="ui-filter-overlay">
-      <div class="ui-filter-overlay-content">
-        <ui-filter-panel
-          [columns]="columnOptions"
-          [data]="data"
-          [filter]="activeFilter || undefined"
-          [limit]="currentLimit"
-          [limitOptions]="limitOptions"
-          [enableReportSave]="enableReportSave"
-          [hasActiveFilter]="!!activeFilter"
-          [defaultSearchFields]="defaultSearchFields"
-          [searchableColumns]="searchableColumns"
-          (filterChange)="onFilterChange($event)"
-          (limitChange)="onLimitChange($event)"
-          (clear)="onFilterClear()"
-          (close)="closeFilterPanel()"
-          (saveReportRequested)="openReportSaveModal($event)">
-        </ui-filter-panel>
+    <!-- Filter Panel Overlay (CDK Overlay - body'da render, viewport'a göre konumlanır) -->
+    <ng-template
+      *ngIf="advancedFilter"
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOpen]="showFilterPanel"
+      [cdkConnectedOverlayOrigin]="filterTrigger!"
+      [cdkConnectedOverlayPositions]="filterOverlayPositions"
+      [cdkConnectedOverlayOffsetY]="4"
+      [cdkConnectedOverlayViewportMargin]="10"
+      [cdkConnectedOverlayPush]="true">
+      <div class="ui-filter-overlay ui-filter-overlay-cdk">
+        <div class="ui-filter-overlay-content">
+          <ui-filter-panel
+            [columns]="columnOptions"
+            [data]="data"
+            [filter]="activeFilter || undefined"
+            [limit]="currentLimit"
+            [limitOptions]="limitOptions"
+            [enableReportSave]="enableReportSave"
+            [hasActiveFilter]="!!activeFilter"
+            [defaultSearchFields]="defaultSearchFields"
+            [searchableColumns]="searchableColumns"
+            (filterChange)="onFilterChange($event)"
+            (limitChange)="onLimitChange($event)"
+            (clear)="onFilterClear()"
+            (close)="closeFilterPanel()"
+            (saveReportRequested)="openReportSaveModal($event)">
+          </ui-filter-panel>
+        </div>
       </div>
-    </div>
+    </ng-template>
   </div>
   
   <!-- Active Filters Display Section -->

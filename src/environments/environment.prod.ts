@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'eureko',
+  setting: 'tskb',
   
   
   // Authentication ayarları
