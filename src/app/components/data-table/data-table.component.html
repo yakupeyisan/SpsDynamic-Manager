@@ -888,13 +888,29 @@
       <div class="ui-form-page-container">
       <div class="ui-form-page-header">
         <h2>{{ isEditMode ? translate.instant('form.editRecord') : translate.instant('form.addNewRecord') }}</h2>
-        <button 
-          type="button" 
-          class="ui-form-page-close"
-          (click)="closeFormModal()"
-          aria-label="Close">
-          ×
-        </button>
+        <div class="ui-form-page-header-actions">
+          <button
+            *ngIf="formFullscreen !== false"
+            type="button"
+            class="ui-form-page-fullscreen-toggle"
+            (click)="toggleFormFullscreen()"
+            [attr.aria-label]="isFormFullscreen ? (translate.instant('form.exitFullscreen') || 'Tam ekrandan çık') : (translate.instant('form.enterFullscreen') || 'Tam ekran')"
+            [title]="isFormFullscreen ? (translate.instant('form.exitFullscreen') || 'Tam ekrandan çık') : (translate.instant('form.enterFullscreen') || 'Tam ekran')">
+            <ng-container *ngIf="!isFormFullscreen">
+              <i-tabler name="arrows-maximize" class="icon-18"></i-tabler>
+            </ng-container>
+            <ng-container *ngIf="isFormFullscreen">
+              <i-tabler name="arrows-minimize" class="icon-18"></i-tabler>
+            </ng-container>
+          </button>
+          <button 
+            type="button" 
+            class="ui-form-page-close"
+            (click)="closeFormModal()"
+            aria-label="Close">
+            ×
+          </button>
+        </div>
       </div>
       
       <div class="ui-form-page-body">

@@ -1380,10 +1380,10 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
   transform: translate(-50%, -50%);
   border-radius: var(--ui-border-radius, 8px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 90vw;
-  max-height: 90vh;
+  width: min(90vw, 900px);
+  height: min(90vh, 700px);
   min-width: 400px;
-  min-height: 300px;
+  min-height: 400px;
 }
 
 /* Backdrop for modal mode */
@@ -1414,6 +1414,31 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--ui-border-color, #e0e0e0);
   background: var(--ui-white, #ffffff);
+  flex-shrink: 0;
+}
+
+.ui-form-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-form-page-fullscreen-toggle {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--ui-gray-600, #666);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ui-form-page-fullscreen-toggle:hover {
+  background-color: var(--ui-gray-100, #f5f5f5);
+  color: var(--ui-gray-900, #333);
 }
 
 .ui-form-page-header h2 {
@@ -1447,8 +1472,7 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
 
 .ui-form-page-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -1458,8 +1482,23 @@ body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
 .ui-form-page-body ::ng-deep ui-form,
 .ui-form-page-body ui-form {
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Tabs in form - fixed height so tab content scrolls, form doesn't resize */
+.ui-form-page-body ::ng-deep .ui-tabs {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-form-page-body ::ng-deep .ui-tabs-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Report Save Modal (moved from filter-panel -> data-table) */
