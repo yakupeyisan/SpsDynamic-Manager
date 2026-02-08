@@ -1,4 +1,4 @@
-<div class="ui-data-table">
+<div class="ui-data-table" [style.--ui-table-row-height]="effectiveRecordHeight + 'px'">
   <!-- Loading Spinner Overlay -->
   <div *ngIf="isLoading" class="ui-data-table-loading-overlay">
     <div class="ui-data-table-spinner">
@@ -442,14 +442,14 @@
   </div>
 
   <div #tableWrapper class="ui-table-wrapper" 
-       [style.height]="height && fixedBody ? height : null"
+       [style.height]="fixedBody ? (height || 'calc(100vh - 300px)') : null"
        [style.padding-bottom]="showFooter ? '0px' : null"
        [attr.tabindex]="keyboard ? (tabIndex ?? 0) : null"
        (focus)="onGridFocus($event)"
        (blur)="onGridBlur($event)"
        (copy)="onGridCopy($event)"
        (paste)="onGridPaste($event)">
-    <table class="ui-table" [class.ui-table-striped]="striped" [class.ui-table-hover]="hover" [class.ui-table-fixed-body]="fixedBody && height">
+    <table class="ui-table" [class.ui-table-striped]="striped" [class.ui-table-hover]="hover" [class.ui-table-fixed-body]="fixedBody" [style.min-width]="tableMinWidth">
       <thead>
         <!-- Column Groups Row -->
         <tr *ngIf="computedColumnGroups && computedColumnGroups.length > 0">
@@ -484,6 +484,7 @@
             *ngFor="let column of displayColumns; let colIndex = index"
             [class]="['ui-table-header', column.sortable ? 'ui-table-sortable' : '', getAlignmentClass(column.align)]"
             [style.width]="column.width"
+            [style.min-width]="(column.min ?? 100) + 'px'"
             [attr.title]="column.tooltip || column.label |translate"
             (click)="onSort(column, $event)"
             (dblclick)="onColumnDblClick(column, $event)"
@@ -509,6 +510,9 @@
         <tr
           *ngFor="let row of filteredData; let i = index"
           [attr.index]="i"
+          [style.height]="getRowHeight(row, i) + 'px'"
+          [style.min-height]="getRowHeight(row, i) + 'px'"
+          [style.max-height]="getRowHeight(row, i) + 'px'"
           [class.ui-table-row-even]="i % 2 === 0"
           [class.ui-table-row-odd]="i % 2 === 1"
           [ngClass]="getRowClass ? getRowClass(row) : null"
@@ -529,7 +533,9 @@
             *ngFor="let column of displayColumns; let colIndex = index"
             [attr.col]="colIndex"
             [class]="getAlignmentClass(column.align)"
+            [class.ui-table-cell-with-row-resizer]="colIndex === 0"
             [style.width]="column.width"
+            [style.min-width]="(column.min ?? 100) + 'px'"
             (click)="onCellClick($event, row, column, i, colIndex)"
             (dblclick)="onCellDblClick($event, row, column)">
             <ng-container *ngIf="column.template; else defaultCell">
@@ -544,6 +550,9 @@
                 <ng-template #textValue>{{ getCellValue(row, column, i) }}</ng-template>
               </ng-template>
             </ng-template>
+            @if (colIndex === 0) {
+            <div class="ui-table-row-resizer" (mousedown)="onRowResizeStart($event, row, i)" [attr.title]="'Resize row height (Ctrl: all rows)'"></div>
+            }
           </td>
         </tr>
         <!-- Empty message row -->
@@ -556,11 +565,18 @@
         <!-- Empty rows for Excel-like appearance -->
         <tr
           *ngFor="let emptyRow of emptyRows; let i = index"
+          [style.height]="effectiveRecordHeight + 'px'"
+          [style.min-height]="effectiveRecordHeight + 'px'"
+          [style.max-height]="effectiveRecordHeight + 'px'"
           [class.ui-table-row-even]="(filteredData.length + i) % 2 === 0"
           [class.ui-table-row-odd]="(filteredData.length + i) % 2 === 1"
           class="ui-table-empty-row">
           <td *ngIf="selectable" class="ui-table-select-cell"></td>
-          <td *ngFor="let column of displayColumns" [class]="getAlignmentClass(column.align)"></td>
+          <td *ngFor="let column of displayColumns; let colIndex = index" [class]="getAlignmentClass(column.align)" [class.ui-table-cell-with-row-resizer]="colIndex === 0" [style.width]="column.width" [style.min-width]="(column.min ?? 100) + 'px'">
+            @if (colIndex === 0) {
+            <div class="ui-table-row-resizer" (mousedown)="onRowResizeStart($event, null, filteredData.length + i)" [attr.title]="'Resize row height (Ctrl: all rows)'"></div>
+            }
+          </td>
         </tr>
         
       </tbody>

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, TemplateRef, AfterViewInit, DoCheck, OnChanges, OnDestroy, SimpleChanges, HostListener, ViewChild, ViewChildren, QueryList, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, TemplateRef, OnInit, AfterViewInit, DoCheck, OnChanges, OnDestroy, SimpleChanges, HostListener, ViewChild, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -237,7 +237,7 @@ export interface ToolbarConfig {
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, OnDestroy {
+export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnChanges, OnDestroy {
   @Input() columns: TableColumn[] = [];
   private internalColumns: TableColumn[] = [];
   @Input() data: TableRow[] = [];
@@ -474,6 +474,18 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   private resizeStartWidth: number = 0;
   private resizeTimer: any = null;
   private resizeTds: HTMLElement[] = [];
+  private resizeTable: HTMLTableElement | null = null;
+  
+  // Row resizing state
+  private isRowResizing: boolean = false;
+  private resizeStartY: number = 0;
+  private resizeStartHeight: number = 0;
+  private resizingRowKey: number | null = null; // row index for single-row resize, null = resize all (Ctrl)
+  private resizingWithCtrl: boolean = false;
+  /** Effective row height - default for all rows, updated when Ctrl+resize */
+  effectiveRecordHeight: number = 40;
+  /** Per-row heights - key: row index in current filteredData (single-row resize only) */
+  private rowHeightsByIndex: Map<number, number> = new Map();
   
   // Picture overlay state
   showPictureOverlay = false;
@@ -514,9 +526,14 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.onGridPaste = this.onGridPaste.bind(this);
     this.onColumnResizeMove = this.onColumnResizeMove.bind(this);
     this.onColumnResizeEnd = this.onColumnResizeEnd.bind(this);
+    this.onRowResizeMove = this.onRowResizeMove.bind(this);
+    this.onRowResizeEnd = this.onRowResizeEnd.bind(this);
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (changes['recordHeight'] && changes['recordHeight'].currentValue != null && !this.isRowResizing) {
+      this.effectiveRecordHeight = changes['recordHeight'].currentValue;
+    }
     // Update currentPage when page input changes
     if (changes['page'] && changes['page'].currentValue) {
       this.currentPage = changes['page'].currentValue;
@@ -620,6 +637,10 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     if (pastedText) {
       this.paste.emit({ text: pastedText, event });
     }
+  }
+
+  ngOnInit(): void {
+    this.effectiveRecordHeight = this.recordHeight;
   }
 
   ngAfterViewInit(): void {
@@ -886,19 +907,25 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   }
 
   get emptyRowsCount(): number {
-    if (!this.fixedBody || !this.height || !this.showEmptyRows) {
+    if (!this.fixedBody || !this.showEmptyRows) {
       return 0;
     }
     
-    // Calculate how many rows fit in the given height
-    const heightValue = parseInt(this.height);
-    if (isNaN(heightValue)) {
+    let heightValue: number;
+    if (this.height) {
+      heightValue = parseInt(this.height, 10);
+    } else {
+      // Default: calc(100vh - 280px) - use viewport height
+      heightValue = typeof window !== 'undefined' ? window.innerHeight - 280 : 600;
+    }
+    
+    if (isNaN(heightValue) || heightValue <= 0) {
       return 0;
     }
     
     // Subtract header height (approximately 50px for search + 50px for table header)
     const availableHeight = heightValue - 100;
-    const rowsThatFit = Math.floor(availableHeight / this.recordHeight);
+    const rowsThatFit = Math.floor(availableHeight / this.effectiveRecordHeight);
     const actualRows = this.filteredData.length;
     
     // Return number of empty rows needed to fill the space
@@ -1269,6 +1296,17 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     }
     
     return visibleCols;
+  }
+
+  /** Total min-width for table - sum of column widths so overflow scroll grows when columns are resized */
+  get tableMinWidth(): string {
+    const cols = this.displayColumns;
+    let total = this.selectable ? 40 : 0; // select column width
+    for (const col of cols) {
+      const w = col.width || col.size;
+      total += w ? this.parseWidth(w) : (col.min ?? 100);
+    }
+    return total + 'px';
   }
 
   /**
@@ -1657,7 +1695,8 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     
     // Find all tds for this column for quick resize (w2ui approach)
     const tableElement = event.currentTarget as HTMLElement;
-    const table = tableElement.closest('table');
+    const table = tableElement.closest('table') as HTMLTableElement | null;
+    this.resizeTable = table;
     if (table) {
       const rows = table.querySelectorAll('tbody tr');
       this.resizeTds = Array.from(rows).map(row => {
@@ -1683,18 +1722,22 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     event.preventDefault();
     
     const deltaX = event.screenX - this.resizeStartX;
-    const newWidth = Math.max(20, this.resizeStartWidth + deltaX); // Minimum 20px
+    const minWidth = this.resizingColumn?.min ?? 100;
+    const newWidth = Math.max(minWidth, this.resizeStartWidth + deltaX);
     const newWidthStr = newWidth + 'px';
     
-    // Update column in the internal array first (for state management)
+    // Update column in the internal array (find by field - displayColumns index differs from internalColumns when hidden cols exist)
     if (this.internalColumns.length === 0) {
       this.internalColumns = this.columns.map(col => ({ ...col }));
     }
     
-    if (this.resizingColumnIndex < this.internalColumns.length) {
-      // Create a new array with updated column
+    const internalIndex = this.resizingColumn?.field
+      ? this.internalColumns.findIndex(col => col.field === this.resizingColumn!.field)
+      : this.resizingColumnIndex;
+    
+    if (internalIndex >= 0) {
       this.internalColumns = this.internalColumns.map((col, index) => {
-        if (index === this.resizingColumnIndex) {
+        if (index === internalIndex) {
           return {
             ...col,
             width: newWidthStr,
@@ -1703,9 +1746,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
         }
         return col;
       });
-      
-      // Update the resizingColumn reference
-      this.resizingColumn = this.internalColumns[this.resizingColumnIndex];
+      this.resizingColumn = this.internalColumns[internalIndex];
     }
     
     // Quick resize: directly update DOM for immediate visual feedback (w2ui approach)
@@ -1716,14 +1757,16 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
       }
     });
     
-    // Also update header th
-    const resizerElement = event.target as HTMLElement;
-    const table = resizerElement.closest('table');
+    // Also update header th (use stored table ref - event.target changes during drag)
+    // When columnGroups exist, column headers row has no select th (rowspan covers it)
+    const table = this.resizeTable;
     if (table) {
-      const headerRow = table.querySelector('thead tr');
+      const headerRows = table.querySelectorAll('thead tr');
+      const headerRow = headerRows.length > 0 ? headerRows[headerRows.length - 1] : null;
       if (headerRow) {
         const headerCells = headerRow.querySelectorAll('th');
-        const actualColIndex = this.selectable ? this.resizingColumnIndex + 1 : this.resizingColumnIndex;
+        const hasSelectInHeaderRow = this.selectable && (!this.columnGroups || this.columnGroups.length === 0);
+        const actualColIndex = hasSelectInHeaderRow ? this.resizingColumnIndex + 1 : this.resizingColumnIndex;
         const headerCell = headerCells[actualColIndex] as HTMLElement;
         if (headerCell) {
           headerCell.style.width = newWidthStr;
@@ -1778,6 +1821,55 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     this.resizingColumn = null;
     this.resizingColumnIndex = -1;
     this.resizeTds = [];
+    this.resizeTable = null;
+  }
+
+  onRowResizeStart(event: MouseEvent, row: TableRow | null, rowIndex: number) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isRowResizing = true;
+    this.resizeStartY = event.screenY;
+    // Mode locked at mousedown: Ctrl = all rows, no Ctrl = single row. Empty rows always resize all.
+    this.resizingWithCtrl = !row || event.ctrlKey === true;
+    this.resizingRowKey = (row && !this.resizingWithCtrl) ? rowIndex : null;
+    const currentHeight = this.getRowHeight(row, rowIndex);
+    this.resizeStartHeight = currentHeight;
+    document.addEventListener('mousemove', this.onRowResizeMove);
+    document.addEventListener('mouseup', this.onRowResizeEnd);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ns-resize';
+  }
+
+  private onRowResizeMove(event: MouseEvent) {
+    if (!this.isRowResizing) return;
+    event.preventDefault();
+    const deltaY = event.screenY - this.resizeStartY;
+    const newHeight = Math.max(24, Math.min(200, this.resizeStartHeight + deltaY));
+    if (this.resizingWithCtrl) {
+      this.effectiveRecordHeight = newHeight;
+      this.rowHeightsByIndex.clear();
+    } else if (this.resizingRowKey != null) {
+      this.rowHeightsByIndex.set(this.resizingRowKey, newHeight);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private onRowResizeEnd(event: MouseEvent) {
+    if (!this.isRowResizing) return;
+    event.preventDefault();
+    document.removeEventListener('mousemove', this.onRowResizeMove);
+    document.removeEventListener('mouseup', this.onRowResizeEnd);
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    this.isRowResizing = false;
+    this.resizingRowKey = null;
+    this.cdr.markForCheck();
+  }
+
+  getRowHeight(row: TableRow | null, rowIndex: number): number {
+    if (!row) return this.effectiveRecordHeight;
+    const customHeight = this.rowHeightsByIndex.get(rowIndex);
+    return customHeight ?? this.effectiveRecordHeight;
   }
 
   private parseWidth(width: string | number): number {
@@ -2230,9 +2322,12 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
     return selectedCount > 0 && selectedCount < this.allFilteredData.length;
   }
 
-  private getRowId(row: TableRow): any {
+  getRowId(row: TableRow, index?: number): string | number {
     const recidField = this.recid || 'id';
-    return row['recid'] ?? row[recidField] ?? row['id'] ?? row['_id'] ?? JSON.stringify(row);
+    const id = row['recid'] ?? row[recidField] ?? row['id'] ?? row['_id'];
+    if (id != null) return id;
+    if (index != null) return `__idx_${index}`;
+    return JSON.stringify(row);
   }
 
   private emitSelection() {
@@ -2245,6 +2340,7 @@ export class DataTableComponent implements AfterViewInit, DoCheck, OnChanges, On
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.rowHeightsByIndex.clear(); // Per-row heights are index-based, reset on page change
       // Reload data if using dataSource
       if (this.dataSource) {
         this.loadDataSource();

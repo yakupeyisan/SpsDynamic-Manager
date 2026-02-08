@@ -4,7 +4,9 @@
   <i class="iconify icon-18 caption-icon" data-icon="solar:menu-dots-linear"></i>
   <span class="caption-text">{{ item.navCap }}</span>
 </div>
-} @if(!item.navCap && !item.external && !item.twoLines) {
+} @if(item.divider && !item.navCap) {
+<span class="sidebar-divider"></span>
+} @else if(!item.navCap && !item.external && !item.twoLines) {
 <a mat-list-item (click)="onItemSelected(item)" [ngClass]="{
     'mat-toolbar bg-primary activeMenu': item.route
       ? router.isActive(item.route, true)

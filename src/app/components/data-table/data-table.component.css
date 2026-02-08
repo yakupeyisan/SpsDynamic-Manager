@@ -410,6 +410,9 @@
   background-color: var(--ui-gray-50);
   min-height: 48px;
   position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .ui-toolbar-left {
@@ -827,15 +830,16 @@
 
 .ui-table-fixed-body {
   display: table;
-  table-layout: auto;
+  table-layout: fixed;
   width: 100%;
 }
 
 .ui-table {
   width: 100%;
+  height: 100%;
   border-collapse: collapse;
   font-size: var(--ui-font-size-base);
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .ui-table thead {
@@ -908,20 +912,50 @@
 
 .ui-table-column-resizer {
   position: absolute;
-  top: 50%;
+  top: 0;
   right: 0;
-  width: 6px;
-  height: 12px;
-  margin-left: -3px;
-  margin-top: -6px;
+  width: 10px;
+  height: 100%;
+  margin-right: -5px;
   cursor: ew-resize;
-  background-color: rgba(0, 0, 0, 0);
-  z-index: 1000;
-  padding: 0px;
+  background-color: transparent;
+  z-index: 10;
+  padding: 0;
 }
 
 .ui-table-column-resizer:hover {
   background-color: var(--ui-primary);
+}
+
+/* Row resizer - drag to change row height */
+.ui-table-cell-with-row-resizer {
+  position: relative;
+}
+
+.ui-table-row-resizer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  margin-bottom: -4px;
+  cursor: ns-resize;
+  background-color: transparent;
+  z-index: 10;
+}
+
+.ui-table-row-resizer:hover {
+  background-color: var(--ui-primary, #5d87ff);
+  opacity: 0.5;
+}
+
+.ui-table tbody tr:hover .ui-table-row-resizer {
+  background-color: var(--ui-gray-300, #d1d5db);
+}
+
+.ui-table tbody tr:hover .ui-table-row-resizer:hover {
+  background-color: var(--ui-primary, #5d87ff);
+  opacity: 0.6;
 }
 
 .ui-table-header:hover .ui-table-column-resizer {
