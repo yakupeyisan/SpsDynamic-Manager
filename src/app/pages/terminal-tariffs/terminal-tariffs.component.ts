@@ -227,7 +227,7 @@ export class TerminalTariffsComponent implements OnInit {
     // Initialize forms
     this.bulkDefinitionForm = this.fb.group({
       CafeteriaGroupID: ['', Validators.required],
-      TimeZoneID: ['', Validators.required],
+      CafeteriaApplicationID: ['', Validators.required],
       FirstPassFee: [''],
       SecondPassFee: [''],
       DailyLimitCredit: [''],
