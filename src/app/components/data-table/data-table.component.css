@@ -1387,21 +1387,18 @@
   background-color: var(--ui-white, #ffffff);
 }
 
+/* Fullscreen: match pageWrapper (content area); sidebar stays visible, resizes with it */
 .ui-form-page-overlay.ui-form-page-fullscreen {
-  top: 20px;
-  left: calc(var(--sidenav-desktop, 260px) + 20px);
-  right: 20px;
-  bottom: 20px;
-  border-radius: var(--ui-border-radius, 8px);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5),
-              0 0 0 20px rgba(0, 0, 0, 0.3),
-              0 4px 20px rgba(0, 0, 0, 0.4),
-              0 8px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* When modal is open (sidebar is hidden), adjust left position */
-body.modal-open .ui-form-page-overlay.ui-form-page-fullscreen {
-  left: 20px;
+  top: calc(var(--header-height, 70px) + 20px) !important;
+  left: calc(var(--content-area-left, 260px) + 30px) !important;
+  width: calc(100vw - calc(var(--content-area-left, 260px) + 60px)) !important;
+  height: calc(100vh - calc(var(--header-height, 70px) + 70px)) !important;
+  right: auto;
+  bottom: auto;
+  border-radius: 0;
+  box-sizing: border-box;
+  /* box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); */
+  transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .ui-form-page-overlay.ui-form-page-modal {

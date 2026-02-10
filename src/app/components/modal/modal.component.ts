@@ -179,28 +179,18 @@ export class ModalComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleFullscreen() {
     if (this.allowFullscreen) {
       this.isFullscreen = !this.isFullscreen;
-      // Update body class to prevent scroll when fullscreen
       if (this.isFullscreen) {
         document.body.style.overflow = 'hidden';
-        
-        // Sidebar genişliğini al (sadece açık ve görünür ise)
-        const sidebar = document.querySelector('.mat-drawer.sidebarNav') as HTMLElement;
-        let sidebarWidth = 0;
-        
-        if (sidebar && sidebar.offsetWidth > 0 && window.getComputedStyle(sidebar).visibility !== 'hidden') {
-          sidebarWidth = sidebar.offsetWidth;
+        // Fullscreen = pageWrapper alanı; sidebar görünsün, modal content alanında kalsın
+        if (this.hideSidebarWhenOpen) {
+          document.body.classList.remove('modal-open');
         }
-        
-        // CSS custom property olarak set et
-        document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth+50}px`);
-        
       } else {
-        // Fullscreen'den çıkarken custom property'yi temizle
-        document.documentElement.style.removeProperty('--sidebar-width');
+        if (this.hideSidebarWhenOpen && this.show) {
+          document.body.classList.add('modal-open');
+        }
         this.preventBodyScroll();
       }
-      
-      // Resize observer will automatically detect the size change
       setTimeout(() => {
         if (this.modalBodyRef?.nativeElement) {
           const rect = this.modalBodyRef.nativeElement.getBoundingClientRect();

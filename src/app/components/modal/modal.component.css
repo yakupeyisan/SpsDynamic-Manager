@@ -13,10 +13,18 @@
   overflow-y: auto;
 }
 
+/* Fullscreen: match pageWrapper (content area); sidebar stays visible and resizes with it */
 .ui-modal-backdrop-fullscreen {
-  padding: 10px !important;
+  position: fixed !important;
+  top: var(--header-height, 70px) !important;
+  left: var(--content-area-left, 260px) !important;
+  width: calc(100vw - var(--content-area-left, 260px)) !important;
+  height: calc(100vh - var(--header-height, 70px)) !important;
+  padding: 0 !important;
   align-items: stretch;
   justify-content: stretch;
+  border-radius: 0;
+  transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .ui-modal-dialog {
@@ -134,14 +142,15 @@
 }
 
 .ui-modal-fullscreen {
-  max-width: calc(100vw - var(--sidebar-width, 0px)) !important;
-  width: calc(100vw - var(--sidebar-width, 0px)) !important;
-  height: calc(100vh - 55px) !important;
-  max-height: calc(100vh - 55px) !important;
-  border-radius: 10px !important;
-  margin: 0px !important;
+  position: relative !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
   align-self: stretch;
-  box-sizing: content-box;
+  box-sizing: border-box;
 }
 
 .ui-modal-body {

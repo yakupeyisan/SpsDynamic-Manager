@@ -243,7 +243,7 @@ export const tableColumns: TableColumn[] = [
     size: '200px',
     min: 20,
     searchable: 'enum' as ColumnType,
-    searchField: 'ReaderID',
+    searchField: 'Terminal.ReaderID',
     resizable: true,
     exportDisplayField: 'Location',
     load: {

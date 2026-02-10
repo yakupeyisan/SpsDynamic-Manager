@@ -185,8 +185,8 @@ export const formTabs: FormTab[] = [
     grids: [{
       id: "EmployeeCardGrid",
       selectable: true,
-      formFullscreen: false,
-      formWidth: '700px',
+      formFullscreen: true,
+      formWidth: '800px',
       formHeight: '600px',
       recid: 'CardID',
       formFields: [

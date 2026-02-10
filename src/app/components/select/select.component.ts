@@ -342,11 +342,22 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
     const isInModal = container.closest('.ui-modal-dialog') || container.closest('.ui-modal-content') || container.closest('.ui-modal-body');
     
     if (isInFilterOverlay) {
-      // Use fixed positioning for filter overlay dropdowns
-      this.renderer.setStyle(dropdown, 'position', 'fixed');
-      this.renderer.setStyle(dropdown, 'top', `${rect.bottom + 4}px`);
-      this.renderer.setStyle(dropdown, 'left', `${rect.left}px`);
-      this.renderer.setStyle(dropdown, 'width', `${rect.width}px`);
+      // CDK overlay has transform so fixed is relative to overlay pane. Position in pane coordinates.
+      const overlayPane = container.closest('.cdk-overlay-pane') as HTMLElement | null;
+      if (overlayPane) {
+        const paneRect = overlayPane.getBoundingClientRect();
+        const topPx = rect.bottom - paneRect.top + 4;
+        const leftPx = rect.left - paneRect.left;
+        this.renderer.setStyle(dropdown, 'position', 'fixed');
+        this.renderer.setStyle(dropdown, 'top', `${topPx}px`);
+        this.renderer.setStyle(dropdown, 'left', `${leftPx}px`);
+        this.renderer.setStyle(dropdown, 'width', `${rect.width}px`);
+      } else {
+        this.renderer.setStyle(dropdown, 'position', 'absolute');
+        this.renderer.setStyle(dropdown, 'top', '100%');
+        this.renderer.setStyle(dropdown, 'left', '0');
+        this.renderer.setStyle(dropdown, 'right', '0');
+      }
       this.renderer.setStyle(dropdown, 'z-index', '1002');
     } else if (isInModal) {
       // Use fixed positioning for modal dropdowns

@@ -71,9 +71,19 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   --ui-z-dropdown: 1000;
   --ui-z-tooltip: 1070;
   
-  /* Sidebar */
+  /* Sidebar & layout (pageWrapper-aligned fullscreen modals) */
   --sidenav-desktop: 260px;
   --sidenav-mini: 80px;
+  --header-height: 70px;
+  --content-area-left: 260px;
+}
+
+/* Content area left: sidebar width so fullscreen modals match pageWrapper */
+.mainWrapper {
+  --content-area-left: var(--sidenav-desktop);
+}
+.mainWrapper.sidebarNav-mini {
+  --content-area-left: var(--sidenav-mini);
 }
 
 /* Fullscreen dialog styles */
