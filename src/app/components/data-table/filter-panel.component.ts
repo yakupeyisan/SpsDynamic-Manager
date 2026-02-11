@@ -9,6 +9,7 @@ import { SelectComponent, SelectOption } from '../select/select.component';
 import { ButtonComponent } from '../button/button.component';
 import { AdvancedFilter, FilterCondition, FilterLogic, FilterOperator, FILTER_OPERATORS, ColumnType, OperatorType, getOperatorTypeForColumnType, getOperatorsForOperatorType, getDefaultOperatorForType, getOperatorLabel } from './filter.model';
 import { TableColumn } from '../data-table/data-table.component';
+import { formatFilterDateValueForApi, getDateApiType } from '../../utils/date-format-api.util';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
@@ -873,20 +874,12 @@ export class FilterPanelComponent implements OnInit {
       return;
     }
 
-    // Format datetime values: remove "T" from ISO datetime strings
+    // Tarih/saat filtrelerini backend formatına çevir: date → yyyy-MM-dd, datetime → yyyy-MM-dd HH:mm, time → HH:mm (24H)
     const formattedConditions = validConditions.map(cond => {
-      if (this.isDateType(cond.field) && cond.value) {
-        // Handle between operator (value is a string with format "minValue,maxValue")
-        if (cond.operator === 'between' && typeof cond.value === 'string' && cond.value.includes(',')) {
-          const [minValue, maxValue] = cond.value.split(',');
-          const formattedMin = minValue ? minValue.trim().replace('T', ' ') : '';
-          const formattedMax = maxValue ? maxValue.trim().replace('T', ' ') : '';
-          return { ...cond, value: `${formattedMin},${formattedMax}` };
-        }
-        // Handle single datetime value
-        else if (typeof cond.value === 'string') {
-          return { ...cond, value: cond.value.replace('T', ' ') };
-        }
+      const columnType = this.getColumnType(cond.field);
+      if (getDateApiType(columnType) && cond.value !== null && cond.value !== undefined && cond.value !== '') {
+        const formattedValue = formatFilterDateValueForApi(cond.value, columnType, cond.operator);
+        return { ...cond, value: formattedValue };
       }
       return cond;
     });

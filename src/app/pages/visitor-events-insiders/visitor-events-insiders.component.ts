@@ -3,8 +3,8 @@ import { Component, ChangeDetectorRef, OnInit, ViewChild, HostListener } from '@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, Subject, of } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
+import { combineLatest, Observable, Subject, of } from 'rxjs';
+import { catchError, debounceTime, map, switchMap, startWith } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TablerIconsModule } from 'angular-tabler-icons';
@@ -123,14 +123,17 @@ export class VisitorEventsInsidersComponent {
   }
 
   private setupVisitedEmployeeSearch(): void {
-    this.visitedEmployeeSearchTerm$
-      .pipe(
-        debounceTime(300),
-        // Remove distinctUntilChanged to allow same search term to trigger again
-        // This ensures search works even when company doesn't change
-        switchMap((searchTerm) => {
-          const companyId = this.entryForm.get('CompanyId')?.value;
+    const companyId$ = (this.entryForm.get('CompanyId')?.valueChanges ?? of(null)).pipe(
+      startWith(this.entryForm.get('CompanyId')?.value ?? null)
+    );
+    const searchTerm$ = this.visitedEmployeeSearchTerm$.pipe(
+      startWith(''),
+      debounceTime(300)
+    );
 
+    combineLatest([companyId$, searchTerm$])
+      .pipe(
+        switchMap(([companyId, searchTerm]) => {
           if (!companyId) {
             this.visitedEmployeeOptions = [];
             this.isLoadingVisitedEmployees = false;
@@ -138,7 +141,7 @@ export class VisitorEventsInsidersComponent {
             return of([] as SelectOption[]);
           }
 
-          if (!searchTerm || searchTerm.trim().length < 2) {
+          if (!searchTerm || String(searchTerm).trim().length < 2) {
             this.visitedEmployeeOptions = [];
             this.isLoadingVisitedEmployees = false;
             this.cdr.markForCheck();
@@ -148,14 +151,11 @@ export class VisitorEventsInsidersComponent {
           this.isLoadingVisitedEmployees = true;
           this.cdr.markForCheck();
 
-          // Backend pattern (like card assignment): POST /api/Employees/find
-          // CompanyId is sent in body to filter results.
           return this.http
             .post<any>(`${this.apiUrl}/api/Employees/find`, {
-              search: searchTerm.trim(),
+              search: String(searchTerm).trim(),
               limit: 50,
               offset: 0,
-              // Send a few common variants; backend will use what it knows.
               CompanyId: companyId,
               CompanyID: companyId,
               PdksCompanyID: companyId,
@@ -164,7 +164,7 @@ export class VisitorEventsInsidersComponent {
             .pipe(
               map((res) => this.extractRecords(res)),
               map((records) => {
-                const term = searchTerm.trim().toLowerCase();
+                const term = String(searchTerm).trim().toLowerCase();
                 const filtered = records.filter((x: AnyRecord) => {
                   const name = String(x['Name'] ?? '');
                   const surname = String(x['SurName'] ?? '');
@@ -173,12 +173,15 @@ export class VisitorEventsInsidersComponent {
                   return full.includes(term) || idNo.includes(term);
                 });
 
-                return filtered.slice(0, 50).map((x: AnyRecord) => ({
-                  value: x['EmployeeID'] ?? x['Id'] ?? x['id'],
-                  label:
-                    `${x['Name'] ?? ''} ${x['SurName'] ?? ''}`.trim() ||
-                    (x['FullName'] ?? String(x['EmployeeID'] ?? x['Id'] ?? x['id']))
-                }));
+                return filtered.slice(0, 50).map((x: AnyRecord) => {
+                  const id = x['EmployeeID'] ?? x['Id'] ?? x['id'];
+                  return {
+                    value: id != null ? Number(id) : null,
+                    label:
+                      `${x['Name'] ?? ''} ${x['SurName'] ?? ''}`.trim() ||
+                      (x['FullName'] ?? String(id))
+                  };
+                });
               }),
               catchError((error) => {
                 console.error('Load visited employees (search) error:', error);
@@ -187,7 +190,7 @@ export class VisitorEventsInsidersComponent {
             );
         })
       )
-      .subscribe((opts) => {
+      .subscribe((opts: SelectOption[]) => {
         this.isLoadingVisitedEmployees = false;
         this.visitedEmployeeOptions = opts;
         this.cdr.markForCheck();
@@ -311,6 +314,23 @@ export class VisitorEventsInsidersComponent {
       return;
     }
     this.showEntryModal = true;
+    // Modal her açıldığında (daha önce açıldıysa dahil) girilen değerleri sıfırla
+    this.resetEntryForm();
+    this.visitedEmployeeOptions = [];
+    this.visitedEmployeeSearchTerm$.next('');
+    setTimeout(() => {
+      if (this.visitedEmployeeSelect) {
+        this.visitedEmployeeSelect.clearSearch();
+      }
+    }, 50);
+    this.loadCompaniesIfNeeded();
+    this.loadVisitorCards();
+    this.loadAccessGroups();
+    setTimeout(() => {
+      if (this.visitorTable) {
+        this.visitorTable.reload();
+      }
+    }, 100);
     this.cdr.markForCheck();
   }
 
@@ -504,6 +524,11 @@ export class VisitorEventsInsidersComponent {
     // Always emit search term to observable, even if it's the same value
     // This ensures search works even when company doesn't change
     this.visitedEmployeeSearchTerm$.next(searchTerm || '');
+  }
+
+  onVisitedEmployeeChange(value: number | null): void {
+    // valueChange ile form değerini açıkça güncelle (ControlValueAccessor senkronizasyon sorunlarını önler)
+    this.entryForm.patchValue({ VisitedEmployeeID: value }, { emitEvent: false });
   }
 
   // ===== Exit visitor =====

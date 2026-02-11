@@ -123,7 +123,8 @@
             [placeholder]="'Kişi ara... (en az 2 karakter)'"
             [searchPlaceholder]="'Kişi ara...'"
             [disableClientFilter]="true"
-            (searchChange)="onVisitedEmployeeSearchChange($event)">
+            (searchChange)="onVisitedEmployeeSearchChange($event)"
+            (valueChange)="onVisitedEmployeeChange($event)">
           </ui-select>
 
           <div *ngIf="isLoadingVisitedEmployees" style="font-size: 12px; opacity: 0.8;">

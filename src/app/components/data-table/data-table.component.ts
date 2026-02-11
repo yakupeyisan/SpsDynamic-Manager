@@ -24,6 +24,7 @@ import { ButtonComponent } from '../button/button.component';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
 import { buildSerializableLoadConfig } from '../../utils/report-load-config';
+import { formatFilterDateValueForApi } from '../../utils/date-format-api.util';
 
 // PLACEHOLDERS constant (replacement for @customizer/ui)
 // Note: These are now translated via TranslateService in the component
@@ -2655,25 +2656,29 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       return filter;
     }
 
-    // Transform each condition to use searchField if available
+    // Transform each condition to use searchField if available and format date/time for API
     const transformedConditions = filter.conditions.map(condition => {
       // Find the column that matches the field (field or searchField)
       const column = this.columns.find(col => col.field === condition.field || col.searchField === condition.field);
-      const conditionType = condition.type ?? (typeof column?.searchable === 'string' ? column.searchable : column?.type);
+      const conditionType: ColumnType | undefined = condition.type ?? (typeof column?.searchable === 'string' ? column.searchable as ColumnType : column?.type);
       
-      // If column has searchField, use it instead of field
+      let field = condition.field;
+      let value = condition.value;
+      
       if (column && column.searchField && column.field === condition.field) {
-        return {
-          ...condition,
-          field: column.searchField,
-          type: conditionType
-        };
+        field = column.searchField;
       }
       
-      // Return condition as-is if no searchField transform needed
+      // Tarih/saat filtrelerini backend formatına çevir: date → yyyy-MM-dd, datetime → yyyy-MM-dd HH:mm, time → HH:mm (24H)
+      if (conditionType === 'date' || conditionType === 'time' || conditionType === 'datetime') {
+        value = formatFilterDateValueForApi(condition.value, conditionType, condition.operator);
+      }
+      
       return {
         ...condition,
-        type: conditionType
+        field,
+        type: conditionType,
+        value
       };
     });
 

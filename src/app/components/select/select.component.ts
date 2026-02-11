@@ -456,6 +456,10 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
       return; // Value hasn't changed, no need to update
     }
     
+    // Update oldValue so that a subsequent user selection of the "same" value
+    // (e.g. after form reset) will properly emit onChange
+    this.oldValue = this.normalizeForComparison(newValue);
+    
     // Simply update the value
     // writeValue is called by Angular Forms, not by user interaction
     // Do NOT call onChange here - it's only for external updates

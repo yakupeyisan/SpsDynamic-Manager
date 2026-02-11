@@ -91,13 +91,35 @@ export class AppSideForgotPasswordComponent implements AfterViewInit {
   ) {}
 
   ngAfterViewInit() {
-    // Ordu Üniversitesi logo scriptini yükle
-    // setTimeout ile bir sonraki tick'te çalıştır ki DOM tamamen hazır olsun
-    setTimeout(() => {
+    
+    const loginImage = environment.settings[environment.setting as keyof typeof environment.settings].loginImage;
+
+    //environment.setting değeri ordu ise
+    if (environment.setting === 'ordu') {
       this.loadOrduImageScript();
-    }, 0);
+    } else {
+      //değilse environment.settings[environment.setting as keyof typeof environment.settings].loginImage url'sini kullanarak logo scriptini yükle
+      // loginImage boş değilse ve varsa yükle
+      if (loginImage && loginImage !== '') {
+        this.loadLoginImageScript(loginImage);
+      }
+    }
   }
 
+  loadLoginImageScript(loginImage: string) {
+    // loginImage boş değilse devam et
+    if (!loginImage || loginImage === '') {
+      return;
+    }
+    
+    // loginImage elementinin hazır olduğundan emin ol
+    const loginImageElement = document.getElementById('randomImage');
+    if (!loginImageElement) {
+      console.warn('loginImage elementi bulunamadı');
+      return;
+    }
+    loginImageElement.setAttribute('src', loginImage);
+  }
   loadOrduImageScript() {
     // randomImage elementinin hazır olduğundan emin ol
     const imageElement = document.getElementById('randomImage');

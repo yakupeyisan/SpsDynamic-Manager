@@ -56,6 +56,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'Company', 
     searchField: 'Company.PdksCompanyName',
+    exportDisplayField: 'Company.PdksCompanyName',
     label: 'Firma', 
     text: 'Firma',
     type: 'list' as ColumnType,
@@ -89,6 +90,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'Kadro', 
     searchField: 'Kadro.Name',
+    exportDisplayField: 'Kadro.Name',
     label: 'Kadro', 
     text: 'Kadro',
     type: 'list' as ColumnType,
@@ -122,6 +124,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'EmployeeDepartments', 
     searchField: 'EmployeeDepartments.Department.DepartmentName',
+    exportDisplayField: 'EmployeeDepartments.Department.DepartmentName',
     label: 'Departman', 
     text: 'Departman',
     type: 'text' as ColumnType, 
@@ -152,6 +155,7 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'list' as ColumnType,
     resizable: true,
+    exportValueMap: { '0': 'İçerde', '1': 'Dışarıda' },
     options: [
       { label: 'İçerde', value: 0 },
       { label: 'Dışarıda', value: 1 }
@@ -219,6 +223,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'EmployeeAccessGroups', 
     searchField: 'EmployeeAccessGroups.AccessGroup.AccessGroupName',
+    exportDisplayField: 'EmployeeAccessGroups.AccessGroup.AccessGroupName',
     label: 'Geçiş Yetkisi', 
     text: 'Geçiş Yetkisi',
     type: 'text' as ColumnType, 

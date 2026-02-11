@@ -125,6 +125,7 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'text' as ColumnType,
     resizable: true,
+    exportDisplayField: 'Employee.EmployeeDepartments.Department.DepartmentName',
     render: (record: TableRow) => {
       const employee = record['Employee'];
       if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
@@ -144,6 +145,7 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'text' as ColumnType,
     resizable: true,
+    exportDisplayField: 'Employee.EmployeeAccessGroups.AccessGroup.AccessGroupName',
     render: (record: TableRow) => {
       const employee = record['Employee'];
       if (employee?.EmployeeAccessGroups && Array.isArray(employee.EmployeeAccessGroups) && employee.EmployeeAccessGroups.length > 0) {
