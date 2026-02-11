@@ -54,9 +54,14 @@
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #dee2e6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
 }
 
-.card-write-list-select-all {
+.card-write-list-select-all,
+.card-write-list-print-with-template {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;

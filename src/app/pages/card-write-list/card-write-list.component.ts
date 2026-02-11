@@ -8,9 +8,11 @@ import { Observable, of, forkJoin } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
+import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
+import QRCode from 'qrcode';
 
 // Import configurations
 import { joinOptions } from './card-write-list-config';
@@ -33,6 +35,7 @@ import {
   imports: [
     MaterialModule, 
     CommonModule, 
+    FormsModule,
     TablerIconsModule,
     TranslateModule,
     DataTableComponent,
@@ -53,6 +56,7 @@ export class CardWriteListComponent implements OnInit {
   previewData: any[] = [];
   previewCardHtmls: SafeHtml[] = []; // Her kart için ayrı önizleme HTML (checkbox solunda göstermek için)
   previewPrintSelection: boolean[] = []; // Checkbox: hangi kartlar yazdırılacak
+  previewPrintWithTemplate = false; // Şablon ile birlikte yazdır (renkleri/arka planları dahil)
   isLoadingPreview = false;
   
   // Form configuration
@@ -286,23 +290,14 @@ export class CardWriteListComponent implements OnInit {
         }
       });
       
-      // Load card data with Employee join if not already in record
+      // Kart verilerini api/Cards/GetForWrite adresinden al
       let cardRequest: Observable<any>;
-      if (record['Card'] && record['Card']['Employee'] && record['Card']['Employee']['Name']) {
-        // Card data already loaded with Employee join
-        cardRequest = of({ record: record['Card'] });
-      } else if (cardId) {
-        // Load card data separately with Employee join
-        cardRequest = this.http.post(`${apiUrl}/api/Cards/form`, {
-          request: {
-            action: 'get',
-            recid: cardId,
-            name: 'EditCard'
-          }
-        });
+      if (cardId) {
+        cardRequest = this.http.post<any>(`${apiUrl}/api/Cards/GetForWrite`, { CardID: cardId }).pipe(
+          catchError(() => of(null))
+        );
       } else {
-        // No card ID, use record as is
-        cardRequest = of({ record: record['Card'] || record });
+        cardRequest = of(record['Card'] || record ? { data: record['Card'] || record } : null);
       }
       
       return forkJoin({
@@ -311,7 +306,18 @@ export class CardWriteListComponent implements OnInit {
       }).pipe(
         map((result: any) => {
           const template = result.template?.record || result.template;
-          const card = result.card?.record || result.card || record['Card'];
+          const getForWriteResponse = result.card;
+          if (cardId && getForWriteResponse) {
+            const cardData = this.buildCardDataFromGetForWrite(getForWriteResponse);
+            if (cardData) {
+              return {
+                ...record,
+                TemplateData: template?.TemplateData ? (typeof template.TemplateData === 'string' ? JSON.parse(template.TemplateData) : template.TemplateData) : null,
+                CardData: cardData
+              };
+            }
+          }
+          const card = result.card?.record || result.card?.data || record['Card'];
           const employee = card?.Employee || record['Card']?.Employee;
           
           // Extract Department from EmployeeDepartments array (like SQL STUFF query)
@@ -473,12 +479,12 @@ export class CardWriteListComponent implements OnInit {
     });
     
     forkJoin(requests).subscribe({
-      next: (results) => {
+      next: async (results) => {
         this.previewData = results.filter(r => r !== null);
         this.previewPrintSelection = this.previewData.map(() => true); // Varsayılan: hepsi seçili
-        this.previewCardHtmls = this.previewData.map((data) =>
-          this.sanitizer.bypassSecurityTrustHtml(this.buildSingleCardPreviewHtmlString(data))
-        );
+        const htmlPromises = this.previewData.map((data) => this.buildSingleCardPreviewHtmlString(data));
+        const htmls = await Promise.all(htmlPromises);
+        this.previewCardHtmls = htmls.map((h) => this.sanitizer.bypassSecurityTrustHtml(h));
         this.isLoadingPreview = false;
         this.cdr.markForCheck();
       },
@@ -498,6 +504,68 @@ export class CardWriteListComponent implements OnInit {
     this.previewData = [];
     this.previewCardHtmls = [];
     this.previewPrintSelection = [];
+  }
+
+  /** GetForWrite yanıtından CardData oluşturur */
+  private buildCardDataFromGetForWrite(response: any): any {
+    const data = response?.data || response?.record || response;
+    if (!data) return null;
+    const card = data;
+    const employee = data.Employee || {};
+    const fullName = employee ? `${employee.Name || ''} ${employee.SurName || ''}`.trim() : '';
+    let departmentName = '';
+    if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
+      departmentName = employee.EmployeeDepartments.map((ed: any) => ed?.Department?.DepartmentName || ed?.Department?.Name).filter(Boolean).join(', ') || '';
+    }
+    let facultyName = employee?.Faculty?.Name || employee?.Faculty?.FacultyName || '';
+
+    const cardData: any = {
+      ...(card || {}),
+      ...(employee || {}),
+      Employee: employee,
+      EmployeeID: employee?.EmployeeID || employee?.Id || card?.EmployeeID || '',
+      PictureID: employee?.PictureID || card?.PictureID || employee?.PictureId || card?.PictureId || '',
+      Name: employee?.Name || card?.Name || '',
+      SurName: employee?.SurName || card?.SurName || '',
+      FullName: fullName,
+      DepartmentName: departmentName,
+      CardID: card?.CardID || card?.CardId,
+      CardCode: card?.CardCode || card?.CardUID || '',
+      TagCode: card?.TagCode || '',
+      CardUID: card?.CardUID || '',
+      CardDesc: card?.CardDesc || '',
+      IdentificationNumber: employee?.IdentificationNumber || '',
+      EmployeeName: fullName,
+      Department: departmentName,
+      Faculty: facultyName,
+      FacultyName: facultyName
+    };
+    if (employee?.Company) {
+      const comp = employee.Company;
+      const companyName = comp.PdksCompanyName ?? comp.CompanyName ?? comp.Name ?? '';
+      Object.assign(cardData, { Company: comp, PdksCompanyName: companyName, CompanyName: companyName });
+    }
+    if (employee?.CustomField) {
+      Object.keys(employee.CustomField).forEach((k: string) => {
+        if (k.startsWith('CustomField')) cardData[k] = employee.CustomField[k];
+      });
+    }
+    if (employee?.EmployeeCustomFields) {
+      const cf = Array.isArray(employee.EmployeeCustomFields) && employee.EmployeeCustomFields.length > 0
+        ? employee.EmployeeCustomFields[0]
+        : employee.EmployeeCustomFields;
+      if (cf && typeof cf === 'object') {
+        Object.keys(cf).forEach((k: string) => {
+          if (k.startsWith('CustomField') && k !== 'EmployeeID' && k !== 'Id') {
+            cardData[k] = cf[k];
+          }
+        });
+      }
+    }
+    ['PersonInfo01', 'PersonInfo02', 'PersonInfo03', 'PersonInfo04', 'PersonInfo05', 'PersonInfo06', 'PersonInfo07', 'PersonInfo08', 'PersonInfo09', 'PersonInfo10'].forEach((p) => {
+      if (card?.[p] !== undefined) cardData[p] = card[p];
+    });
+    return cardData;
   }
 
   /** Checkbox: Tüm kartları yazdırma için seç / kaldır */
@@ -527,13 +595,13 @@ export class CardWriteListComponent implements OnInit {
   }
 
   /** Seçili kartlarla yazdır; önlü/arkalı ise önce ön sonra arka sayfa */
-  printSelectedPreview(): void {
+  async printSelectedPreview(): Promise<void> {
     const selectedData = this.previewData.filter((_, i) => this.previewPrintSelection[i]);
     if (selectedData.length === 0) {
       this.toastr.warning('Yazdırmak için en az bir kart seçin.');
       return;
     }
-    const printHtml = this.buildPrintHtmlString(selectedData);
+    const printHtml = await this.buildPrintHtmlString(selectedData);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       this.toastr.error('Yazdırma penceresi açılamadı. Pop-up engelleyicisini kapatıp tekrar deneyin.');
@@ -552,28 +620,32 @@ export class CardWriteListComponent implements OnInit {
    * Yazdırma için HTML: Her kart için önce ön yüz (sayfa), sonra arka yüz (sayfa).
    * Önlü arkalı yazdırmada yazıcıda "çift taraflı" seçilince doğru sırada basılır.
    */
-  private buildPrintHtmlString(selectedData: any[]): string {
+  private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
     if (!selectedData || selectedData.length === 0) return '';
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
     let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kart Yazdır</title>';
     html += '<style>body{ margin:0; padding:10px; font-family:\'Open Sans\',sans-serif; }';
     html += '.print-page{ page-break-after:always; display:flex; justify-content:center; align-items:center; min-height:100vh; box-sizing:border-box; }';
-    html += '.print-page:last-child{ page-break-after:auto; }</style></head><body>';
-    selectedData.forEach((data) => {
-      if (!data.TemplateData) return;
+    html += '.print-page:last-child{ page-break-after:auto; }';
+    if (this.previewPrintWithTemplate) {
+      html += '*{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }';
+    }
+    html += '</style></head><body>';
+    for (const data of selectedData) {
+      if (!data.TemplateData) continue;
       if (data.TemplateData.FRONT) {
-        html += '<div class="print-page">' + this.buildCardSideHtml(data, 'FRONT', apiUrl) + '</div>';
+        html += '<div class="print-page">' + (await this.buildCardSideHtml(data, 'FRONT', apiUrl)) + '</div>';
       }
       if (data.TemplateData.BACK) {
-        html += '<div class="print-page">' + this.buildCardSideHtml(data, 'BACK', apiUrl) + '</div>';
+        html += '<div class="print-page">' + (await this.buildCardSideHtml(data, 'BACK', apiUrl)) + '</div>';
       }
-    });
+    }
     html += '</body></html>';
     return html;
   }
 
   /** Tek yüz (FRONT veya BACK) HTML üretir; önizleme ve yazdırma için ortak */
-  private buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string): string {
+  private async buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string): Promise<string> {
     const face = data.TemplateData[side];
     if (!face) return '';
     const bgStyle = face.background && face.background !== 'transparent'
@@ -581,7 +653,7 @@ export class CardWriteListComponent implements OnInit {
       : 'background: white;';
     let html = `<div class="preview-card-${side.toLowerCase()}" data-type="${side}" style="position: relative; width: ${face.width}; height: ${face.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
     const items = face.items ? (Array.isArray(face.items) ? face.items : Object.values(face.items)) : [];
-    items.forEach((item: any) => {
+    for (const item of items) {
       if (item.type === 'fix') {
         const fixText = this.textTransform(item.field || '', item.textTransform);
         html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fixText}</label>`;
@@ -589,7 +661,7 @@ export class CardWriteListComponent implements OnInit {
         const field = item.field.split('-')[0];
         let value = '';
         if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
-          value = String(data.CardData[field]);
+          value = this.valueToDisplayString(data.CardData[field]);
         } else {
           value = this.getFieldValue(data.CardData, field);
         }
@@ -598,7 +670,8 @@ export class CardWriteListComponent implements OnInit {
         const field = item.field.split('-')[0];
         let pictureId = '';
         if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
-          pictureId = String(data.CardData[field]);
+          const v = data.CardData[field];
+          pictureId = typeof v === 'object' ? '' : String(v);
         } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
           pictureId = String(data.CardData.PictureID);
         } else {
@@ -611,29 +684,44 @@ export class CardWriteListComponent implements OnInit {
         html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
       } else if (item.type === 'barcode' && item.field) {
         const field = item.field.split('-')[0];
-        const value = this.getFieldValue(data.CardData, field);
-        if (value) {
-          html += `<div class="qrcode-placeholder" data-value="${value}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${value}</div>`;
+        const value = this.getFieldValue(data.CardData, field) || field;
+        const textToEncode = (value || ' ').toString().trim() || ' ';
+        try {
+          const qrDataUrl = await QRCode.toDataURL(textToEncode, { margin: 1, width: 200, errorCorrectionLevel: 'M' });
+          html += `<img src="${qrDataUrl}" alt="QR" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; object-fit: contain;" />`;
+        } catch {
+          html += `<div style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${textToEncode}</div>`;
         }
       }
-    });
+    }
     html += '</div>';
     return html;
   }
 
   /** Tek kart satırı için önizleme HTML string (checkbox solunda göstermek için) */
-  private buildSingleCardPreviewHtmlString(data: any): string {
+  private async buildSingleCardPreviewHtmlString(data: any): Promise<string> {
     if (!data?.TemplateData) return '';
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
     let html = '<div class="preview-row">';
     if (data.TemplateData.FRONT) {
-      html += this.buildCardSideHtml(data, 'FRONT', apiUrl);
+      html += await this.buildCardSideHtml(data, 'FRONT', apiUrl);
     }
     if (data.TemplateData.BACK) {
-      html += this.buildCardSideHtml(data, 'BACK', apiUrl);
+      html += await this.buildCardSideHtml(data, 'BACK', apiUrl);
     }
     html += '</div>';
     return html;
+  }
+
+  /** Obje değerlerinden (Company, Department vb.) görüntülenecek metni çıkarır */
+  private valueToDisplayString(val: any): string {
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+    if (typeof val === 'object') {
+      return (val.PdksCompanyName ?? val.CompanyName ?? val.DepartmentName ?? val.FacultyName ?? val.Name ?? val.Text ?? '') || '';
+    }
+    return '';
   }
 
   /**
@@ -648,9 +736,7 @@ export class CardWriteListComponent implements OnInit {
     
     // Direct field access (like PHP $data->{$field})
     if (cardData[field] !== undefined && cardData[field] !== null) {
-      const value = String(cardData[field]);
-      //console.log(`getFieldValue: Found direct field "${field}" = "${value}"`);
-      return value;
+      return this.valueToDisplayString(cardData[field]);
     }
     
     // Special handling for FullName (SQL computed field)
@@ -672,7 +758,7 @@ export class CardWriteListComponent implements OnInit {
           return '';
         }
       }
-      return value !== undefined && value !== null ? String(value) : '';
+      return value !== undefined && value !== null ? this.valueToDisplayString(value) : '';
     }
     
     // Try common field name variations
@@ -685,7 +771,7 @@ export class CardWriteListComponent implements OnInit {
     
     for (const variant of variations) {
       if (cardData[variant] !== undefined && cardData[variant] !== null) {
-        return String(cardData[variant]);
+        return this.valueToDisplayString(cardData[variant]);
       }
     }
     
@@ -693,7 +779,7 @@ export class CardWriteListComponent implements OnInit {
     if (cardData.Employee) {
       for (const variant of variations) {
         if (cardData.Employee[variant] !== undefined && cardData.Employee[variant] !== null) {
-          return String(cardData.Employee[variant]);
+          return this.valueToDisplayString(cardData.Employee[variant]);
         }
       }
     }

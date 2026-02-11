@@ -79,6 +79,10 @@
         <input type="checkbox" [checked]="allPreviewPrintSelected" (change)="selectAllPreviewPrint($any($event.target).checked)" class="form-check-input">
         <span>Tümünü seç</span>
       </label>
+      <label class="card-write-list-print-with-template">
+        <input type="checkbox" [(ngModel)]="previewPrintWithTemplate" class="form-check-input">
+        <span>Şablon ile birlikte yazdır</span>
+      </label>
     </div>
     <div class="card-write-list-preview-list">
       <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row">

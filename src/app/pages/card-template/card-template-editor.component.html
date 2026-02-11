@@ -7,6 +7,50 @@
     <div class="editor-wrapper">
       <!-- Left Panel: Controls -->
       <div class="editor-panel">
+        <div class="panel-section preview-data-section">
+          <label class="section-title">Önizleme Verisi</label>
+          <div class="input-group input-group-full">
+            <label>Kişi Ara</label>
+            <div class="person-search-wrap">
+              <ui-select
+                [options]="employeeOptions"
+                [placeholder]="'Kişi ara... (en az 2 karakter)'"
+                [searchPlaceholder]="'Kişi ara...'"
+                [disableClientFilter]="true"
+                [label]="''"
+                [(ngModel)]="selectedEmployeeId"
+                (valueChange)="onEmployeeSelect($event)"
+                (searchChange)="onEmployeeSearchChange($event)">
+              </ui-select>
+              <div *ngIf="isLoadingEmployees" class="search-loading">Aranıyor...</div>
+            </div>
+          </div>
+          <div class="cards-list-wrap" *ngIf="selectedEmployeeId">
+            <div *ngIf="isLoadingCards" class="cards-loading">Kartlar yükleniyor...</div>
+            <div *ngIf="!isLoadingCards && employeeCardsList.length === 0" class="cards-empty">Bu kişiye ait kart bulunamadı.</div>
+            <div *ngIf="!isLoadingCards && employeeCardsList.length > 0" class="cards-table">
+              <div class="cards-table-header">
+                <span>CardID</span>
+                <span>TagCode</span>
+                <span>FacilityCode</span>
+                <span>CardCode</span>
+                <span>CardDesc</span>
+              </div>
+              <div
+                *ngFor="let card of employeeCardsList"
+                class="cards-table-row"
+                [class.selected]="selectedCardId === (card.CardID ?? card.CardId ?? card.recid)"
+                (click)="onCardSelect(card)">
+                <span>{{ card.CardID ?? card.CardId ?? card.recid ?? '-' }}</span>
+                <span>{{ card.TagCode ?? '-' }}</span>
+                <span>{{ card.FacilityCode ?? '-' }}</span>
+                <span>{{ card.CardCode ?? '-' }}</span>
+                <span>{{ card.CardDesc ?? '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="panel-section">
           <label class="section-title">Sayfa Ölçüleri</label>
           
@@ -80,12 +124,12 @@
 
           <div class="input-group" *ngIf="(contentType === '0' || contentType === '2') && field === 'Fix'">
             <label>Fix Yazı</label>
-            <input type="text" [(ngModel)]="fixText">
+            <input type="text" [(ngModel)]="fixText" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '0'">
             <label>Yazı Tipi</label>
-            <select [(ngModel)]="fontFamily">
+            <select [(ngModel)]="fontFamily" (ngModelChange)="applyChangesToSelected()">
               <option value="Special">Özel</option>
               <option value="Open Sans">Open Sans</option>
               <option value="Libre Barcode 39 Extended Text">1D Barcode</option>
@@ -98,17 +142,17 @@
 
           <div class="input-group" *ngIf="contentType === '0'">
             <label>Yazı Boyutu (mm)</label>
-            <input type="number" [(ngModel)]="fontSize" step="0.1">
+            <input type="number" [(ngModel)]="fontSize" step="0.1" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '0'">
             <label>Genişlik (mm)</label>
-            <input type="number" [(ngModel)]="textWidth" step="0.1">
+            <input type="number" [(ngModel)]="textWidth" step="0.1" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '0'">
             <label>Kalınlık</label>
-            <select [(ngModel)]="fontWeight">
+            <select [(ngModel)]="fontWeight" (ngModelChange)="applyChangesToSelected()">
               <option value="100">En İnce</option>
               <option value="200">200</option>
               <option value="300">300</option>
@@ -123,7 +167,7 @@
 
           <div class="input-group" *ngIf="contentType === '0'">
             <label>Karakter Tipi</label>
-            <select [(ngModel)]="textTransform">
+            <select [(ngModel)]="textTransform" (ngModelChange)="applyChangesToSelected()">
               <option value="none">Normal</option>
               <option value="capitalize">İlk Harf Büyük</option>
               <option value="uppercase">Bütün Harfler Büyük</option>
@@ -136,39 +180,39 @@
             <div class="align-buttons">
               <button type="button" 
                       [class.active]="textAlign === 'left'"
-                      (click)="textAlign = 'left'"
+                      (click)="textAlign = 'left'; applyChangesToSelected()"
                       title="Sola Hizala">
                 ◄
               </button>
               <button type="button" 
                       [class.active]="textAlign === 'center'"
-                      (click)="textAlign = 'center'"
+                      (click)="textAlign = 'center'; applyChangesToSelected()"
                       title="Ortala">
                 ━
               </button>
               <button type="button" 
                       [class.active]="textAlign === 'right'"
-                      (click)="textAlign = 'right'"
+                      (click)="textAlign = 'right'; applyChangesToSelected()"
                       title="Sağa Hizala">
                 ►
               </button>
-              <input type="color" [(ngModel)]="textColor" class="color-picker">
+              <input type="color" [(ngModel)]="textColor" class="color-picker" (ngModelChange)="applyChangesToSelected()">
             </div>
           </div>
 
           <div class="input-group" *ngIf="contentType === '1' || contentType === '2' || contentType === '4'">
             <label>Genişlik (mm)</label>
-            <input type="number" [(ngModel)]="imageWidth" step="0.1">
+            <input type="number" [(ngModel)]="imageWidth" step="0.1" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '1' || contentType === '2' || contentType === '4'">
             <label>Yükseklik (mm)</label>
-            <input type="number" [(ngModel)]="imageHeight" step="0.1">
+            <input type="number" [(ngModel)]="imageHeight" step="0.1" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">
             <label>Hizalama</label>
-            <select [(ngModel)]="objectFit">
+            <select [(ngModel)]="objectFit" (ngModelChange)="applyChangesToSelected()">
               <option value="fill">Doldur</option>
               <option value="contain">Sığdır</option>
               <option value="cover">Taşan alanı kes</option>
@@ -178,7 +222,7 @@
 
           <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">
             <label>Yuvarlama</label>
-            <input type="text" [(ngModel)]="borderRadius">
+            <input type="text" [(ngModel)]="borderRadius" (ngModelChange)="applyChangesToSelected()">
           </div>
 
           <div class="input-group" *ngIf="contentType === '1' || contentType === '4'">

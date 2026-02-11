@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'ordu',
+  setting: 'development',
   
   
   // Authentication ayarları

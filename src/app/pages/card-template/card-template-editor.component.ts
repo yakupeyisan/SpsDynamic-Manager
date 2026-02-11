@@ -4,12 +4,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, of, Subject } from 'rxjs';
+import { catchError, map, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MaterialModule } from 'src/app/material.module';
+import { TablerIconsModule } from 'angular-tabler-icons';
+import { SelectComponent, SelectOption } from 'src/app/components/select/select.component';
+import { tableColumns as employeeTableColumns } from 'src/app/pages/employee/employee-table-columns';
+import { tableColumns as cardTableColumns } from 'src/app/pages/card/card-table-columns';
+import QRCode from 'qrcode';
 
 interface TemplateItem {
   id: string;
@@ -54,7 +59,9 @@ interface TemplateData {
     CommonModule,
     FormsModule,
     MaterialModule,
-    TranslateModule
+    TranslateModule,
+    TablerIconsModule,
+    SelectComponent
   ],
   templateUrl: './card-template-editor.component.html',
   styleUrls: ['./card-template-editor.component.scss']
@@ -116,6 +123,16 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   selectedItemId: string | null = null;
   isDragging: boolean = false;
 
+  // Kişi arama ve kart listesi (önizleme verisi)
+  selectedEmployeeId: number | null = null;
+  employeeOptions: SelectOption[] = [];
+  employeeSearchTerm$ = new Subject<string>();
+  isLoadingEmployees = false;
+  employeeCardsList: any[] = [];
+  selectedCardId: number | null = null;
+  isLoadingCards = false;
+  getForWriteData: any = null;
+
   constructor(
     private http: HttpClient,
     private route: ActivatedRoute,
@@ -128,7 +145,8 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Load field options
     this.loadFieldOptions();
-    
+    // Kişi arama
+    this.setupEmployeeSearch();
     // Check if editing existing template
     this.route.params.subscribe(params => {
       const id = params['id'];
@@ -136,9 +154,273 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         this.loadTemplate(Number(id));
       }
     });
-    
     // Initialize page type
     this.updatePageDimensions();
+  }
+
+  private setupEmployeeSearch(): void {
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.employeeSearchTerm$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((searchTerm) => {
+          if (!searchTerm || String(searchTerm).trim().length < 2) {
+            this.employeeOptions = [];
+            this.isLoadingEmployees = false;
+            this.cdr.markForCheck();
+            return of([]);
+          }
+          this.isLoadingEmployees = true;
+          this.cdr.markForCheck();
+          return this.http.post<any>(`${apiUrl}/api/Employees/find`, {
+            search: String(searchTerm).trim(),
+            limit: 50,
+            offset: 0
+          }).pipe(
+            map((res: any) => {
+              const records = Array.isArray(res?.records) ? res.records : (res?.data || []);
+              return records.map((item: any) => {
+                const name = item.Name || '';
+                const surname = item.SurName || '';
+                const company = item.CompanyName || '';
+                let label = `${name} ${surname}`.trim();
+                if (company) label += ` - ${company}`;
+                if (!label) label = `ID: ${item.EmployeeID}`;
+                return { label, value: item.EmployeeID };
+              });
+            }),
+            catchError(() => {
+              this.isLoadingEmployees = false;
+              this.cdr.markForCheck();
+              return of([]);
+            })
+          );
+        })
+      )
+      .subscribe((opts) => {
+        this.employeeOptions = opts;
+        this.isLoadingEmployees = false;
+        this.cdr.markForCheck();
+      });
+  }
+
+  onEmployeeSearchChange(term: string): void {
+    this.employeeSearchTerm$.next(term || '');
+  }
+
+  onEmployeeSelect(employeeId: number | null): void {
+    this.selectedEmployeeId = employeeId;
+    this.employeeCardsList = [];
+    this.selectedCardId = null;
+    this.getForWriteData = null;
+    if (employeeId) {
+      this.loadEmployeeCards(employeeId);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private loadEmployeeCards(employeeId: number): void {
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.isLoadingCards = true;
+    this.cdr.markForCheck();
+    this.http.post<any>(`${apiUrl}/api/Cards/GetCardsByEmployeeID`, {
+      EmployeeID: employeeId,
+      limit: -1,
+      offset: 0
+    }).pipe(
+      map((res: any) => Array.isArray(res?.records) ? res.records : (res?.data || [])),
+      catchError(() => {
+        this.isLoadingCards = false;
+        this.employeeCardsList = [];
+        this.cdr.markForCheck();
+        return of([]);
+      })
+    ).subscribe((records) => {
+      this.employeeCardsList = records;
+      this.isLoadingCards = false;
+      this.cdr.markForCheck();
+    });
+  }
+
+  onCardSelect(card: any): void {
+    const cardId = card?.CardID ?? card?.CardId ?? card?.recid ?? null;
+    if (!cardId) return;
+    this.selectedCardId = cardId;
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.http.post<any>(`${apiUrl}/api/Cards/GetForWrite`, { CardID: cardId }).pipe(
+      catchError((err) => {
+        console.error('GetForWrite error:', err);
+        this.toastr.error('Kart verisi alınamadı.', 'Hata');
+        return of(null);
+      })
+    ).subscribe((response) => {
+      this.getForWriteData = response;
+      const cardData = this.buildCardDataFromGetForWrite(response);
+      this.refreshPreviewWithCardData(cardData);
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** GetForWrite yanıtından CardData oluşturur (card-write-list ile uyumlu) */
+  private buildCardDataFromGetForWrite(response: any): any {
+    const data = response?.data || response?.record || response;
+    if (!data) return null;
+    const card = data;
+    const employee = data.Employee || {};
+    const fullName = employee ? `${employee.Name || ''} ${employee.SurName || ''}`.trim() : '';
+    let departmentName = '';
+    if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
+      departmentName = employee.EmployeeDepartments.map((ed: any) => ed.Department?.DepartmentName || ed.Department?.Name).filter(Boolean).join(', ') || '';
+    }
+    let facultyName = employee?.Faculty?.Name || employee?.Faculty?.FacultyName || '';
+
+    const cardData: any = {
+      ...(card || {}),
+      ...(employee || {}),
+      Employee: employee,
+      EmployeeID: employee?.EmployeeID || employee?.Id || card?.EmployeeID || '',
+      PictureID: employee?.PictureID || card?.PictureID || employee?.PictureId || card?.PictureId || '',
+      Name: employee?.Name || card?.Name || '',
+      SurName: employee?.SurName || card?.SurName || '',
+      FullName: fullName,
+      DepartmentName: departmentName,
+      CardID: card?.CardID || card?.CardId,
+      CardCode: card?.CardCode || card?.CardUID || '',
+      TagCode: card?.TagCode || '',
+      CardUID: card?.CardUID || '',
+      CardDesc: card?.CardDesc || '',
+      IdentificationNumber: employee?.IdentificationNumber || '',
+      EmployeeName: fullName,
+      Department: departmentName,
+      Faculty: facultyName,
+      FacultyName: facultyName
+    };
+    if (employee?.Company) {
+      const comp = employee.Company;
+      const companyName = comp.PdksCompanyName ?? comp.CompanyName ?? comp.Name ?? '';
+      Object.assign(cardData, { Company: comp, PdksCompanyName: companyName, CompanyName: companyName });
+    }
+    if (employee?.CustomField) {
+      Object.keys(employee.CustomField).forEach((k) => {
+        if (k.startsWith('CustomField')) cardData[k] = employee.CustomField[k];
+      });
+    }
+    // EmployeeCustomFields (GetForWrite API alternatif yapısı)
+    if (employee?.EmployeeCustomFields) {
+      const cf = Array.isArray(employee.EmployeeCustomFields) && employee.EmployeeCustomFields.length > 0
+        ? employee.EmployeeCustomFields[0]
+        : employee.EmployeeCustomFields;
+      if (cf && typeof cf === 'object') {
+        Object.keys(cf).forEach((k) => {
+          if (k.startsWith('CustomField') && k !== 'EmployeeID' && k !== 'Id') {
+            cardData[k] = cf[k];
+          }
+        });
+      }
+    }
+    ['PersonInfo01', 'PersonInfo02', 'PersonInfo03', 'PersonInfo04', 'PersonInfo05', 'PersonInfo06', 'PersonInfo07', 'PersonInfo08', 'PersonInfo09', 'PersonInfo10'].forEach((p) => {
+      if (card?.[p] !== undefined) cardData[p] = card[p];
+    });
+    return cardData;
+  }
+
+  /** fieldOptions'tan alan key'ine karşılık gelen görünen adı döner */
+  private getFieldDisplayName(fieldKey: string): string {
+    if (!fieldKey || !this.fieldOptions?.length) return '';
+    const opt = this.fieldOptions.find((o) => o.Field === fieldKey);
+    return opt?.Name ?? '';
+  }
+
+  /** Obje değerlerinden (Company, Department vb.) görüntülenecek metni çıkarır */
+  private valueToDisplayString(val: any): string {
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+    if (typeof val === 'object') {
+      return (val.PdksCompanyName ?? val.CompanyName ?? val.DepartmentName ?? val.FacultyName ?? val.Name ?? val.Text ?? '') || '';
+    }
+    return '';
+  }
+
+  private getFieldValueFromCardData(cardData: any, field: string): string {
+    if (!cardData || !field) return '';
+    const f = (field || '').trim();
+    if (!f) return '';
+    // Employee.CustomField.XXX -> CustomFieldXXX (root'ta olabilir)
+    const plainField = f.startsWith('Employee.CustomField.') ? f.replace('Employee.CustomField.', '') : f;
+    const tryGet = (val: any): string => {
+      const s = this.valueToDisplayString(val);
+      return s !== '' ? s : '';
+    };
+    let v = tryGet(cardData[plainField]);
+    if (v) return v;
+    // Employee.CustomField.XXX nested path
+    v = tryGet(cardData?.Employee?.CustomField?.[plainField]);
+    if (v) return v;
+    // CustomField02 / CustomField2 varyantları (bazı API'ler farklı key kullanır)
+    if (/^CustomField\d+$/.test(plainField)) {
+      const num = plainField.replace('CustomField', '');
+      const altKey = 'CustomField' + String(parseInt(num, 10)).padStart(2, '0');
+      v = tryGet(cardData[altKey] ?? cardData?.Employee?.CustomField?.[altKey]);
+      if (v) return v;
+      const altKey2 = 'CustomField' + parseInt(num, 10);
+      v = tryGet(cardData[altKey2] ?? cardData?.Employee?.CustomField?.[altKey2]);
+      if (v) return v;
+    }
+    // FullName: Employee.Name + " " + Employee.SurName (CardWrite ile uyumlu)
+    if (f === 'FullName') {
+      return (
+        cardData.FullName ||
+        (cardData.Name != null && cardData.SurName != null ? `${cardData.Name} ${cardData.SurName}`.trim() : '') ||
+        (cardData.Employee?.Name != null && cardData.Employee?.SurName != null
+          ? `${cardData.Employee.Name} ${cardData.Employee.SurName}`.trim()
+          : '') ||
+        ''
+      );
+    }
+    // Employee.Name, Employee.SurName gibi nested alanlar
+    if (f.includes('.')) {
+      const parts = f.split('.');
+      let val: any = cardData;
+      for (const p of parts) {
+        val = val != null && typeof val === 'object' ? val[p] : undefined;
+      }
+      return tryGet(val);
+    }
+    return '';
+  }
+
+  /** Önizlemedeki öğeleri CardData ile günceller */
+  private refreshPreviewWithCardData(cardData: any): void {
+    if (!cardData) return;
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    const avatarUrl = '/assets/images/profile/avaatar.png';
+    for (const side of ['FRONT', 'BACK'] as const) {
+      const items = this.templateData[side]?.items;
+      if (!items) continue;
+      const container = side === 'FRONT' ? this.frontContainerRef?.nativeElement : this.backContainerRef?.nativeElement;
+      if (!container) continue;
+      Object.keys(items).forEach((itemId) => {
+        const item = items[itemId];
+        const el = document.getElementById(itemId);
+        if (!el) return;
+        if (item.type === 'fix') {
+          el.textContent = item.field || '';
+        } else if (item.type === 'label' && item.field) {
+          const val = this.getFieldValueFromCardData(cardData, item.field);
+          el.textContent = val || this.getFieldDisplayName(item.field) || item.field;
+        } else if (item.type === 'image' && item.field) {
+          const picField = item.field === 'PictureId' || item.field === 'PictureID' ? 'PictureID' : item.field;
+          const pictureId = this.getFieldValueFromCardData(cardData, picField) || cardData.PictureID || cardData.PictureId;
+          (el as HTMLImageElement).src = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
+        } else if (item.type === 'barcode' && item.field) {
+          const val = this.getFieldValueFromCardData(cardData, item.field);
+          const textToEncode = val || item.field || ' ';
+          this.setQrCodeOnElement(el, textToEncode);
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -202,60 +484,94 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Özel alan key'ini Employee.CustomField. prefix'li forma getirir (eski şablon uyumluluğu). */
+  private normalizeCustomFieldKey(field: string): string {
+    if (!field || typeof field !== 'string') return field;
+    if (field.startsWith('Employee.CustomField.')) return field;
+    if (/^CustomField\d{2}$/.test(field)) return 'Employee.CustomField.' + field;
+    return field;
+  }
+
+  private normalizeTemplateItems(items: { [key: string]: TemplateItem } | undefined): { [key: string]: TemplateItem } {
+    if (!items) return {};
+    const out: { [key: string]: TemplateItem } = {};
+    Object.keys(items).forEach((id) => {
+      const item = { ...items[id] };
+      if (item.field) {
+        item.field = this.normalizeCustomFieldKey(item.field);
+      }
+      out[id] = item;
+    });
+    return out;
+  }
+
   loadFieldOptions(): void {
-    // Default field options (Employee fields that can be used in card templates)
-    this.fieldOptions = [
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+
+    // ID veya Id ile biten alanları alma (primary/foreign key'ler)
+    const isIdField = (field: string) => /(?:ID|Id)$/.test(field);
+
+    // Employee tablosundaki tüm alanlar (CustomField ve ID alanları hariç)
+    const employeeFields = employeeTableColumns
+      .filter((col) => col.field && !/^CustomField\d{2}$/.test(col.field) && !isIdField(col.field))
+      .map((col) => ({
+        Field: "Employee."+col.field,
+        Name: (col.text || col.label || col.field) as string
+      }));
+
+    // Card tablosundaki tüm alanlar (ID alanları hariç)
+    const cardFields = cardTableColumns
+      .filter((col) => col.field && !isIdField(col.field))
+      .map((col) => ({
+        Field: col.field,
+        Name: (col.text || col.label || col.field) as string
+      }));
+
+    // Fix + FullName (hesaplanan) + Employee + Card alanları (tekrarsız)
+    const seen = new Set<string>(['Fix', 'FullName']);
+    const baseFields: Array<{ Field: string; Name: string }> = [
       { Field: 'Fix', Name: 'Fix' },
       { Field: 'FullName', Name: 'Ad Soyad' },
-      { Field: 'Name', Name: 'Ad' },
-      { Field: 'SurName', Name: 'Soyad' },
-      { Field: 'IdentificationNumber', Name: 'TC Kimlik' },
-      { Field: 'PictureId', Name: 'Resim' },
-      { Field: 'CustomField01', Name: 'Özel Alan 1' },
-      { Field: 'CustomField02', Name: 'Özel Alan 2' },
-      { Field: 'CustomField03', Name: 'Özel Alan 3' },
-      { Field: 'CustomField04', Name: 'Özel Alan 4' },
-      { Field: 'CustomField05', Name: 'Özel Alan 5' },
-      { Field: 'CustomField06', Name: 'Özel Alan 6' },
-      { Field: 'CustomField07', Name: 'Özel Alan 7' },
-      { Field: 'CustomField08', Name: 'Özel Alan 8' },
-      { Field: 'CustomField09', Name: 'Özel Alan 9' },
-      { Field: 'CustomField10', Name: 'Özel Alan 10' },
-      { Field: 'CustomField11', Name: 'Özel Alan 11' },
-      { Field: 'CustomField12', Name: 'Özel Alan 12' },
-      { Field: 'CustomField13', Name: 'Özel Alan 13' },
-      { Field: 'CustomField14', Name: 'Özel Alan 14' },
-      { Field: 'CustomField15', Name: 'Özel Alan 15' },
-      { Field: 'CustomField16', Name: 'Özel Alan 16' },
-      { Field: 'CustomField17', Name: 'Özel Alan 17' },
-      { Field: 'CustomField18', Name: 'Özel Alan 18' },
-      { Field: 'CustomField19', Name: 'Özel Alan 19' },
-      { Field: 'CustomField20', Name: 'Özel Alan 20' },
-      { Field: 'Mail', Name: 'E-posta' },
-      { Field: 'MobilePhone1', Name: 'Cep Telefonu 1' },
-      { Field: 'MobilePhone2', Name: 'Cep Telefonu 2' },
-      { Field: 'Address', Name: 'Adres' },
-      { Field: 'City', Name: 'Şehir' }
-    ];
-    
-    // Try to load from API (optional - if endpoint exists)
-    this.http.post<any>(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/CardTemplates/GetFieldList`, {}).pipe(
-      catchError(() => {
-        // Silently fail - use default options
-        return of(null);
+      ...employeeFields.filter((f) => {
+        if (seen.has(f.Field)) return false;
+        seen.add(f.Field);
+        return true;
+      }),
+      ...cardFields.filter((f) => {
+        if (seen.has(f.Field)) return false;
+        seen.add(f.Field);
+        return true;
       })
-    ).subscribe({
-      next: (response: any) => {
-        if (response && (response.success || response.status === 'success')) {
-          const apiFields = response.data || response.records || [];
-          if (apiFields.length > 0) {
-            this.fieldOptions = apiFields;
-            if (!this.fieldOptions.find(f => f.Field === 'Fix')) {
-              this.fieldOptions.unshift({ Field: 'Fix', Name: 'Fix' });
-            }
-          }
+    ];
+
+    // Özel alan tanımları: api/CustomFieldSettings'ten ayarları al, sonra custom field listesini oluştur
+    this.http.post<any>(`${apiUrl}/api/CustomFieldSettings`, {
+      limit: -1,
+      offset: 0
+    }).pipe(
+      catchError(() => of({ status: 'error' as const, records: [] as any[] })),
+      map((res: any) => {
+        const records = Array.isArray(res?.records) ? res.records : (res?.data || []);
+        return records as Array<{ Field?: string; Text?: string; Name?: string; IsVisible?: boolean }>;
+      }),
+      map((settings) => {
+        const prefix = 'Employee.CustomField.';
+        const visibleSettings = settings.filter((s) => s.Field && s.IsVisible !== false);
+        const customFields = visibleSettings.map((s, index) => ({
+          Field: prefix + s.Field!,
+          Name: (s.Text || s.Name || `Özel Alan ${index + 1}`).trim() || s.Field!
+        }));
+        if (customFields.length === 0) {
+          return Array.from({ length: 20 }, (_, i) => ({
+            Field: prefix + `CustomField${String(i + 1).padStart(2, '0')}`,
+            Name: `Özel Alan ${i + 1}`
+          }));
         }
-      }
+        return customFields;
+      })
+    ).subscribe((customFields) => {
+      this.fieldOptions = [...baseFields, ...customFields];
+      this.cdr.markForCheck();
     });
   }
 
@@ -326,12 +642,13 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       }
       this.updatePageDimensions();
       
-      // Initialize template data after dimensions are set
+      // Initialize template data after dimensions are set (özel alan key'lerini prefix'li forma normalize et)
+      const frontItems = this.normalizeTemplateItems(front.items);
       this.templateData.FRONT = {
         width: front.width,
         height: front.height,
         background: front.background || 'transparent',
-        items: { ...front.items } // Copy items to avoid reference issues
+        items: frontItems
       };
       
       // Load background
@@ -341,24 +658,25 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       
       // Load items
       setTimeout(() => {
-        this.loadItems('FRONT', front.items || {});
+        this.loadItems('FRONT', frontItems);
       }, 100);
     }
     
     if (data.BACK) {
       const back = data.BACK;
+      const backItems = this.normalizeTemplateItems(back.items);
       this.templateData.BACK = {
         width: back.width || this.templateData.FRONT.width,
         height: back.height || this.templateData.FRONT.height,
         background: back.background || 'transparent',
-        items: { ...back.items } // Copy items to avoid reference issues
+        items: backItems
       };
       
       if (back.background && back.background !== 'transparent') {
         this.setBackground('BACK', back.background);
       }
       setTimeout(() => {
-        this.loadItems('BACK', back.items || {});
+        this.loadItems('BACK', backItems);
       }, 200);
     } else if (data.SIDE === 'SINGLE') {
       this.designType = 'SINGLE';
@@ -392,7 +710,8 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   createTextElement(container: HTMLDivElement, item: TemplateItem, side: 'FRONT' | 'BACK'): void {
     const label = document.createElement('label');
     label.id = item.id;
-    label.textContent = item.field || '';
+    const displayText = item.type === 'fix' ? (item.field || '') : (this.getFieldDisplayName(item.field) || item.field || '');
+    label.textContent = displayText;
     label.style.display = 'inline-block';
     label.style.color = item.color || '#000000';
     label.style.fontSize = `${item.fontsize || 5}mm`;
@@ -451,31 +770,57 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
     container.appendChild(img);
   }
 
+  /** QR kodunu img elementine veya img içeren containera uygular */
+  private setQrCodeOnElement(el: HTMLElement, text: string): void {
+    const img = el.tagName === 'IMG' ? el as HTMLImageElement : el.querySelector('img');
+    if (!img) return;
+    const value = (text || ' ').toString().trim() || ' ';
+    QRCode.toDataURL(value, { margin: 1, width: 200, errorCorrectionLevel: 'M' })
+      .then((url: string) => { img.src = url; })
+      .catch(() => { img.src = ''; });
+  }
+
   createBarcodeElement(container: HTMLDivElement, item: TemplateItem, side: 'FRONT' | 'BACK'): void {
-    // Barcode creation would need QRCode library
-    // For now, create a placeholder
-    const div = document.createElement('div');
-    div.id = item.id;
-    div.textContent = 'QR Code: ' + item.field;
-    div.style.position = 'absolute';
-    div.style.top = `${item.top}mm`;
-    div.style.left = `${item.left}mm`;
-    div.style.width = item.width || '20mm';
-    div.style.height = item.height || '20mm';
-    div.style.border = '1px dashed white';
-    div.style.cursor = 'move';
-    
-    this.makeDraggable(div, side);
-    
-    div.addEventListener('dblclick', () => {
+    const wrapper = document.createElement('div');
+    wrapper.id = item.id;
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = `${item.top}mm`;
+    wrapper.style.left = `${item.left}mm`;
+    wrapper.style.width = item.width || '20mm';
+    wrapper.style.height = item.height || '20mm';
+    wrapper.style.border = '1px dashed white';
+    wrapper.style.cursor = 'move';
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.overflow = 'hidden';
+
+    const img = document.createElement('img');
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+
+    const cardData = this.getForWriteData ? this.buildCardDataFromGetForWrite(this.getForWriteData) : null;
+    const value = cardData ? this.getFieldValueFromCardData(cardData, item.field) : null;
+    const textToEncode = value || item.field || ' ';
+
+    QRCode.toDataURL(textToEncode, { margin: 1, width: 200, errorCorrectionLevel: 'M' })
+      .then((url: string) => { img.src = url; })
+      .catch(() => { img.alt = 'QR: ' + (this.getFieldDisplayName(item.field) || item.field); });
+
+    wrapper.appendChild(img);
+
+    this.makeDraggable(wrapper, side);
+
+    wrapper.addEventListener('dblclick', () => {
       this.deleteItem(item.id, side);
     });
-    
-    div.addEventListener('click', () => {
+
+    wrapper.addEventListener('click', () => {
       this.selectItem(item.id, side);
     });
-    
-    container.appendChild(div);
+
+    container.appendChild(wrapper);
   }
 
   makeDraggable(element: HTMLElement, side: 'FRONT' | 'BACK'): void {
@@ -801,15 +1146,18 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
   }
 
   onContentTypeChange(): void {
-    // Show/hide relevant input groups
+    this.applyChangesToSelected();
+  }
+
+  /** İçerik panelindeki değişiklik seçili nesneye anlık uygulanır */
+  applyChangesToSelected(): void {
+    if (this.selectedItemId) {
+      this.updateSelectedItem(true);
+    }
   }
 
   onFieldChange(): void {
-    if (this.field === 'Fix') {
-      // Show fix text input
-    } else {
-      // Hide fix text input
-    }
+    this.applyChangesToSelected();
   }
 
   addItem(): void {
@@ -874,6 +1222,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         this.templateData[side].items[randomId] = item;
       }
       this.createTextElement(container, item, side);
+      this.refreshPreviewIfCardSelected();
     } else if (this.contentType === '1' || this.contentType === '4') {
       // Image
       const file = this.sampleImgInputRef?.nativeElement?.files?.[0];
@@ -908,6 +1257,7 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
             const img = document.getElementById(randomId) as HTMLImageElement;
             if (img) img.src = item.src;
           }
+          this.refreshPreviewIfCardSelected();
         });
       }
     } else if (this.contentType === '2') {
@@ -929,10 +1279,20 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
         this.templateData[side].items[randomId] = item;
       }
       this.createBarcodeElement(container, item, side);
+      this.refreshPreviewIfCardSelected();
     }
   }
 
-  updateSelectedItem(): void {
+  /** Seçili kart varsa önizlemeyi CardData ile günceller */
+  private refreshPreviewIfCardSelected(): void {
+    if (this.getForWriteData) {
+      const cardData = this.buildCardDataFromGetForWrite(this.getForWriteData);
+      this.refreshPreviewWithCardData(cardData);
+    }
+  }
+
+  /** @param keepSelection true ise seçim korunur (anlık düzenleme için) */
+  updateSelectedItem(keepSelection = false): void {
     if (!this.selectedItemId) return;
     
     const side = this.designDirection;
@@ -951,7 +1311,8 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       
       const element = document.getElementById(this.selectedItemId) as HTMLLabelElement;
       if (element) {
-        element.textContent = item.field;
+        const displayText = item.type === 'fix' ? item.field : (this.getFieldDisplayName(item.field) || item.field);
+        element.textContent = displayText;
         element.style.color = item.color;
         element.style.fontSize = `${item.fontsize}mm`;
         element.style.width = `${item.lwidth}mm`;
@@ -993,8 +1354,12 @@ export class CardTemplateEditorComponent implements OnInit, OnDestroy {
       }
     }
     
-    this.selectedItemId = null;
-    this.clearSelection();
+    this.refreshPreviewIfCardSelected();
+    if (!keepSelection) {
+      this.selectedItemId = null;
+      this.clearSelection();
+    }
+    this.cdr.markForCheck();
   }
 
   fileToBase64(file: File): Promise<string> {
