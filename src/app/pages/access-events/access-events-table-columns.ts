@@ -49,6 +49,23 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'Employee.IdentificationNumber', 
+    searchField: 'Employee.IdentificationNumber',
+    label: 'Kimlik Numarası', 
+    text: 'Kimlik Numarası',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '130px', 
+    size: '130px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const employee = record['Employee'];
+      return employee?.['IdentificationNumber'] ?? '';
+    }
+  },
+  { 
     field: 'Employee.Name', 
     label: 'Kişi Adı', 
     text: 'Kişi Adı',

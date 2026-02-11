@@ -3459,6 +3459,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
               mappedItem.onClick = (event) => this.onUpdate();
             } else if (mappedItem.id === 'export') {
               mappedItem.onClick = (event) => this.onExport();
+            } else if (mappedItem.id === 'toolbar-run') {
+              mappedItem.disabled = mappedItem.disabled !== undefined ? mappedItem.disabled : !this.hasSingleSelection();
             }
           }
         }

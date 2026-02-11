@@ -85,6 +85,14 @@ export class TaskSchedulersComponent implements OnInit {
     return {
       items: [
         {
+          id: 'toolbar-run',
+          type: 'button',
+          text: 'Çalıştır',
+          icon: 'player-play',
+          tooltip: 'Seçili görevi şimdi çalıştır',
+          onClick: (_event: MouseEvent, _item: ToolbarItem) => this.onTableRun(),
+        },
+        {
           id: 'toolabara-copy',
           type: 'button',
           text: 'Kopyala',
@@ -268,6 +276,34 @@ export class TaskSchedulersComponent implements OnInit {
     this.applyRepeatTypeRules('');
     this.applySchedulerTypeRules('');
     this.dataTableComponent?.openAddForm();
+  }
+
+  onTableRun(): void {
+    const record = this.dataTableComponent?.getSelectedRecord();
+    if (!record) {
+      this.toastr.warning(this.translate.instant('common.selectRow') ?? 'Çalıştırmak için bir satır seçin.', this.translate.instant('common.warning') ?? 'Uyarı');
+      return;
+    }
+    const id = record['Id'] ?? record['ID'] ?? record['recid'];
+    if (id == null || id === '') {
+      this.toastr.warning('Kayıt ID bulunamadı.', this.translate.instant('common.warning') ?? 'Uyarı');
+      return;
+    }
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/TaskSchedulers/Run/${id}`;
+    this.http.post(url, {}).subscribe({
+      next: (response: any) => {
+        if (response?.status === 'success' || response?.error === false) {
+          this.toastr.success('Görev çalıştırıldı.', this.translate.instant('common.success'));
+          this.dataTableComponent?.reload();
+        } else {
+          this.toastr.error(response?.message ?? 'Görev çalıştırılamadı.', this.translate.instant('common.error'));
+        }
+      },
+      error: (error) => {
+        const msg = error?.error?.message ?? error?.message ?? 'Görev çalıştırılamadı.';
+        this.toastr.error(msg, this.translate.instant('common.error'));
+      },
+    });
   }
 
   onTableCopy(): void {

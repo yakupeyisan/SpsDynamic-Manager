@@ -123,6 +123,7 @@ export const formFields: TableColumn[] = [
     type: 'list' as ColumnType,
     fullWidth: true,
     options: [
+      { label: 'No Encryption', value: '' },
       { label: 'TLS', value: 'TLS' },
       { label: 'SSL', value: 'SSL' }
     ]
