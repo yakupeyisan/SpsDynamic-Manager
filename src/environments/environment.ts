@@ -158,31 +158,51 @@ export const environment = {
       // Primary renk (Ana renk) - Logo EUREKO mavisi
       primary: '#004191',
       primaryFixedDim: 'rgba(0, 65, 145, 0.15)',
-      
+
       // Secondary renk (İkincil renk) - Logo Sigorta grisi
       secondary: '#828282',
       secondaryFixedDim: 'rgba(130, 130, 130, 0.15)',
-      
+
       // Error renk (Hata renkleri)
       error: '#D32F2F',
       errorFixedDim: 'rgba(211, 47, 47, 0.15)',
-      
+
       // Warning renk (Uyarı renkleri)
       warning: '#f8c20a',
       warningFixedDim: '#f8c20a26',
-      
+
       // Success renk (Başarı renkleri)
       success: '#36c76c',
       successFixedDim: '#36c76c26',
-      
+
       // Tertiary renk (Üçüncül renk) - Açık gri ton
       tertiary: '#f5f5f5',
       tertiaryFixedDim: 'rgba(245, 245, 245, 0.15)',
-      
+
       // Outline variant (Border renkleri) - Açık gri
       outlineVariant: '#e0e0e0',
-      
+
       // Shadows (Gölgeler)
+      level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
+    },
+    // development (Technolife) - Teknoloji markası: mavi + teal
+    development: {
+      primary: '#1565C0',
+      primaryFixedDim: 'rgba(21, 101, 192, 0.15)',
+      secondary: '#00897B',
+      secondaryFixedDim: 'rgba(0, 137, 123, 0.15)',
+      error: '#D32F2F',
+      errorFixedDim: 'rgba(211, 47, 47, 0.15)',
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      tertiary: '#f5f5f5',
+      tertiaryFixedDim: 'rgba(245, 245, 245, 0.15)',
+      outlineVariant: '#e0e0e0',
       level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',

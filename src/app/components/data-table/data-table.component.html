@@ -259,8 +259,14 @@
                 <p style="margin-bottom: 16px; color: var(--ui-gray-600); font-size: 14px;">
                   {{ translate.instant('options.defaultSearchFieldsDescription') || 'Arama paneli açıldığında varsayılan olarak görünecek alanları seçin.' }}
                 </p>
-                <ng-container *ngFor="let column of getSearchableColumnsForDefaultFields()">
-                  <div class="ui-join-option-item">
+                <p style="margin-bottom: 12px; color: var(--ui-gray-500); font-size: 13px;">
+                  {{ translate.instant('options.columnOrderHint') || 'Kolonların sırasını değiştirmek için sürükleyip bırakın.' }}
+                </p>
+                <div cdkDropList (cdkDropListDropped)="onDefaultSearchFieldsDrop($event)" class="ui-column-visibility-list">
+                  <div *ngFor="let column of defaultSearchFieldsOrdered" cdkDrag class="ui-join-option-item ui-column-visibility-item">
+                    <span cdkDragHandle class="ui-column-drag-handle" title="{{ translate.instant('options.dragToReorder') || 'Sıralamak için sürükle' }}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                    </span>
                     <label class="ui-checkbox-label">
                       <input 
                         type="checkbox" 
@@ -270,7 +276,7 @@
                       <span>{{ getColumnLabel(column) }}</span>
                     </label>
                   </div>
-                </ng-container>
+                </div>
               </div>
               <div class="ui-join-options-footer">
                 <button class="ui-btn ui-btn-primary" (click)="saveDefaultSearchFields()">{{ translate.instant('common.save') || 'Kaydet' }}</button>
@@ -289,8 +295,14 @@
                 <p style="margin-bottom: 16px; color: var(--ui-gray-600); font-size: 14px;">
                   {{ translate.instant('options.columnVisibilityDescription') || 'Gridde görünecek kolonları seçin. Hiçbir şey seçilmezse tüm kolonlar görünür.' }}
                 </p>
-                <ng-container *ngFor="let column of getAllColumnsForVisibility()">
-                  <div class="ui-join-option-item">
+                <p style="margin-bottom: 12px; color: var(--ui-gray-500); font-size: 13px;">
+                  {{ translate.instant('options.columnOrderHint') || 'Kolonların sırasını değiştirmek için sürükleyip bırakın.' }}
+                </p>
+                <div cdkDropList (cdkDropListDropped)="onColumnVisibilityDrop($event)" class="ui-column-visibility-list">
+                  <div *ngFor="let column of columnVisibilityOrdered" cdkDrag class="ui-join-option-item ui-column-visibility-item">
+                    <span cdkDragHandle class="ui-column-drag-handle" title="{{ translate.instant('options.dragToReorder') || 'Sıralamak için sürükle' }}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                    </span>
                     <label class="ui-checkbox-label">
                       <input 
                         type="checkbox" 
@@ -300,7 +312,7 @@
                       <span>{{ getColumnLabel(column) }}</span>
                     </label>
                   </div>
-                </ng-container>
+                </div>
               </div>
               <div class="ui-join-options-footer">
                 <button class="ui-btn ui-btn-primary" (click)="saveVisibleColumns()">{{ translate.instant('common.save') || 'Kaydet' }}</button>

@@ -190,6 +190,8 @@ export const formTabs: FormTab[] = [
       formHeight: '600px',
       recid: 'CardID',
       formFields: [
+        { field: 'CardID', label: 'ID', text: 'ID', type: 'int', showInAdd: false, disabled: true },
+        { field: 'ReferanceID', label: 'Referans ID', text: 'Referans ID', type: 'int', showInAdd: false, disabled: true },
         { field: 'CardTypeID', label: 'CardTypeID', text: 'CardTypeID', type: 'list',required: true, load: {
           url: `${apiUrl}/api/CardTypes`,
           injectAuth: true,
@@ -226,7 +228,7 @@ export const formTabs: FormTab[] = [
             })) : [];
           }
         }},
-        { field: 'CardStatusId', label: 'Kart Statü', text: 'Kart Statü', type: 'list', required: true, load: {
+        { field: 'CardStatusId', label: 'Kart Statü', text: 'Kart Statü', type: 'list', required: true, hidden: true, load: {
           url: `${apiUrl}/api/CardStatuses`,
           injectAuth: true,
           method: 'POST',
@@ -260,8 +262,8 @@ export const formTabs: FormTab[] = [
         { field: 'CardCode', label: 'Kart Kodu', text: 'Kart Kodu', type: 'int' },
         { field: 'CardUID', label: 'CardUID', text: 'CardUID', type: 'text' },
         { field: 'Plate', label: 'Plaka', text: 'Plaka', type: 'text' },
-        { field: 'CardDesc', label: 'Kart Açıklaması', text: 'Kart Açıklaması', type: 'textarea' },
         { field: 'Status', label: 'Durum', text: 'Durum', type: 'checkbox' },
+        { field: 'CardDesc', label: 'Kart Açıklaması', text: 'Kart Açıklaması', type: 'textarea' },
       ] as TableColumn[],
       formLoadUrl: `${apiUrl}/api/Cards/form`,
       formLoadRequest: (recid: any, parentFormData?: any) => {
@@ -311,6 +313,10 @@ export const formTabs: FormTab[] = [
         // Add EmployeeID back to record if it exists (required for both add and edit)
         if (EmployeeID) {
           record.EmployeeID = EmployeeID;
+        }
+        // Kart Statü formda gizli; yoksa varsayılan 1
+        if (record.CardStatusId == null || record.CardStatusId === '') {
+          record.CardStatusId = 1;
         }
         return http.post(url, {
           request: {

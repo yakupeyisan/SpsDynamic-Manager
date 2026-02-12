@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, TemplateRef, OnInit, AfterViewInit, DoCheck, OnChanges, OnDestroy, SimpleChanges, HostListener, ViewChild, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule, CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Observable, of, Subscription } from 'rxjs';
@@ -234,7 +235,7 @@ export interface ToolbarConfig {
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, TablerIconsModule, OverlayModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, MaterialModule, TablerIconsModule, OverlayModule, DragDropModule, InputComponent, FilterPanelComponent, ModalComponent, FormComponent, FormFieldComponent, SelectComponent, ToggleComponent, TabsComponent, TabItemComponent, ButtonComponent],
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -439,7 +440,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   selectedJoins: { [key: string]: boolean | { [key: string]: boolean } } = {};
   showDeleted: boolean = false; // Toggle for showing deleted records
   defaultSearchFields: string[] = []; // Default search fields to show when filter panel opens
+  defaultSearchFieldsOrder: string[] = []; // Custom order for default search fields panel
+  defaultSearchFieldsOrdered: TableColumn[] = []; // Ordered list for panel (drag-drop)
   visibleColumns: string[] = []; // Visible columns (empty means all visible)
+  columnOrder: string[] = []; // Custom column order (empty means use default)
+  columnVisibilityOrdered: TableColumn[] = []; // Ordered list for visibility panel (drag-drop)
   searchableColumns: string[] = []; // Searchable columns in filter panel (empty means all searchable)
   isLoading: boolean = false; // Loading state for data source
   internalData: TableRow[] = []; // Internal data storage (from dataSource)
@@ -615,6 +620,16 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         });
       }
       
+      // When visibleColumns is set (e.g. from localStorage), ensure newly added column fields are included so they appear
+      if (this.visibleColumns && this.visibleColumns.length > 0) {
+        const currentFields = newColumns.filter(c => !c.hidden).map(c => c.field);
+        const missing = currentFields.filter(f => !this.visibleColumns.includes(f));
+        if (missing.length > 0) {
+          this.visibleColumns = [...this.visibleColumns, ...missing];
+          this.saveVisibleColumnsToStorage();
+        }
+      }
+      
       // Update column visibility based on joins after columns are updated
       this.updateColumnVisibilityForJoins();
     }
@@ -659,8 +674,20 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       this.loadJoinOptionsFromStorage();
       this.loadShowDeletedFromStorage();
       this.loadDefaultSearchFieldsFromStorage();
+      this.loadDefaultSearchFieldsOrderFromStorage();
       this.loadVisibleColumnsFromStorage();
+      this.loadColumnOrderFromStorage();
       this.loadSearchableColumnsFromStorage();
+      // Ensure any column in current definition (e.g. newly added ReferanceID) is in visibleColumns so it appears
+      const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+      if (this.visibleColumns && this.visibleColumns.length > 0 && cols.length > 0) {
+        const currentFields = cols.filter((c: TableColumn) => !c.hidden).map((c: TableColumn) => c.field);
+        const missing = currentFields.filter((f: string) => !this.visibleColumns.includes(f));
+        if (missing.length > 0) {
+          this.visibleColumns = [...this.visibleColumns, ...missing];
+          this.saveVisibleColumnsToStorage();
+        }
+      }
     }
     
     // Update column visibility based on joins on initialization
@@ -1308,6 +1335,16 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     // If visibleColumns is set and not empty, filter by visible columns
     if (this.visibleColumns && this.visibleColumns.length > 0) {
       visibleCols = visibleCols.filter(col => this.visibleColumns.includes(col.field));
+    }
+    
+    // Apply custom column order if set
+    if (this.columnOrder && this.columnOrder.length > 0) {
+      const orderMap = new Map(this.columnOrder.map((f, i) => [f, i]));
+      visibleCols = [...visibleCols].sort((a, b) => {
+        const idxA = orderMap.has(a.field) ? orderMap.get(a.field)! : 9999;
+        const idxB = orderMap.has(b.field) ? orderMap.get(b.field)! : 9999;
+        return idxA - idxB;
+      });
     }
     
     return visibleCols;
@@ -5681,6 +5718,42 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   }
 
   /**
+   * Load default search fields order from localStorage
+   */
+  private loadDefaultSearchFieldsOrderFromStorage(): void {
+    if (!this.id) return;
+    try {
+      const storageKey = `grid_${this.id}_defaultSearchFieldsOrder`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.defaultSearchFieldsOrder = parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading default search fields order from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save default search fields order to localStorage
+   */
+  private saveDefaultSearchFieldsOrderToStorage(): void {
+    if (!this.id) return;
+    try {
+      const storageKey = `grid_${this.id}_defaultSearchFieldsOrder`;
+      if (this.defaultSearchFieldsOrder && this.defaultSearchFieldsOrder.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(this.defaultSearchFieldsOrder));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error('Error saving default search fields order to localStorage:', error);
+    }
+  }
+
+  /**
    * Load default search fields from localStorage
    */
   private loadDefaultSearchFieldsFromStorage(): void {
@@ -5727,6 +5800,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     this.showColumnVisibilityPanel = false;
     this.showSearchableColumnsPanel = false;
     this.preventBodyScroll();
+    this.defaultSearchFieldsOrdered = this.getOrderedSearchableColumnsForDefaultFields();
     setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
@@ -5766,8 +5840,38 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    * Save default search fields and close panel
    */
   saveDefaultSearchFields(): void {
+    this.defaultSearchFields = this.defaultSearchFieldsOrdered
+      .filter(c => this.defaultSearchFields.includes(c.field))
+      .map(c => c.field);
+    this.defaultSearchFieldsOrder = this.defaultSearchFieldsOrdered.map(c => c.field);
     this.saveDefaultSearchFieldsToStorage();
+    this.saveDefaultSearchFieldsOrderToStorage();
     this.closeDefaultSearchFieldsPanel();
+  }
+
+  /**
+   * Get searchable columns for default search fields panel in current order
+   */
+  getOrderedSearchableColumnsForDefaultFields(): TableColumn[] {
+    const cols = this.getSearchableColumnsForDefaultFields();
+    if (!this.defaultSearchFieldsOrder || this.defaultSearchFieldsOrder.length === 0) {
+      return cols;
+    }
+    const orderMap = new Map(this.defaultSearchFieldsOrder.map((f, i) => [f, i]));
+    return [...cols].sort((a, b) => {
+      const idxA = orderMap.has(a.field) ? orderMap.get(a.field)! : 9999;
+      const idxB = orderMap.has(b.field) ? orderMap.get(b.field)! : 9999;
+      return idxA - idxB;
+    });
+  }
+
+  /**
+   * Handle drag-drop reorder in default search fields panel
+   */
+  onDefaultSearchFieldsDrop(event: CdkDragDrop<TableColumn[]>): void {
+    moveItemInArray(this.defaultSearchFieldsOrdered, event.previousIndex, event.currentIndex);
+    this.defaultSearchFieldsOrder = this.defaultSearchFieldsOrdered.map(c => c.field);
+    this.cdr.markForCheck();
   }
 
   /**
@@ -5832,6 +5936,45 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   }
 
   /**
+   * Load column order from localStorage
+   */
+  private loadColumnOrderFromStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_columnOrder`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.columnOrder = parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading column order from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save column order to localStorage
+   */
+  private saveColumnOrderToStorage(): void {
+    if (!this.id) return;
+    
+    try {
+      const storageKey = `grid_${this.id}_columnOrder`;
+      if (this.columnOrder && this.columnOrder.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(this.columnOrder));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error('Error saving column order to localStorage:', error);
+    }
+  }
+
+  /**
    * Open column visibility panel
    */
   openColumnVisibilityPanel(): void {
@@ -5842,6 +5985,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     this.showJoinOptionsPanel = false;
     this.showDefaultSearchFieldsPanel = false;
     this.preventBodyScroll();
+    this.columnVisibilityOrdered = this.getOrderedColumnsForVisibility();
     setTimeout(() => this.updateOptionsPanelOverlayPosition(), 0);
     this.cdr.markForCheck();
   }
@@ -5885,7 +6029,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    * Save visible columns and close panel
    */
   saveVisibleColumns(): void {
+    this.columnOrder = this.columnVisibilityOrdered.map(c => c.field);
     this.saveVisibleColumnsToStorage();
+    this.saveColumnOrderToStorage();
     this.closeColumnVisibilityPanel();
     // Trigger change detection to update grid
     this.cdr.markForCheck();
@@ -5899,6 +6045,31 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     // Get all columns excluding hidden ones (don't use displayColumns as it filters by visibleColumns)
     const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
     return cols.filter(col => !col.hidden);
+  }
+
+  /**
+   * Get columns for visibility panel in current order (columnOrder or default)
+   */
+  getOrderedColumnsForVisibility(): TableColumn[] {
+    const cols = this.getAllColumnsForVisibility();
+    if (!this.columnOrder || this.columnOrder.length === 0) {
+      return cols;
+    }
+    const orderMap = new Map(this.columnOrder.map((f, i) => [f, i]));
+    return [...cols].sort((a, b) => {
+      const idxA = orderMap.has(a.field) ? orderMap.get(a.field)! : 9999;
+      const idxB = orderMap.has(b.field) ? orderMap.get(b.field)! : 9999;
+      return idxA - idxB;
+    });
+  }
+
+  /**
+   * Handle drag-drop reorder in column visibility panel
+   */
+  onColumnVisibilityDrop(event: CdkDragDrop<TableColumn[]>): void {
+    moveItemInArray(this.columnVisibilityOrdered, event.previousIndex, event.currentIndex);
+    this.columnOrder = this.columnVisibilityOrdered.map(c => c.field);
+    this.cdr.markForCheck();
   }
 
   /**

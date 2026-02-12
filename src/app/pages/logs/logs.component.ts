@@ -72,12 +72,21 @@ export class LogsComponent implements OnInit {
             operator = 'between';
           }
           
-          // For datetime fields with between operator, ensure value is array
+          // For datetime/date fields with between operator, API expects value as [min, max]
           let value = condition.value;
           if ((column.type === 'datetime' || column.type === 'date') && operator === 'between') {
-            if (!Array.isArray(value)) {
-              const dateStr = String(value);
-              value = [dateStr, dateStr];
+            if (Array.isArray(value) && value.length >= 2) {
+              value = [String(value[0]).trim(), String(value[1]).trim()];
+            } else if (Array.isArray(value) && value.length === 1) {
+              const part = String(value[0]).trim();
+              value = part.includes(',') ? part.split(',').map((v: string) => v.trim()) : [part, part];
+            } else if (!Array.isArray(value)) {
+              const str = String(value).trim();
+              if (str.includes(',')) {
+                value = str.split(',').map((v: string) => v.trim());
+              } else {
+                value = [str, str];
+              }
             }
           }
           

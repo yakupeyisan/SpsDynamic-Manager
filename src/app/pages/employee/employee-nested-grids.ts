@@ -18,6 +18,17 @@ export const cardGridColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'ReferanceID', 
+    label: 'Referans ID', 
+    text: 'Referans ID',
+    type: 'int' as ColumnType, 
+    sortable: true, 
+    width: '100px', 
+    size: '100px',
+    searchable: 'int',
+    resizable: true
+  },
+  { 
     field: 'CardTypeName', 
     searchField: 'CardTypeID',
     label: 'Kart Tipi', 

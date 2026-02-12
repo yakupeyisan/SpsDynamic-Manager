@@ -337,6 +337,7 @@ export function createFormTabs(http: any, translate: any, onCardFormat: any, onC
             text: 'Kart Statü', 
             type: 'list', 
             required: true, 
+            hidden: true,
             load: {
               url: `${apiUrl}/api/CardStatuses`,
               injectAuth: true,
@@ -355,6 +356,7 @@ export function createFormTabs(http: any, translate: any, onCardFormat: any, onC
           { field: 'CardUID', label: 'CardUID', text: 'CardUID', type: 'text' },
           { field: 'Plate', label: 'Plaka', text: 'Plaka', type: 'text' },
           { field: 'CardDesc', label: 'Kart Açıklaması', text: 'Kart Açıklaması', type: 'textarea' },
+          { field: 'ReferanceID', label: 'Referans ID', text: 'Referans ID', type: 'int', showInAdd: false, disabled: true },
           { field: 'Status', label: 'Durum', text: 'Durum', type: 'checkbox' },
         ] as TableColumn[],
         formLoadUrl: `${apiUrl}/api/Cards/GetCardsByEmployeeID`,
@@ -368,6 +370,10 @@ export function createFormTabs(http: any, translate: any, onCardFormat: any, onC
           const url = `${apiUrl}/api/Cards/form`;
           const recid = data.CardID || data.recid || null;
           const { CardID, recid: _, ...record } = data;
+          // Kart Statü formda gizli; yoksa varsayılan 1
+          if (record.CardStatusId == null || record.CardStatusId === '') {
+            record.CardStatusId = 1;
+          }
           return http.post(url, {
             request: {
               action: 'save',

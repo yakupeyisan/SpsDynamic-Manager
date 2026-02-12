@@ -36,8 +36,23 @@ export class AppHorizontalSidebarComponent implements OnInit, OnDestroy {
     return JSON.parse(JSON.stringify(items));
   }
 
+  private getRouteOrder(item: NavItem, visibleRoutes: string[]): number {
+    if (item.navCap || item.divider) {
+      return -1; // navCap ve divider her zaman en üstte
+    }
+    if (item.route) {
+      const idx = visibleRoutes.indexOf(item.route);
+      return idx >= 0 ? idx : 9999;
+    }
+    if (item.children && item.children.length > 0) {
+      const childOrders = item.children.map(c => this.getRouteOrder(c, visibleRoutes));
+      return Math.min(...childOrders);
+    }
+    return 9999;
+  }
+
   private filterVisibleItems(items: NavItem[], visibleRoutes: string[] = [], strictMode: boolean = false): NavItem[] {
-    return items.filter(item => {
+    const filtered = items.filter(item => {
       // Always hide items explicitly marked as visible: false
       if (item.visible === false) return false;
       
@@ -76,6 +91,12 @@ export class AppHorizontalSidebarComponent implements OnInit, OnDestroy {
       
       return true;
     });
+
+    // visibleRoutes sırasına göre sırala
+    if (visibleRoutes.length > 0) {
+      filtered.sort((a, b) => this.getRouteOrder(a, visibleRoutes) - this.getRouteOrder(b, visibleRoutes));
+    }
+    return filtered;
   }
 
   constructor(

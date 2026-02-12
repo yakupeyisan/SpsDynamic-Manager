@@ -16,6 +16,32 @@ export const tableColumns: TableColumn[] = [
     align: 'right'
   },
   { 
+    field: 'ProcessTime', 
+    label: 'İşlem Zamanı', 
+    text: 'İşlem Zamanı',
+    type: 'datetime' as ColumnType, 
+    sortable: true, 
+    width: '180px', 
+    size: '180px',
+    min: 20,
+    searchable: 'datetime' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const date = record['ProcessTime'];
+      if (date) {
+        return new Date(date).toLocaleString('tr-TR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+      return '';
+    }
+  },
+  { 
     field: 'ReferanceTable', 
     label: 'Referans Tablo', 
     text: 'Referans Tablo',
@@ -51,32 +77,6 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'text' as ColumnType,
     resizable: true
-  },
-  { 
-    field: 'ProcessTime', 
-    label: 'İşlem Zamanı', 
-    text: 'İşlem Zamanı',
-    type: 'datetime' as ColumnType, 
-    sortable: true, 
-    width: '180px', 
-    size: '180px',
-    min: 20,
-    searchable: 'datetime' as ColumnType,
-    resizable: true,
-    render: (record: TableRow) => {
-      const date = record['ProcessTime'];
-      if (date) {
-        return new Date(date).toLocaleString('tr-TR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-      }
-      return '';
-    }
   },
   { 
     field: 'EmployeeId', 

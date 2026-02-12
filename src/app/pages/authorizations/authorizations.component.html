@@ -705,11 +705,17 @@
       <p style="margin: 0; color: #666; font-size: 14px;">
         Bu yetkiye sahip kullanıcıların sidebar menüsünde görebileceği sayfaları seçin.
       </p>
+      <p style="margin: 8px 0 0 0; color: #999; font-size: 13px;">
+        Öğelerin sırasını değiştirmek için sürükleyip bırakın.
+      </p>
     </div>
     
-    <div class="page-visibility-list">
+    <div class="page-visibility-list" cdkDropList (cdkDropListDropped)="onPageVisibilityDrop($event)">
       @for (item of pageVisibilityItems; track item.route || item.displayName) {
-        <div class="page-visibility-item" [style.padding-left.px]="(item.level || 0) * 20">
+        <div class="page-visibility-item page-visibility-draggable" cdkDrag [style.padding-left.px]="(item.level || 0) * 20">
+          <span cdkDragHandle class="page-visibility-drag-handle" title="Sıralamak için sürükle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+          </span>
           @if (item.route || (item.children && item.children.length > 0)) {
             <label class="page-visibility-label" style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; transition: background-color 0.2s;">
               <input 
@@ -727,9 +733,12 @@
           }
           
           @if (item.children && item.children.length > 0) {
-            <div class="page-visibility-children" style="margin-left: 26px;">
+            <div class="page-visibility-children" cdkDropList (cdkDropListDropped)="onPageVisibilityChildrenDrop(item, $event)" style="margin-left: 26px;">
               @for (child of item.children; track child.route || child.displayName) {
-                <div class="page-visibility-item" [style.padding-left.px]="((child.level || 0) - (item.level || 0) - 1) * 20">
+                <div class="page-visibility-item page-visibility-draggable" cdkDrag [style.padding-left.px]="((child.level || 0) - (item.level || 0) - 1) * 20">
+                  <span cdkDragHandle class="page-visibility-drag-handle" title="Sıralamak için sürükle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                  </span>
                   @if (child.route || (child.children && child.children.length > 0)) {
                     <label class="page-visibility-label" style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; transition: background-color 0.2s;">
                       <input 
@@ -747,9 +756,12 @@
                   }
                   
                   @if (child.children && child.children.length > 0) {
-                    <div class="page-visibility-children" style="margin-left: 26px;">
+                    <div class="page-visibility-children" cdkDropList (cdkDropListDropped)="onPageVisibilityGrandchildrenDrop(child, $event)" style="margin-left: 26px;">
                       @for (grandchild of child.children; track grandchild.route || grandchild.displayName) {
-                        <div class="page-visibility-item" [style.padding-left.px]="((grandchild.level || 0) - (child.level || 0) - 1) * 20">
+                        <div class="page-visibility-item page-visibility-draggable" cdkDrag [style.padding-left.px]="((grandchild.level || 0) - (child.level || 0) - 1) * 20">
+                          <span cdkDragHandle class="page-visibility-drag-handle" title="Sıralamak için sürükle">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                          </span>
                           @if (grandchild.route || (grandchild.children && grandchild.children.length > 0)) {
                             <label class="page-visibility-label" style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; transition: background-color 0.2s;">
                               <input 

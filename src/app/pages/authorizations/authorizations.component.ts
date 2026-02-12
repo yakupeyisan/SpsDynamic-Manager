@@ -14,6 +14,7 @@ import { tableColumns } from './authorizations-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper } from './authorizations-form-config';
 import { DataTableComponent, TableColumn, ToolbarConfig, GridResponse, JoinOption, FormTab, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { navItems } from 'src/app/layouts/full/vertical/sidebar/sidebar-data';
 import { NavItem } from 'src/app/layouts/full/vertical/sidebar/nav-item/nav-item';
@@ -29,7 +30,7 @@ interface PageVisibilityItem {
 @Component({
   selector: 'app-authorizations',
   standalone: true,
-  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, ReactiveFormsModule, FormsModule],
+  imports: [MaterialModule, CommonModule, TablerIconsModule, TranslateModule, DataTableComponent, ModalComponent, ReactiveFormsModule, FormsModule, DragDropModule],
   templateUrl: './authorizations.component.html',
   styleUrls: ['./authorizations.component.scss']
 })
@@ -928,6 +929,26 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     }
   }
 
+  // Drag-drop handlers for page visibility reordering
+  onPageVisibilityDrop(event: CdkDragDrop<PageVisibilityItem[]>): void {
+    moveItemInArray(this.pageVisibilityItems, event.previousIndex, event.currentIndex);
+    this.cdr.markForCheck();
+  }
+
+  onPageVisibilityChildrenDrop(parent: PageVisibilityItem, event: CdkDragDrop<PageVisibilityItem[]>): void {
+    if (parent.children) {
+      moveItemInArray(parent.children, event.previousIndex, event.currentIndex);
+      this.cdr.markForCheck();
+    }
+  }
+
+  onPageVisibilityGrandchildrenDrop(parent: PageVisibilityItem, event: CdkDragDrop<PageVisibilityItem[]>): void {
+    if (parent.children) {
+      moveItemInArray(parent.children, event.previousIndex, event.currentIndex);
+      this.cdr.markForCheck();
+    }
+  }
+
   // Collect all visible routes recursively
   private collectVisibleRoutes(items: PageVisibilityItem[]): string[] {
     const routes: string[] = [];
@@ -952,10 +973,12 @@ export class AuthorizationsComponent implements OnInit, AfterViewInit {
     }
 
     const visibleRoutes = this.collectVisibleRoutes(this.pageVisibilityItems);
+    // Modal sıralamasına göre (sürükle-bırak) { Route, OrderNumber } formatında gönder
+    const orderedItems = visibleRoutes.map((route, index) => ({ Route: route, OrderNumber: index }));
 
     this.http.post(`${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Authorizations/SavePageVisibility`, {
       AuthorizationId: this.authorizationIdForPermissions,
-      VisibleRoutes: visibleRoutes
+      VisibleRoutes: orderedItems
     }).subscribe({
       next: (response: any) => {
         if (response.error === false || response.status === 'success') {
