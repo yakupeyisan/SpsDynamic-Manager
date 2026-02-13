@@ -47,6 +47,98 @@
   overflow-x: hidden;
   padding: 0.25rem 0;
   -webkit-overflow-scrolling: touch;
+
+  ::ng-deep .ui-tabs {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  ::ng-deep .ui-tabs-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+// İçerik sekmesi: kartlar + Onayla butonu
+.card-write-list-content-tab {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.preview-content-capture-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card-write-list-content-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #f8f9fa;
+
+  .card-write-list-preview-checkbox {
+    flex-shrink: 0;
+    margin: 0.25rem 0 0;
+  }
+}
+
+.preview-content-capture {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  overflow: hidden;
+
+  .preview-content-capture-inner {
+    display: inline-block;
+    ::ng-deep .preview-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    ::ng-deep .preview-card-front,
+    ::ng-deep .preview-card-back {
+      overflow: hidden;
+      border: 1px solid #6c757d;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  }
+}
+
+// Önizleme sekmesi
+.card-write-list-preview-tab {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.preview-card-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #6c757d;
+  border-radius: 4px;
+}
+
+.preview-placeholder-text {
+  padding: 2rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 // Üstte "Tümünü seç" çubuğu

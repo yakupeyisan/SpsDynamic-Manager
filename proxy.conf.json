@@ -1,9 +1,4 @@
 {
-  "/api/*": {
-    "target": "http://localhost",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  }
+  "/api/*": {"target": "http://localhost", "secure": false, "changeOrigin": true, "logLevel": "debug"},
+  "/images/*": {"target": "http://localhost", "secure": false, "changeOrigin": true, "logLevel": "debug"}
 }
-
