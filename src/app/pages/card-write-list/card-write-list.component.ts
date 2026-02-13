@@ -11,7 +11,9 @@ import { catchError, map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
+import { PrintConfirmDialogComponent } from 'src/app/dialogs/print-confirm-dialog/print-confirm-dialog.component';
 import QRCode from 'qrcode';
 
 // Import configurations
@@ -56,6 +58,7 @@ export class CardWriteListComponent implements OnInit {
   previewData: any[] = [];
   previewCardHtmls: SafeHtml[] = []; // Her kart için ayrı önizleme HTML (checkbox solunda göstermek için)
   previewPrintSelection: boolean[] = []; // Checkbox: hangi kartlar yazdırılacak
+  previewWritedAtFilled: boolean[] = []; // WritedAt dolu kartlar önizlemede disabled
   previewPrintWithTemplate = false; // Şablon ile birlikte yazdır (renkleri/arka planları dahil)
   isLoadingPreview = false;
   
@@ -164,7 +167,8 @@ export class CardWriteListComponent implements OnInit {
     private toastr: ToastrService,
     public translate: TranslateService,
     private cdr: ChangeDetectorRef,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -263,8 +267,8 @@ export class CardWriteListComponent implements OnInit {
       const id = row['recid'] ?? row['Id'] ?? row['id'];
       return selectedIds.includes(id);
     });
-    
-    // Load preview data
+
+    // Tüm seçili kartlar önizlemeye alınır; WritedAt dolu olanlar listede disabled gösterilir
     this.loadPreviewData(selectedRecords);
   }
 
@@ -481,7 +485,12 @@ export class CardWriteListComponent implements OnInit {
     forkJoin(requests).subscribe({
       next: async (results) => {
         this.previewData = results.filter(r => r !== null);
-        this.previewPrintSelection = this.previewData.map(() => true); // Varsayılan: hepsi seçili
+        // WritedAt dolu kartlar disabled; sadece boş olanlar varsayılan seçili
+        this.previewWritedAtFilled = this.previewData.map((data) => {
+          const v = data['WritedAt'];
+          return v != null && v !== '';
+        });
+        this.previewPrintSelection = this.previewData.map((_, i) => !this.previewWritedAtFilled[i]);
         const htmlPromises = this.previewData.map((data) => this.buildSingleCardPreviewHtmlString(data));
         const htmls = await Promise.all(htmlPromises);
         this.previewCardHtmls = htmls.map((h) => this.sanitizer.bypassSecurityTrustHtml(h));
@@ -504,6 +513,7 @@ export class CardWriteListComponent implements OnInit {
     this.previewData = [];
     this.previewCardHtmls = [];
     this.previewPrintSelection = [];
+    this.previewWritedAtFilled = [];
   }
 
   /** GetForWrite yanıtından CardData oluşturur */
@@ -568,25 +578,29 @@ export class CardWriteListComponent implements OnInit {
     return cardData;
   }
 
-  /** Checkbox: Tüm kartları yazdırma için seç / kaldır */
+  /** Checkbox: Tüm (seçilebilir) kartları yazdırma için seç / kaldır; disabled kartlara dokunulmaz */
   selectAllPreviewPrint(checked: boolean): void {
-    this.previewPrintSelection = this.previewData.map(() => checked);
+    this.previewPrintSelection = this.previewData.map((_, i) =>
+      this.previewWritedAtFilled[i] ? this.previewPrintSelection[i] : checked
+    );
     this.cdr.markForCheck();
   }
 
-  /** Tek bir kartın yazdırma seçimini değiştir */
+  /** Tek bir kartın yazdırma seçimini değiştir (WritedAt dolu kartlar değiştirilemez) */
   onPreviewPrintSelect(index: number, checked: boolean): void {
-    if (index >= 0 && index < this.previewPrintSelection.length) {
+    if (index >= 0 && index < this.previewPrintSelection.length && !this.previewWritedAtFilled[index]) {
       this.previewPrintSelection[index] = checked;
       this.cdr.markForCheck();
     }
   }
 
-  /** Tüm kartlar yazdırma için seçili mi (Tümünü seç kutusu) */
+  /** Tüm seçilebilir kartlar yazdırma için seçili mi (Tümünü seç kutusu); disabled kartlar hesaba katılmaz */
   get allPreviewPrintSelected(): boolean {
-    return this.previewData.length > 0 &&
-      this.previewPrintSelection.length === this.previewData.length &&
-      this.previewPrintSelection.every((b) => b);
+    const selectableIndices = this.previewData
+      .map((_, i) => i)
+      .filter((i) => !this.previewWritedAtFilled[i]);
+    if (selectableIndices.length === 0) return false;
+    return selectableIndices.every((i) => this.previewPrintSelection[i]);
   }
 
   /** En az bir kart yazdırma için seçili mi (Yazdır butonu aktif) */
@@ -601,6 +615,9 @@ export class CardWriteListComponent implements OnInit {
       this.toastr.warning('Yazdırmak için en az bir kart seçin.');
       return;
     }
+    const writedCardIds = selectedData
+      .map((d) => d.CardData?.CardID ?? d.CardData?.CardId)
+      .filter((id) => id != null && id !== '');
     const printHtml = await this.buildPrintHtmlString(selectedData);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -610,9 +627,51 @@ export class CardWriteListComponent implements OnInit {
     printWindow.document.write(printHtml);
     printWindow.document.close();
     printWindow.focus();
+
+    // Tarayıcı API'si yazdırma diyaloğunda "Yazdır" / "İptal" ayrımı yapmaz; afterprint her iki durumda da tetiklenir.
+    let handled = false;
+    const finish = (message: 'dialog_closed' | 'window_closed') => {
+      if (handled) return;
+      handled = true;
+      try {
+        if (printWindow && !printWindow.closed) printWindow.close();
+      } catch (_) {}
+      this.toastr.info('Yazdırma ekranı kapatıldı.', 'Yazdırma');
+
+      // Yazdırma başlatıldı mı? Evet/Hayır diyaloğu
+      const dialogRef = this.dialog.open(PrintConfirmDialogComponent, {
+        width: '400px',
+        disableClose: false
+      });
+      dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+        if (confirmed && writedCardIds.length > 0) {
+          const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+          this.http.post(`${apiUrl}/api/CardWriteLists/Writed`, { WritedCards: writedCardIds }).subscribe({
+            next: () => {
+              this.toastr.success('Yazdırılan kartlar kaydedildi.', 'Yazdırma');
+            },
+            error: (err) => {
+              this.toastr.error(err?.error?.message || err?.message || 'Kayıt gönderilemedi.', 'Yazdırma');
+            }
+          });
+        }
+      });
+    };
+
+    const pollClosed = setInterval(() => {
+      if (printWindow.closed) {
+        clearInterval(pollClosed);
+        if (!handled) finish('window_closed');
+      }
+    }, 300);
+
+    printWindow.addEventListener('afterprint', () => {
+      clearInterval(pollClosed);
+      if (!handled) finish('dialog_closed');
+    }, { once: true });
+
     setTimeout(() => {
       printWindow.print();
-      printWindow.close();
     }, 300);
   }
 
@@ -651,7 +710,7 @@ export class CardWriteListComponent implements OnInit {
     const bgStyle = face.background && face.background !== 'transparent'
       ? `background: url('${face.background}'); background-repeat: no-repeat; background-size: cover;`
       : 'background: white;';
-    let html = `<div class="preview-card-${side.toLowerCase()}" data-type="${side}" style="position: relative; width: ${face.width}; height: ${face.height}; ${bgStyle} border: 1px solid #6C757D; border-radius: 4px; box-sizing: border-box;">`;
+    let html = `<div class="preview-card-${side.toLowerCase()}" data-type="${side}" style="position: relative; width: ${face.width}; height: ${face.height}; ${bgStyle} border: none; border-radius: 8px; box-sizing: border-box; overflow: hidden;">`;
     const items = face.items ? (Array.isArray(face.items) ? face.items : Object.values(face.items)) : [];
     for (const item of items) {
       if (item.type === 'fix') {

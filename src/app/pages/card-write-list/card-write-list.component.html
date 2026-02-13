@@ -85,9 +85,9 @@
       </label>
     </div>
     <div class="card-write-list-preview-list">
-      <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row">
+      <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row" [class.card-write-list-preview-row-disabled]="previewWritedAtFilled[i]">
         <label class="card-write-list-preview-checkbox">
-          <input type="checkbox" [checked]="previewPrintSelection[i]" (change)="onPreviewPrintSelect(i, $any($event.target).checked)" class="form-check-input" [attr.data-index]="i" [attr.aria-label]="'Kart ' + (i + 1) + ' yazdır'">
+          <input type="checkbox" [checked]="previewPrintSelection[i]" (change)="onPreviewPrintSelect(i, $any($event.target).checked)" [disabled]="previewWritedAtFilled[i]" class="form-check-input" [attr.data-index]="i" [attr.aria-label]="'Kart ' + (i + 1) + ' yazdır'">
         </label>
         <div class="card-write-list-preview-content" [innerHTML]="previewCardHtmls[i]"></div>
       </div>

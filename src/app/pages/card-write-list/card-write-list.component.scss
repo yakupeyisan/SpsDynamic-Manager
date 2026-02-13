@@ -77,6 +77,12 @@
   }
 }
 
+// div.preview-row: border kaldırıldı (tarayıcı önizlemesinde uygulanan stiller)
+:host ::ng-deep div.preview-row {
+  border: none;
+  border-image: none;
+}
+
 // Kart listesi: her satır = checkbox (sol) + kart önizlemesi
 .card-write-list-preview-list {
   display: flex;
@@ -89,9 +95,19 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid #dee2e6;
+  border: none;
   border-radius: 8px;
   background: #f8f9fa;
+}
+
+// WritedAt dolu kartlar: soluk ve tıklanamaz
+.card-write-list-preview-row-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+
+  .card-write-list-preview-checkbox {
+    cursor: default;
+  }
 }
 
 // Checkbox kartın hemen solunda, dikey ortada
@@ -136,8 +152,8 @@
   ::ng-deep .preview-card-front,
   ::ng-deep .preview-card-back {
     overflow: hidden !important;
-    border: 1px solid #6c757d;
-    border-radius: 4px;
+    border: none !important;
+    border-radius: 8px;
     box-sizing: border-box;
     position: relative;
   }
