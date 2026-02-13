@@ -24,6 +24,7 @@
           [imageAsBase64Field]="imageAsBase64Field"
           [imageField]="imageField"
           [imagePreviewUrl]="imagePreviewUrl"
+          [imageCacheBuster]="imageCacheBuster ?? undefined"
           [onSave]="onSave"
           [onFormChange]="onFormChange"
           [getGridColumns]="getGridColumns"
@@ -1151,6 +1152,95 @@
       <span *ngIf="isResettingPassword" class="cancel-spinner me-2"></span>
       <i *ngIf="!isResettingPassword" class="ti ti-check me-1"></i>
       Onayla ve Sıfırla
+    </button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Image Upload Modal -->
+<ui-modal
+  [show]="showBulkImageUploadModal"
+  [title]="translate.instant('operations.bulkImageUpload')"
+  [size]="'lg'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onBulkImageUploadModalChange($event)">
+  <div class="cancel-confirmation-content bulk-image-upload-content">
+    <div class="cancel-section">
+      <div class="cancel-section-header">
+        <i class="ti ti-photo-up me-2"></i>
+        <span class="cancel-section-title">Resim Dosyaları</span>
+      </div>
+      <div class="cancel-description-hint bulk-image-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>Resim dosyası adı (örn. TC Kimlik No ile eşleşecek şekilde) kullanılabilir. Birden fazla resim seçebilirsiniz.</span>
+      </div>
+      <input
+        #bulkImageFileInput
+        type="file"
+        accept="image/*"
+        multiple
+        class="bulk-image-file-input"
+        (change)="onBulkImageFilesSelected($event)">
+      <button
+        type="button"
+        class="bulk-image-add-btn"
+        (click)="bulkImageFileInput.click()"
+        [disabled]="isReadingBulkImageFiles || isUploadingBulkImages">
+        <span *ngIf="isReadingBulkImageFiles" class="bulk-image-add-spinner"></span>
+        <i *ngIf="!isReadingBulkImageFiles" class="ti ti-photo-plus bulk-image-add-icon"></i>
+        <span class="bulk-image-add-text">{{ isReadingBulkImageFiles ? 'Yükleniyor...' : 'Resim Ekle' }}</span>
+      </button>
+    </div>
+    <div class="cancel-section" *ngIf="bulkImageUploadItems.length > 0">
+      <div class="cancel-section-header">
+        <i class="ti ti-list me-2"></i>
+        <span class="cancel-section-title">Seçilen Resimler</span>
+        <span class="cancel-section-badge">{{ bulkImageUploadItems.length }}</span>
+      </div>
+      <div class="selected-events-list bulk-image-list">
+        <div
+          *ngFor="let item of bulkImageUploadItems; let i = index"
+          class="selected-event-item bulk-image-item">
+          <div class="selected-event-number"
+               [class.bulk-image-num-success]="bulkImageItemStatuses[i] === 'success'"
+               [class.bulk-image-num-error]="bulkImageItemStatuses[i] === 'error'">{{ i + 1 }}</div>
+          <div class="selected-event-content">
+            <div class="selected-event-row">
+              <span class="selected-event-value">{{ item.ImageName }}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="bulk-image-remove-btn"
+            (click)="removeBulkImageItem(i); $event.stopPropagation()"
+            [disabled]="isUploadingBulkImages"
+            title="Kaldır">
+            <i-tabler name="x" class="bulk-image-remove-icon"></i-tabler>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="bulk-image-upload-progress" *ngIf="isUploadingBulkImages && bulkImageUploadProgress.total > 0">
+      <span class="bulk-image-upload-progress-text">{{ bulkImageUploadProgress.uploaded }} / {{ bulkImageUploadProgress.total }} resim yüklendi</span>
+    </div>
+  </div>
+  <div slot="footer" class="cancel-modal-footer">
+    <button
+      type="button"
+      class="cancel-btn cancel-btn-secondary"
+      (click)="closeBulkImageUploadModal()"
+      [disabled]="isUploadingBulkImages">
+      <i class="ti ti-x me-1"></i>
+      Vazgeç
+    </button>
+    <button
+      type="button"
+      class="cancel-btn cancel-btn-primary"
+      (click)="onConfirmBulkImageUpload()"
+      [disabled]="isUploadingBulkImages || bulkImageUploadItems.length === 0">
+      <span *ngIf="isUploadingBulkImages" class="cancel-spinner me-2"></span>
+      <i *ngIf="!isUploadingBulkImages" class="ti ti-upload me-1"></i>
+      Yükle
     </button>
   </div>
 </ui-modal>

@@ -11,7 +11,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, map, finalize } from 'rxjs/operators';
+import { catchError, map, finalize, concatMap, toArray, tap } from 'rxjs/operators';
+import { from } from 'rxjs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 import { SelectComponent } from 'src/app/components/select/select.component';
@@ -164,6 +165,19 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   showTransferFromVisitorModal = false;
   isTransferringFromVisitor = false;
   
+  // Bulk Image Upload modal state
+  showBulkImageUploadModal = false;
+  bulkImageUploadItems: { ImageName: string; Data: string }[] = [];
+  isUploadingBulkImages = false;
+  isReadingBulkImageFiles = false;
+  /** İstek gövdesi sunucu limitini (413) aşmaması için parça başına resim sayısı. Base64 büyük olduğu için 25–30 civarı güvenli. */
+  readonly BULK_IMAGE_MAX_PER_REQUEST = 25;
+  bulkImageUploadProgress = { uploaded: 0, total: 0 };
+  /** Her resim için işlem sonucu: pending | success | error (sıra numarası yeşil/kırmızı) */
+  bulkImageItemStatuses: ('pending' | 'success' | 'error')[] = [];
+  /** Resim URL'leri önbellek kırıcı - toplu resim yükleme sonrası güncellenir */
+  imageCacheBuster: number | null = null;
+
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
   // Reader messages tracking
@@ -453,7 +467,17 @@ export class EmployeeComponent implements OnInit, OnDestroy {
         name: 'EditEmployee',
         record: record
       }
-    });
+    }).pipe(
+      tap(() => {
+        this.imageCacheBuster = Date.now();
+        if (this.dataTableComponent) {
+          if (typeof this.dataTableComponent.clearCache === 'function') {
+            this.dataTableComponent.clearCache();
+          }
+        }
+        this.cdr.detectChanges();
+      })
+    );
   };
 
   // Form change handler
@@ -1720,7 +1744,166 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onBulkImageUpload(event: MouseEvent, item: any) {
-    //console.log('Bulk image upload:', event, item);
+    this.bulkImageUploadItems = [];
+    this.showBulkImageUploadModal = true;
+  }
+
+  onBulkImageUploadModalChange(show: boolean) {
+    this.showBulkImageUploadModal = show;
+    if (!show) {
+      this.closeBulkImageUploadModal();
+    }
+  }
+
+  closeBulkImageUploadModal() {
+    this.showBulkImageUploadModal = false;
+    this.bulkImageUploadItems = [];
+    this.bulkImageItemStatuses = [];
+    this.isUploadingBulkImages = false;
+    this.isReadingBulkImageFiles = false;
+    this.bulkImageUploadProgress = { uploaded: 0, total: 0 };
+  }
+
+  onBulkImageFilesSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = input?.files;
+    if (!files || files.length === 0) return;
+    this.isReadingBulkImageFiles = true;
+    const promises: Promise<{ ImageName: string; Data: string }>[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
+      promises.push(
+        new Promise<{ ImageName: string; Data: string }>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            const base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+            resolve({ ImageName: file.name, Data: base64 ?? '' });
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        })
+      );
+    }
+    Promise.all(promises)
+      .then((items) => {
+        this.bulkImageUploadItems = [...this.bulkImageUploadItems, ...items];
+        this.cdr.detectChanges();
+      })
+      .catch((err) => {
+        console.error('Error reading image files:', err);
+        this.toastr.error('Resimler okunurken hata oluştu.');
+      })
+      .finally(() => {
+        this.isReadingBulkImageFiles = false;
+        this.cdr.detectChanges();
+        input.value = '';
+      });
+  }
+
+  removeBulkImageItem(index: number) {
+    this.bulkImageUploadItems = this.bulkImageUploadItems.filter((_, i) => i !== index);
+    this.cdr.detectChanges();
+  }
+
+  onConfirmBulkImageUpload() {
+    if (this.bulkImageUploadItems.length === 0) {
+      this.toastr.warning('En az bir resim ekleyiniz.');
+      return;
+    }
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    const maxPerRequest = this.BULK_IMAGE_MAX_PER_REQUEST;
+    const allImages = this.bulkImageUploadItems;
+    const chunks: { ImageName: string; data: string }[][] = [];
+    for (let i = 0; i < allImages.length; i += maxPerRequest) {
+      const chunk = allImages.slice(i, i + maxPerRequest).map((img) => ({
+        ImageName: img.ImageName,
+        data: img.Data
+      }));
+      chunks.push(chunk);
+    }
+    this.isUploadingBulkImages = true;
+    this.bulkImageUploadProgress = { uploaded: 0, total: allImages.length };
+    this.bulkImageItemStatuses = allImages.map(() => 'pending');
+    this.cdr.detectChanges();
+
+    const chunkPayloads = chunks.map((chunk, chunkIndex) => ({ chunk, chunkIndex }));
+    from(chunkPayloads)
+      .pipe(
+        concatMap(({ chunk, chunkIndex }) => {
+          const startIdx = chunkIndex * maxPerRequest;
+          return this.http
+            .post<{
+              ok?: boolean;
+              message?: string;
+              successCount?: number;
+              errorCount?: number;
+              success?: Record<string, string>;
+              errors?: Record<string, string>;
+            }>(`${apiUrl}/api/Employees/BulkImageUpload`, { Images: chunk })
+            .pipe(
+              tap((res) => {
+                this.bulkImageUploadProgress = {
+                  uploaded: this.bulkImageUploadProgress.uploaded + chunk.length,
+                  total: this.bulkImageUploadProgress.total
+                };
+                const successMap = res?.success ?? {};
+                const errorsMap = res?.errors ?? {};
+                for (let k = 0; k < chunk.length; k++) {
+                  const imageName = chunk[k].ImageName;
+                  const status: 'success' | 'error' =
+                    successMap[imageName] != null ? 'success' : errorsMap[imageName] != null ? 'error' : 'error';
+                  this.bulkImageItemStatuses[startIdx + k] = status;
+                }
+                this.cdr.detectChanges();
+              }),
+              catchError((err) => {
+                console.warn('BulkImageUpload chunk error:', chunkIndex, err);
+                for (let k = 0; k < chunk.length; k++) {
+                  this.bulkImageItemStatuses[startIdx + k] = 'error';
+                }
+                this.bulkImageUploadProgress = {
+                  uploaded: this.bulkImageUploadProgress.uploaded + chunk.length,
+                  total: this.bulkImageUploadProgress.total
+                };
+                this.cdr.detectChanges();
+                return of(null);
+              })
+            );
+        }),
+        toArray(),
+        finalize(() => {
+          this.isUploadingBulkImages = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: () => {
+          const successCount = this.bulkImageItemStatuses.filter((s) => s === 'success').length;
+          const errorCount = this.bulkImageItemStatuses.filter((s) => s === 'error').length;
+          this.imageCacheBuster = Date.now();
+          if (this.dataTableComponent) {
+            if (typeof this.dataTableComponent.clearCache === 'function') {
+              this.dataTableComponent.clearCache();
+            }
+            if (this.dataTableComponent.reload) {
+              this.dataTableComponent.reload();
+            }
+          }
+          this.cdr.detectChanges();
+          if (errorCount === 0) {
+            this.toastr.success(`Toplu resim aktarımı tamamlandı (${successCount} resim).`);
+            this.closeBulkImageUploadModal();
+          } else {
+            this.toastr.warning(`${successCount} başarılı, ${errorCount} hata. Listede yeşil/kırmızı ile gösterildi.`);
+          }
+        },
+        error: (err) => {
+          console.error('BulkImageUpload error:', err);
+          this.toastr.error(err?.error?.message || err?.message || 'Toplu resim aktarımı sırasında hata oluştu.');
+        }
+      });
   }
 
   onBulkWebClient(event: MouseEvent, item: any) {

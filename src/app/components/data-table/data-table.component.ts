@@ -356,6 +356,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   @Input() imageAsBase64Field?: string; // When set (e.g. 'Picture'), embed image as base64 in form payload on save – no separate upload
   @Input() imageField?: string; // Field name for image
   @Input() imagePreviewUrl?: (filename: string) => string; // Function to generate image preview URL
+  /** Resim URL'lerine eklenecek cache-buster (?t=...) - örn. toplu resim yükleme sonrası Date.now() */
+  @Input() imageCacheBuster?: number | string;
   @Input() onSave?: (data: any, isEdit: boolean, http?: any) => Observable<any>; // Callback function to save form data (http is optional for nested grids)
   @Input() onFormChange?: (formData: any) => void; // Callback function for form data changes
   @Input() formFullscreen?: boolean = true; // Whether form should open in fullscreen mode (default: true)
@@ -829,6 +831,16 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     if (this.dataSource) {
       this.loadDataSource();
     }
+  }
+
+  /**
+   * Önbelleği temizle (kolon seçenekleri, grid data source cache). Resim yükleme sonrası yeniden veri çekmek için reload() öncesi çağrılabilir.
+   */
+  clearCache(): void {
+    this.columnOptionsCache.clear();
+    this.columnOptionsLoading.clear();
+    this.gridDataSourceCache.clear();
+    this.gridDataSourceFormDataCache.clear();
   }
 
   /**
@@ -2645,18 +2657,19 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    * Build picture URL from pictureId and column prependUrl
    */
   private buildPictureUrl(pictureId: string, column: TableColumn): string {
+    let url: string;
     // If pictureId is already a full URL, return it
     if (pictureId.startsWith('http://') || pictureId.startsWith('https://')) {
-      return pictureId;
+      url = pictureId;
+    } else if (column.prependUrl) {
+      url = column.prependUrl.replace('{0}', pictureId);
+    } else {
+      url = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl + `/images/${pictureId}`;
     }
-    
-    // If prependUrl is provided, use it
-    if (column.prependUrl) {
-      return column.prependUrl.replace('{0}', pictureId);
+    if (this.imageCacheBuster != null && this.imageCacheBuster !== '') {
+      url += (url.includes('?') ? '&' : '?') + 't=' + this.imageCacheBuster;
     }
-    
-    // Default fallback
-    return environment.settings[environment.setting as keyof typeof environment.settings].apiUrl+`/images/${pictureId}`;
+    return url;
   }
 
   /**
@@ -3846,6 +3859,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
             } else {
               this.imagePreview = `http://localhost/images/${this.formData[this.imageField]}`;
             }
+            if (this.imagePreview && this.imageCacheBuster != null && this.imageCacheBuster !== '') {
+              this.imagePreview += (this.imagePreview.includes('?') ? '&' : '?') + 't=' + this.imageCacheBuster;
+            }
           } else {
             this.imagePreview = null;
           }
@@ -4287,7 +4303,12 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     //console.log('getOnSaveWithHttp called:', { gridId: grid.id, hasOnSave: !!grid.onSave, grid });
     
     if (!grid.onSave) {
-      console.warn('getOnSaveWithHttp: grid.onSave is undefined for grid:', grid.id);
+      // Only warn if grid supports add/edit - read-only grids don't need onSave
+      const showAdd = grid.toolbar?.show?.add !== false;
+      const showEdit = grid.toolbar?.show?.edit !== false;
+      if (showAdd || showEdit) {
+        console.warn('getOnSaveWithHttp: grid.onSave is undefined for grid:', grid.id);
+      }
       return undefined;
     }
     
