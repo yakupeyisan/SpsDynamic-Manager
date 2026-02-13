@@ -74,64 +74,38 @@
   </div>
   
   <div *ngIf="!isLoadingPreview" class="card-write-list-preview-wrap">
-    <ui-tabs [activeTab]="previewActiveTabIndex" (activeTabChange)="onPreviewTabChange($event)">
-      <ui-tab-item [label]="'İçerik'" [disabled]="previewTabEnabled">
-        <div class="card-write-list-content-tab">
-          <div class="card-write-list-preview-toolbar">
-            <label class="card-write-list-select-all">
-              <input type="checkbox" [checked]="allPreviewPrintSelected" (change)="selectAllPreviewPrint($any($event.target).checked)" class="form-check-input">
-              <span>Tümünü seç</span>
-            </label>
-            <label class="card-write-list-print-with-template">
-              <input type="checkbox" [(ngModel)]="previewPrintWithTemplate" (ngModelChange)="onPreviewPrintWithTemplateChange()" class="form-check-input">
-              <span>Şablon ile birlikte yazdır</span>
-            </label>
-          </div>
-          <div class="preview-content-capture-wrap">
-            <div *ngFor="let item of previewData; let i = index" class="card-write-list-content-row">
-              <label class="card-write-list-preview-checkbox">
-                <input type="checkbox" [checked]="previewPrintSelection[i]" (change)="onPreviewPrintSelect(i, $any($event.target).checked)" class="form-check-input" [attr.data-index]="i" [attr.aria-label]="'Kart ' + (i + 1) + ' yazdır'">
-              </label>
-              <div class="preview-content-capture" #contentCaptureItem>
-                <div class="preview-content-capture-inner" [innerHTML]="previewCardHtmls[i]"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ui-tab-item>
-      <ui-tab-item [label]="'Önizleme'" [disabled]="!previewTabEnabled">
-        <div class="card-write-list-preview-tab">
-          <div class="card-write-list-preview-list">
-            <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row">
-              <div class="card-write-list-preview-content">
-                <img *ngIf="previewCardImages[i]; else previewPlaceholder" [src]="previewCardImages[i]" alt="Kart önizleme" class="preview-card-image">
-                <ng-template #previewPlaceholder>
-                  <div class="preview-placeholder-text">Önizleme için Onayla butonuna basın.</div>
-                </ng-template>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ui-tab-item>
-    </ui-tabs>
+    <div class="card-write-list-preview-toolbar">
+      <label class="card-write-list-select-all">
+        <input type="checkbox" [checked]="allPreviewPrintSelected" (change)="selectAllPreviewPrint($any($event.target).checked)" class="form-check-input">
+        <span>Tümünü seç</span>
+      </label>
+      <label class="card-write-list-print-with-template">
+        <input type="checkbox" [(ngModel)]="previewPrintWithTemplate" class="form-check-input">
+        <span>Şablon ile birlikte yazdır</span>
+      </label>
+    </div>
+    <div class="card-write-list-preview-list">
+      <div *ngFor="let item of previewData; let i = index" class="card-write-list-preview-row">
+        <label class="card-write-list-preview-checkbox">
+          <input type="checkbox" [checked]="previewPrintSelection[i]" (change)="onPreviewPrintSelect(i, $any($event.target).checked)" class="form-check-input" [attr.data-index]="i" [attr.aria-label]="'Kart ' + (i + 1) + ' yazdır'">
+        </label>
+        <div class="card-write-list-preview-content" [innerHTML]="previewCardHtmls[i]"></div>
+      </div>
+    </div>
   </div>
   
   <div slot="footer" class="card-write-list-preview-footer">
     <div class="text-muted small">
-      <ng-container *ngIf="previewData.length && previewTabEnabled">Önlü arkalı kartlarda önce ön yüz, sonra arka yüz sayfa sırasıyla yazdırılır.</ng-container>
+      <ng-container *ngIf="previewData.length">Önlü arkalı kartlarda önce ön yüz, sonra arka yüz sayfa sırasıyla yazdırılır.</ng-container>
     </div>
     <div class="card-write-list-preview-footer-actions">
-      <button *ngIf="!previewTabEnabled" type="button" class="btn btn-primary" (click)="onConfirmPreview()">
-        <i class="ti ti-check me-1"></i>
-        Onayla
-      </button>
-      <button *ngIf="previewTabEnabled" type="button" class="btn btn-primary" (click)="printSelectedPreview()" [disabled]="!hasAnyPreviewPrintSelected">
+      <button type="button" class="btn btn-primary" (click)="printSelectedPreview()" [disabled]="!hasAnyPreviewPrintSelected">
         <i class="ti ti-printer me-1"></i>
         Yazdır
       </button>
       <button type="button" class="btn btn-secondary" (click)="closePreviewModal()">
         <i class="ti ti-x me-1"></i>
-        İptal
+        Kapat
       </button>
     </div>
   </div>

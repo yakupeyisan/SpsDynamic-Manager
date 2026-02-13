@@ -35,7 +35,6 @@
     "apexcharts": "^4.7.0",
     "chance": "^1.1.13",
     "date-fns": "^4.1.0",
-    "dom-to-image": "^2.6.0",
     "dropzone": "^6.0.0-beta.2",
     "highlight.js": "^11.11.1",
     "iconify": "^1.4.0",

@@ -1,6 +1,5 @@
-/// <reference path="../../../dom-to-image.d.ts" />
 // CardWriteList Component
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ViewChildren, QueryList, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { TablerIconsModule } from 'angular-tabler-icons';
@@ -11,12 +10,9 @@ import { ToastrService } from 'ngx-toastr';
 import { catchError, map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DomSanitizer, SafeHtml, SafeUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
-import { TabsComponent } from 'src/app/components/tabs/tabs.component';
-import { TabItemComponent } from 'src/app/components/tabs/tab-item.component';
 import QRCode from 'qrcode';
-import * as domtoimage from 'dom-to-image';
 
 // Import configurations
 import { joinOptions } from './card-write-list-config';
@@ -43,9 +39,7 @@ import {
     TablerIconsModule,
     TranslateModule,
     DataTableComponent,
-    ModalComponent,
-    TabsComponent,
-    TabItemComponent
+    ModalComponent
   ],
   templateUrl: './card-write-list.component.html',
   styleUrls: ['./card-write-list.component.scss']
@@ -61,15 +55,9 @@ export class CardWriteListComponent implements OnInit {
   showPreviewModal = false;
   previewData: any[] = [];
   previewCardHtmls: SafeHtml[] = []; // Her kart için ayrı önizleme HTML (checkbox solunda göstermek için)
-  previewCardImages: SafeUrl[] = []; // Onayla sonrası dom-to-image ile alınan kart görselleri (data URL, SafeUrl ile bağlanır)
-  previewCardImagesRaw: string[] = []; // Yazdırma için ham data URL listesi
   previewPrintSelection: boolean[] = []; // Checkbox: hangi kartlar yazdırılacak
   previewPrintWithTemplate = false; // Şablon ile birlikte yazdır (renkleri/arka planları dahil)
   isLoadingPreview = false;
-  previewActiveTabIndex = 0; // 0 = İçerik, 1 = Önizleme (İçerik varsayılan açılsın)
-  previewTabEnabled = false; // Önizleme sekmesi ve Yazdır butonu Onayla'dan sonra aktif olur
-
-  @ViewChildren('contentCaptureItem') contentCaptureItems!: QueryList<ElementRef<HTMLElement>>;
   
   // Form configuration
   formFields: TableColumn[] = formFields;
@@ -494,8 +482,7 @@ export class CardWriteListComponent implements OnInit {
       next: async (results) => {
         this.previewData = results.filter(r => r !== null);
         this.previewPrintSelection = this.previewData.map(() => true); // Varsayılan: hepsi seçili
-        const includeBack = this.previewPrintWithTemplate;
-        const htmlPromises = this.previewData.map((data) => this.buildSingleCardPreviewHtmlString(data, includeBack));
+        const htmlPromises = this.previewData.map((data) => this.buildSingleCardPreviewHtmlString(data));
         const htmls = await Promise.all(htmlPromises);
         this.previewCardHtmls = htmls.map((h) => this.sanitizer.bypassSecurityTrustHtml(h));
         this.isLoadingPreview = false;
@@ -516,136 +503,7 @@ export class CardWriteListComponent implements OnInit {
     this.showPreviewModal = false;
     this.previewData = [];
     this.previewCardHtmls = [];
-    this.previewCardImages = [];
-    this.previewCardImagesRaw = [];
     this.previewPrintSelection = [];
-    this.previewActiveTabIndex = 0;
-    this.previewTabEnabled = false;
-  }
-
-  /** Sekme değişince: Önizleme pasifken Önizleme'ye, Onayla sonrası İçerik pasifken İçerik'e geçiş engellenir */
-  onPreviewTabChange(index: number): void {
-    if (index === 1 && !this.previewTabEnabled) return;
-    if (index === 0 && this.previewTabEnabled) return;
-    this.previewActiveTabIndex = index;
-    this.cdr.markForCheck();
-  }
-
-  /** Footer veya İçerik tabındaki Onayla: kart içeriğini dom-to-image ile resme çevirir, Önizleme tabındaki listeyi sıfırlayıp yeniden ekler */
-  async onConfirmPreview(): Promise<void> {
-    if (!this.previewData.length) {
-      this.toastr.warning('Önizlenecek kart bulunamadı.');
-      return;
-    }
-    const items = this.contentCaptureItems?.toArray();
-    if (!items || items.length === 0) {
-      this.toastr.warning('Kart içeriği henüz yüklenmedi. Lütfen kısa süre sonra tekrar deneyin.');
-      return;
-    }
-    try {
-      this.toastr.info('Kartlar resme dönüştürülüyor...');
-      // Önizleme tabındaki kart listesini sıfırla: görselleri temizle
-      this.previewCardImages = [];
-      this.cdr.detectChanges();
-      await new Promise<void>(r => setTimeout(r, 300));
-
-      // Cross-origin resimleri klondan çıkar (fallback: fetch başarısız olursa tainted canvas önlenir)
-      const filterExternalImages = (node: Node): boolean => {
-        if (node.nodeType !== Node.ELEMENT_NODE) return true;
-        const el = node as HTMLElement;
-        if (el.tagName === 'IMG') {
-          const src = (el as HTMLImageElement).src || '';
-          if (src.startsWith('http://') || src.startsWith('https://')) {
-            try {
-              if (new URL(src).origin !== window.location.origin) return false;
-            } catch {
-              return false;
-            }
-          }
-        }
-        return true;
-      };
-
-      const dataUrls: SafeUrl[] = [];
-      const rawUrls: string[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const el = items[i].nativeElement;
-        try {
-          await this.inlineExternalImagesInElement(el);
-          const dataUrl = await domtoimage.toPng(el, {
-            quality: 1,
-            bgcolor: '#ffffff',
-            cacheBust: true,
-            style: { transform: 'scale(1)' }
-          });
-          rawUrls.push(dataUrl);
-          dataUrls.push(this.sanitizer.bypassSecurityTrustUrl(dataUrl));
-        } catch (err) {
-          console.warn('dom-to-image failed for card', i, err);
-          try {
-            const dataUrl = await domtoimage.toPng(el, {
-              quality: 1,
-              bgcolor: '#ffffff',
-              cacheBust: true,
-              filter: filterExternalImages,
-              style: { transform: 'scale(1)' }
-            });
-            rawUrls.push(dataUrl);
-            dataUrls.push(this.sanitizer.bypassSecurityTrustUrl(dataUrl));
-          } catch (err2) {
-            const placeholder = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect fill="#f0f0f0" width="200" height="100"/><text x="50%" y="50%" fill="#999" text-anchor="middle" dy=".3em" font-size="12">Resim alınamadı</text></svg>');
-            rawUrls.push(placeholder);
-            dataUrls.push(this.sanitizer.bypassSecurityTrustUrl(placeholder));
-          }
-        }
-      }
-      this.previewCardImagesRaw = rawUrls;
-      this.previewCardImages = dataUrls;
-      this.previewTabEnabled = true;
-      this.previewActiveTabIndex = 1; // Önizleme tabına geç
-      this.cdr.markForCheck();
-      this.toastr.success('Önizleme hazır. Önizleme sekmesine geçildi.');
-    } catch (error) {
-      console.error('onConfirmPreview error:', error);
-      this.toastr.error('Kartlar resme dönüştürülürken hata oluştu.');
-    }
-  }
-
-  /**
-   * Element içindeki harici (http/https) img src'leri fetch ile data URL'ye çevirir.
-   * Böylece dom-to-image capture'da kişi fotoğrafı da dahil olur (sunucu CORS izin veriyorsa).
-   */
-  private async inlineExternalImagesInElement(el: HTMLElement): Promise<void> {
-    const imgs = Array.from(el.querySelectorAll<HTMLImageElement>('img[src^="http://"], img[src^="https://"]'));
-    const promises: Promise<void>[] = [];
-    for (const img of imgs) {
-      const src = img.src;
-      try {
-        const dataUrl = await this.fetchAsDataUrl(src);
-        if (dataUrl) {
-          promises.push(new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = dataUrl;
-            if (img.complete) resolve();
-          }));
-        }
-      } catch {
-        // Fetch başarısız (CORS vb.) – bu img olduğu gibi kalır, capture'da filter ile çıkarılır
-      }
-    }
-    await Promise.all(promises);
-  }
-
-  private fetchAsDataUrl(url: string): Promise<string | null> {
-    return fetch(url, { mode: 'cors', credentials: 'omit' })
-      .then(r => (r.ok ? r.blob() : Promise.reject(new Error('fetch failed'))))
-      .then(blob => new Promise<string | null>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-      }));
   }
 
   /** GetForWrite yanıtından CardData oluşturur */
@@ -736,22 +594,14 @@ export class CardWriteListComponent implements OnInit {
     return this.previewPrintSelection.some((b) => b);
   }
 
-  /** Seçili kartların resim listesini yazdır (Önizleme sekmesindeki yakalanan görseller) */
-  printSelectedPreview(): void {
-    const selectedIndices = this.previewPrintSelection
-      .map((checked, i) => (checked ? i : -1))
-      .filter((i) => i >= 0);
-    if (selectedIndices.length === 0) {
+  /** Seçili kartlarla yazdır; önlü/arkalı ise önce ön sonra arka sayfa */
+  async printSelectedPreview(): Promise<void> {
+    const selectedData = this.previewData.filter((_, i) => this.previewPrintSelection[i]);
+    if (selectedData.length === 0) {
       this.toastr.warning('Yazdırmak için en az bir kart seçin.');
       return;
     }
-    if (!this.previewCardImagesRaw.length || selectedIndices.some((i) => !this.previewCardImagesRaw[i])) {
-      this.toastr.warning('Yazdırılacak resim bulunamadı. Önce Onayla ile önizleme oluşturun.');
-      return;
-    }
-    const printHtml = this.buildPrintHtmlFromImages(
-      selectedIndices.map((i) => this.previewCardImagesRaw[i])
-    );
+    const printHtml = await this.buildPrintHtmlString(selectedData);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       this.toastr.error('Yazdırma penceresi açılamadı. Pop-up engelleyicisini kapatıp tekrar deneyin.');
@@ -764,18 +614,6 @@ export class CardWriteListComponent implements OnInit {
       printWindow.print();
       printWindow.close();
     }, 300);
-  }
-
-  /** Yazdırma için sadece resim listesinden HTML üretir (her resim bir sayfa) */
-  private buildPrintHtmlFromImages(imageDataUrls: string[]): string {
-    if (!imageDataUrls?.length) return '';
-    let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kart Yazdır</title>';
-    html += '<style>body{margin:0;padding:0;} .print-page{page-break-after:always;display:flex;justify-content:center;align-items:center;min-height:100vh;box-sizing:border-box;} .print-page:last-child{page-break-after:auto;} .print-page img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body>';
-    for (const dataUrl of imageDataUrls) {
-      html += '<div class="print-page"><img src="' + dataUrl.replace(/"/g, '&quot;') + '" alt="Kart" /></div>';
-    }
-    html += '</body></html>';
-    return html;
   }
 
   /**
@@ -806,8 +644,8 @@ export class CardWriteListComponent implements OnInit {
     return html;
   }
 
-  /** Tek yüz (FRONT veya BACK) HTML üretir; önizleme ve yazdırma için ortak. imageBaseUrl boş verilirse resimler göreli (/images/...) olur, proxy ile aynı origin olur. */
-  private async buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string, imageBaseUrl?: string): Promise<string> {
+  /** Tek yüz (FRONT veya BACK) HTML üretir; önizleme ve yazdırma için ortak */
+  private async buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string): Promise<string> {
     const face = data.TemplateData[side];
     if (!face) return '';
     const bgStyle = face.background && face.background !== 'transparent'
@@ -830,20 +668,17 @@ export class CardWriteListComponent implements OnInit {
         html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
       } else if (item.type === 'image' && item.field) {
         const field = item.field.split('-')[0];
-        let pictureId: string = '';
+        let pictureId = '';
         if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
           const v = data.CardData[field];
-          pictureId = typeof v === 'object' ? '' : String(v).trim();
+          pictureId = typeof v === 'object' ? '' : String(v);
         } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
-          pictureId = String(data.CardData.PictureID).trim();
+          pictureId = String(data.CardData.PictureID);
         } else {
-          const fv = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
-          pictureId = (fv && String(fv).trim()) || '';
+          pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
         }
         const avatarUrl = '/assets/images/profile/avaatar.png';
-        const base = imageBaseUrl !== undefined ? imageBaseUrl : apiUrl;
-        const hasPictureId = pictureId !== '' && pictureId !== 'null' && pictureId !== 'undefined';
-        const imageUrl = hasPictureId ? `${base}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
+        const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
         html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
       } else if (item.type === 'imagefix' && item.src) {
         html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
@@ -863,30 +698,19 @@ export class CardWriteListComponent implements OnInit {
     return html;
   }
 
-  /** Tek kart satırı için önizleme HTML string. includeBack true ise (Şablon ile birlikte yazdır) arka şablon da eklenir. */
-  private async buildSingleCardPreviewHtmlString(data: any, includeBack?: boolean): Promise<string> {
+  /** Tek kart satırı için önizleme HTML string (checkbox solunda göstermek için) */
+  private async buildSingleCardPreviewHtmlString(data: any): Promise<string> {
     if (!data?.TemplateData) return '';
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
-    const imageBase = ''; // göreli /images/xxx → proxy ile aynı origin, kişi resmi yüklenir
     let html = '<div class="preview-row">';
     if (data.TemplateData.FRONT) {
-      html += await this.buildCardSideHtml(data, 'FRONT', apiUrl, imageBase);
+      html += await this.buildCardSideHtml(data, 'FRONT', apiUrl);
     }
-    if (includeBack && data.TemplateData.BACK) {
-      html += await this.buildCardSideHtml(data, 'BACK', apiUrl, imageBase);
+    if (data.TemplateData.BACK) {
+      html += await this.buildCardSideHtml(data, 'BACK', apiUrl);
     }
     html += '</div>';
     return html;
-  }
-
-  /** Şablon ile birlikte yazdır kutusu değişince kart HTML'lerini (arka şablon dahil/hariç) yeniden oluşturur */
-  async onPreviewPrintWithTemplateChange(): Promise<void> {
-    if (!this.previewData.length) return;
-    const includeBack = this.previewPrintWithTemplate;
-    const htmlPromises = this.previewData.map((data) => this.buildSingleCardPreviewHtmlString(data, includeBack));
-    const htmls = await Promise.all(htmlPromises);
-    this.previewCardHtmls = htmls.map((h) => this.sanitizer.bypassSecurityTrustHtml(h));
-    this.cdr.markForCheck();
   }
 
   /** Obje değerlerinden (Company, Department vb.) görüntülenecek metni çıkarır */
