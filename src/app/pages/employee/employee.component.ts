@@ -23,6 +23,7 @@ import { Subscription } from 'rxjs';
 import { joinOptions } from './employee-config';
 import { tableColumns } from './employee-table-columns';
 import { formFields, formTabs, formLoadUrl, formLoadRequest, formDataMapper, imageAsBase64Field, imageField, imagePreviewUrl } from './employee-form-config';
+import * as XLSX from 'xlsx';
 import { getGridColumns } from './employee-nested-grids';
 
 // Import types from DataTableComponent
@@ -36,6 +37,16 @@ import {
   FormTabGrid,
   ColumnType
 } from 'src/app/components/data-table/data-table.component';
+
+/** ImportXls API yanıt formatı */
+export interface ExcelImportResponse {
+  status?: string;
+  message?: string;
+  imported?: number;
+  updated?: number;
+  errors?: string[];
+  needReview?: { row: number; employeeId: number; status?: string; reasons: string[] }[];
+}
 
 @Component({
   selector: 'app-employee',
@@ -177,6 +188,97 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   bulkImageItemStatuses: ('pending' | 'success' | 'error')[] = [];
   /** Resim URL'leri önbellek kırıcı - toplu resim yükleme sonrası güncellenir */
   imageCacheBuster: number | null = null;
+
+  // Excel import modal state
+  showExcelImportModal = false;
+  excelHeaders: string[] = [];
+  excelRows: any[] = [];
+  /** Excel sütun başlığı -> Employee/CustomField alan adı */
+  excelColumnMapping: Record<string, string> = {};
+  showExcelOptionsOverlay = false;
+  excelOptionsOverlayLoading = false;
+  /** Overlay'de gösterilecek listeler: Firma, Kadro, Departman, AccessGroup, WebClientAuthorization, Authorization */
+  excelOptionsOverlayData: Record<string, { id: string | number; text: string }[]> = {};
+  /** Excel grid sütunları (şablonda getter yerine kullanılır – sonsuz CD önlenir) */
+  excelGridColumns: { field: string; label: string }[] = [];
+  /** ui-data-table için Excel sütunları (TableColumn[]) */
+  excelImportTableColumns: TableColumn[] = [];
+  /** Excel import grid toolbar (sadece görüntüleme; dışarı aktar yok) */
+  excelImportToolbarConfig: ToolbarConfig = {
+    items: [],
+    show: { reload: false, add: false, edit: false, delete: false, save: false, columns: false, export: false }
+  };
+  /** Eşlenebilir alan listesi (şablonda getter yerine kullanılır – sonsuz CD önlenir) */
+  excelMappableFields: { value: string; label: string }[] = [];
+  /** Excel alan eşlemesi select için seçenekler (Eşleme yok + excelMappableFields; etiketlere " - Kişi", " - Özel Alan", " - Kart" eklenir). */
+  get excelMappingSelectOptions(): { value: string; label: string }[] {
+    const empty = [{ value: '', label: '— Eşleme yok —' }];
+    const withSuffix = this.excelMappableFields.map((f) => {
+      const cat = this.excelFieldCategory(f.value);
+      const suffix = cat === 'customfield' ? 'Özel Alan' : cat === 'card' ? 'Kart' : 'Kişi';
+      return { value: f.value, label: `${f.label} - ${suffix}` };
+    });
+    return [...empty, ...withSuffix];
+  }
+
+  /** Alanın Excel eşleme kategorisi (dropdown etiketi için). */
+  private excelFieldCategory(field: string): 'customfield' | 'card' | 'employee' {
+    if (!field) return 'employee';
+    if (/^CustomField\d{2}$/.test(field)) return 'customfield';
+    const cardFields = this.getExcelCardGridFields().map((f) => f.value);
+    if (cardFields.includes(field)) return 'card';
+    return 'employee';
+  }
+  /** Checkbox/boolean alanları – Excel açıklamaları için (type checkbox veya boolean) */
+  excelBooleanFields: { field: string; label: string }[] = [];
+  readonly excelOptionsOverlayKeys = ['Firma', 'Kadro', 'Departman', 'AccessGroup', 'CafeteriaGroup', 'WebClientAuthorization', 'Authorization'] as const;
+  /** Excel import: her kategori için ayrı buton (overlay’da scroll için key kullanılır) */
+  readonly excelOptionsOverlayButtonConfig: { key: string; label: string }[] = [
+    { key: 'Firma', label: 'Eklenebilecek Firmalar' },
+    { key: 'Kadro', label: 'Eklenebilecek Kadrolar' },
+    { key: 'Departman', label: 'Eklenebilecek Departmanlar' },
+    { key: 'AccessGroup', label: 'Eklenebilecek Erişim Grupları' },
+    { key: 'CafeteriaGroup', label: 'Eklenebilecek Kafeterya Grupları' },
+    { key: 'WebClientAuthorization', label: 'Eklenebilecek Web İstemci Yetkiler' },
+    { key: 'Authorization', label: 'Eklenebilecek Yetkiler' },
+  ];
+  /** Overlay'da sadece bu kategori gösterilir; null ise hepsi gösterilir */
+  excelOptionsOverlayActiveKey: string | null = null;
+  /** Excel içe aktarım: işlem devam ediyor mu */
+  excelImportInProgress = false;
+  /** Excel içe aktarım: ilerleme metni (örn. "50/200 kayıt gönderiliyor...") */
+  excelImportProgressText = '';
+  /** Chunk başına kayıt sayısı (ImportXls API'ye gönderim) */
+  readonly excelImportChunkSize = 50;
+  /** Excel import: listede yoksa kontrol edilecek listesine ekle (ImportXls'e gönderilir) */
+  excelAddUnknownCompanyToCheck = false;
+  excelAddUnknownDepartmentToCheck = false;
+  excelAddUnknownKadroToCheck = false;
+  excelAddUnknownAccessGroupToCheck = false;
+
+  /** ImportXls API yanıtı: kontrol gerektiren satırlar ve hatalar (son import sonrası doldurulur) */
+  excelImportResult: {
+    imported: number;
+    updated: number;
+    errors: string[];
+    needReview: { row: number; employeeId: number; status?: string; reasons: string[] }[];
+  } | null = null;
+
+  /** Overlay'da listelenecek kategoriler (tek seçimde sadece o kategori) */
+  get excelOptionsOverlayKeysToShow(): string[] {
+    return this.excelOptionsOverlayActiveKey
+      ? [this.excelOptionsOverlayActiveKey]
+      : [...this.excelOptionsOverlayKeys];
+  }
+
+  /** Overlay başlığı (tek kategori seçiliyse o kategorinin etiketi) */
+  get excelOptionsOverlayTitle(): string {
+    if (this.excelOptionsOverlayActiveKey) {
+      const opt = this.excelOptionsOverlayButtonConfig.find((o) => o.key === this.excelOptionsOverlayActiveKey);
+      return opt?.label ?? 'Eklenebilecek değerler';
+    }
+    return 'Eklenebilecek değerler';
+  }
 
   // Reader status tracking
   readerStatuses: Map<string, 'connected' | 'disconnected' | 'checking'> = new Map();
@@ -1740,7 +1842,282 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   onImportFromExcel(event: MouseEvent, item: any) {
-    //console.log('Import from Excel:', event, item);
+    this.excelHeaders = [];
+    this.excelRows = [];
+    this.excelColumnMapping = {};
+    this.showExcelImportModal = true;
+    this.cdr.markForCheck();
+    setTimeout(() => this.cdr.detectChanges(), 0);
+  }
+
+  onExcelImportModalChange(show: boolean) {
+    this.showExcelImportModal = show;
+    if (!show) this.closeExcelImportModal();
+  }
+
+  closeExcelImportModal() {
+    this.showExcelImportModal = false;
+    this.excelHeaders = [];
+    this.excelRows = [];
+    this.excelGridColumns = [];
+    this.excelImportTableColumns = [];
+    this.excelColumnMapping = {};
+    this.showExcelOptionsOverlay = false;
+    this.excelOptionsOverlayData = {};
+    this.excelAddUnknownCompanyToCheck = false;
+    this.excelAddUnknownDepartmentToCheck = false;
+    this.excelAddUnknownKadroToCheck = false;
+    this.excelAddUnknownAccessGroupToCheck = false;
+  }
+
+  onExcelFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array((e.target?.result as ArrayBuffer) || []);
+        const wb = XLSX.read(data, { type: 'array' });
+        const firstSheet = wb.Sheets[wb.SheetNames[0]];
+        const json: any[][] = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+        if (json.length < 1) {
+          this.toastr.warning('Excel dosyasında veri bulunamadı.');
+          input.value = '';
+          return;
+        }
+        const headers = (json[0] as any[]).map((h) => String(h ?? '').trim() || ' ');
+        const rows = json.slice(1).map((row: any[], idx: number) => {
+          const obj: any = { _result: '', row: idx + 1 };
+          headers.forEach((h, i) => {
+            obj[h] = row[i] != null ? String(row[i]).trim() : '';
+          });
+          return obj;
+        });
+        this.excelHeaders = headers;
+        this.excelRows = rows;
+        this.excelColumnMapping = {};
+        headers.forEach((h) => { this.excelColumnMapping[h] = this.excelColumnMapping[h] ?? ''; });
+        this.excelGridColumns = [{ field: '_result', label: 'Sonuç' }, ...headers.map((h) => ({ field: h, label: h }))];
+        this.excelImportTableColumns = this.excelGridColumns.map((c) => ({
+          field: c.field,
+          label: c.label,
+          text: c.label,
+          type: 'text' as ColumnType,
+          sortable: false,
+          width: c.field === '_result' ? '80px' : undefined
+        }));
+        this.cdr.detectChanges();
+      } catch (err) {
+        console.error(err);
+        this.toastr.error('Excel dosyası okunamadı.');
+      }
+      input.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  openExcelOptionsOverlay(sectionKey: string) {
+    this.showExcelOptionsOverlay = true;
+    this.excelOptionsOverlayLoading = true;
+    this.excelOptionsOverlayData = {};
+    this.excelOptionsOverlayActiveKey = sectionKey;
+    this.cdr.detectChanges();
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    // AuthorizationGroup: 0 = Web istemci yetkisi, 1 = Admin yetkisi
+    const requests: { key: string; obs: Observable<any> }[] = [
+      { key: 'Firma', obs: this.http.post<any>(`${apiUrl}/api/PdksCompanys`, { limit: -1, offset: 0 }).pipe(map((d) => (d.records || []).map((r: any) => ({ id: r.PdksCompanyID, text: r.PdksCompanyName })))) },
+      { key: 'Kadro', obs: this.http.post<any>(`${apiUrl}/api/PdksStaffs`, { limit: -1, offset: 0 }).pipe(map((d) => (d.records || []).map((r: any) => ({ id: r.ID, text: r.Name })))) },
+      { key: 'Departman', obs: this.http.post<any>(`${apiUrl}/api/Departments`, { limit: -1, offset: 0 }).pipe(map((d) => (d.records || []).map((r: any) => ({ id: r.DepartmentID, text: r.DepartmentName })))) },
+      { key: 'AccessGroup', obs: this.http.post<any>(`${apiUrl}/api/AccessGroups`, { limit: -1, offset: 0 }).pipe(map((d) => (d.records || []).map((r: any) => ({ id: r.AccessGroupID || r.Id, text: r.AccessGroupName || r.Name })))) },
+      { key: 'CafeteriaGroup', obs: this.http.post<any>(`${apiUrl}/api/CafeteriaGroups`, { limit: -1, offset: 0 }).pipe(map((d) => (d.records || []).map((r: any) => ({ id: r.CafeteriaGroupID || r.Id, text: r.CafeteriaGroupName || r.Name })))) },
+      { key: 'WebClientAuthorization', obs: this.http.post<any>(`${apiUrl}/api/Authorizations`, { limit: -1, offset: 0, search: [{ field: 'AuthorizationGroup', operator: 'is', type: 'int', value: 0 }], searchLogic: 'AND' }).pipe(map((d) => (d.records || []).filter((r: any) => r.AuthorizationGroup === 0 || r.AuthorizationGroup === '0').map((r: any) => ({ id: r.Id, text: r.Name })))) },
+      { key: 'Authorization', obs: this.http.post<any>(`${apiUrl}/api/Authorizations`, { limit: -1, offset: 0, search: [{ field: 'AuthorizationGroup', operator: 'is', type: 'int', value: 1 }], searchLogic: 'AND' }).pipe(map((d) => (d.records || []).filter((r: any) => r.AuthorizationGroup === 1 || r.AuthorizationGroup === '1').map((r: any) => ({ id: r.Id, text: r.Name })))) },
+    ];
+    let done = 0;
+    requests.forEach(({ key, obs }) => {
+      obs.pipe(catchError(() => of([]))).subscribe((list) => {
+        this.excelOptionsOverlayData[key] = list;
+        done++;
+        if (done === requests.length) {
+          this.excelOptionsOverlayLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    });
+  }
+
+  closeExcelOptionsOverlay() {
+    this.showExcelOptionsOverlay = false;
+    this.excelOptionsOverlayActiveKey = null;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Excel eşlemesindeki alan adını API'de beklenen önekli anahtara dönüştürür:
+   * IdentificationNumber → aynen; CustomField01.. → CustomField.CustomField01; Kart alanları → Card.XXX; diğerleri → Employee.XXX
+   */
+  private excelFieldToApiKey(field: string): string {
+    if (!field) return field;
+    if (/^CustomField\d{2}$/.test(field)) return `CustomField.${field}`;
+    const cardFields = this.getExcelCardGridFields().map((f) => f.value);
+    if (cardFields.includes(field)) return `Card.${field}`;
+    return `Employee.${field}`;
+  }
+
+  /**
+   * Excel satırlarını eşleme tablosuna göre API formatına (önekli alan adı -> değer) dönüştürür.
+   * Anahtarlar: Employee.XXX, CustomField.CustomField01, Card.XXX, IdentificationNumber.
+   * Checkbox/boolean alanlarında "1" -> true, "0" veya boş -> false yapılır.
+   */
+  private buildExcelImportRecords(): Record<string, any>[] {
+    const mapping = this.excelColumnMapping;
+    const rows = this.excelRows || [];
+    const boolFields = new Set(this.excelBooleanFields.map((b) => b.field));
+    return rows.map((row: any) => {
+      const rec: Record<string, any> = {};
+      this.excelHeaders.forEach((header) => {
+        const field = mapping[header];
+        if (!field || field === '') return;
+        let val = row[header];
+        if (val !== undefined && val !== null) val = String(val).trim();
+        else val = '';
+        const apiKey = this.excelFieldToApiKey(field);
+        if (boolFields.has(field)) {
+          rec[apiKey] = val === '1' || val === 'true' || val === 'evet' || val === 'Evet';
+        } else {
+          rec[apiKey] = val;
+        }
+      });
+      return rec;
+    });
+  }
+
+  onConfirmExcelImport() {
+    const records = this.buildExcelImportRecords();
+    if (records.length === 0) {
+      this.toastr.warning('Aktarılacak kayıt yok veya alan eşlemesi yapılmamış.');
+      return;
+    }
+    const chunkSize = this.excelImportChunkSize;
+    const chunks: Record<string, any>[][] = [];
+    for (let i = 0; i < records.length; i += chunkSize) {
+      chunks.push(records.slice(i, i + chunkSize));
+    }
+    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+    this.excelImportInProgress = true;
+    this.excelImportProgressText = `0/${records.length} kayıt gönderiliyor...`;
+    this.cdr.detectChanges();
+    let sent = 0;
+    from(chunks)
+      .pipe(
+        concatMap((chunk) =>
+          this.http.post<ExcelImportResponse>(`${apiUrl}/api/Employees/ImportXls`, {
+            records: chunk,
+            addUnknownCompanyToCheck: this.excelAddUnknownCompanyToCheck,
+            addUnknownDepartmentToCheck: this.excelAddUnknownDepartmentToCheck,
+            addUnknownKadroToCheck: this.excelAddUnknownKadroToCheck,
+            addUnknownAccessGroupToCheck: this.excelAddUnknownAccessGroupToCheck
+          }).pipe(
+            tap(() => {
+              sent += chunk.length;
+              this.excelImportProgressText = `${sent}/${records.length} kayıt gönderiliyor...`;
+              this.cdr.detectChanges();
+            }),
+            map((res) => res)
+          )
+        ),
+        toArray(),
+        finalize(() => {
+          this.excelImportInProgress = false;
+          this.excelImportProgressText = '';
+          this.cdr.detectChanges();
+        }),
+        catchError((err) => {
+          this.toastr.error(err?.error?.message || err?.message || 'İçe aktarım sırasında hata oluştu.');
+          return of([]);
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          if (results.length === chunks.length && chunks.length > 0) {
+            const aggregated = this.aggregateExcelImportResults(results, chunks.length, chunkSize);
+            this.excelImportResult = aggregated;
+            const { imported, updated, errors, needReview } = aggregated;
+            this.applyExcelImportResultToGrid(needReview);
+            this.toastr.success(
+              `${imported} kayıt içe aktarıldı` +
+              (updated > 0 ? `, ${updated} kayıt güncellendi` : '') +
+              (needReview.length > 0 ? `. ${needReview.length} kayıt kontrol gerektiriyor.` : '.')
+            );
+            if (errors.length > 0) {
+              this.toastr.warning(`Hatalar: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`);
+            }
+            this.dataTableComponent?.reload();
+          }
+        }
+      });
+  }
+
+  /** needReview sonucuna göre Excel grid'deki satırların Sonuç (_result) ve satır rengini (_rowStatus) günceller. */
+  private applyExcelImportResultToGrid(needReview: { row: number; employeeId: number; status?: string; reasons: string[] }[]): void {
+    if (!needReview.length || !this.excelRows.length) return;
+    const needReviewByRow = new Map(needReview.map((n) => [n.row, n]));
+    this.excelRows = this.excelRows.map((r) => {
+      const item = needReviewByRow.get(r.row);
+      if (item && item.reasons && item.reasons.length > 0) {
+        const messages = item.reasons.map((code) => this.excelImportReasonLabel(code));
+        const rowStatus = item.status === 'success' ? 'success' : 'error';
+        return { ...r, _result: messages.join(', '), _rowStatus: rowStatus };
+      }
+      return r;
+    });
+    this.cdr.markForCheck();
+  }
+
+  /** Excel import grid satırına status'a göre yeşil/kırmızı sınıf döndürür (getRowClass için). */
+  excelImportGetRowClass = (row: any): string | null => {
+    const status = row?._rowStatus;
+    if (status === 'success') return 'excel-import-row-success';
+    if (status === 'error') return 'excel-import-row-error';
+    return null;
+  };
+
+  /** needReview reason kodunu kullanıcıya gösterilecek etikete çevirir. */
+  private excelImportReasonLabel(code: string): string {
+    const labels: Record<string, string> = {
+      unknown_department: 'Bilinmeyen departman',
+      unknown_company: 'Bilinmeyen firma',
+      unknown_kadro: 'Bilinmeyen kadro',
+      unknown_access_group: 'Bilinmeyen erişim grubu'
+    };
+    return labels[code] ?? code;
+  }
+
+  /** Chunk chunk'larından dönen ImportXls yanıtlarını tek sonuçta toplar; needReview satır numaralarını chunk offset ile düzeltir. */
+  private aggregateExcelImportResults(
+    results: ExcelImportResponse[],
+    chunkCount: number,
+    chunkSize: number
+  ): { imported: number; updated: number; errors: string[]; needReview: { row: number; employeeId: number; status?: string; reasons: string[] }[] } {
+    let imported = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const needReview: { row: number; employeeId: number; status?: string; reasons: string[] }[] = [];
+    results.forEach((res, chunkIndex) => {
+      imported += res.imported ?? 0;
+      updated += res.updated ?? 0;
+      (res.errors || []).forEach((e) => errors.push(e));
+      (res.needReview || []).forEach((item) => {
+        needReview.push({
+          row: chunkIndex * chunkSize + item.row,
+          employeeId: item.employeeId,
+          status: item.status,
+          reasons: item.reasons || []
+        });
+      });
+    });
+    return { imported, updated, errors, needReview };
   }
 
   onBulkImageUpload(event: MouseEvent, item: any) {
@@ -2946,6 +3323,11 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const skip = new Set(['SubscriptionCard', 'TotalPrice']);
+    this.excelMappableFields = (formFields || [])
+      .filter((f) => f.field && !skip.has(f.field))
+      .map((f) => ({ value: f.field!, label: f.label || f.text || f.field! }));
+    this.refreshExcelBooleanFields();
     // Initialize toolbar items for EmployeeCardGrid with translations and handlers
     this.initializeCardGridToolbar();
     // Load and update custom field settings
@@ -3047,10 +3429,44 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       
       // Create new array reference to trigger change detection
       this.formFields = [...this.formFields];
-      
+      this.refreshExcelBooleanFields();
+      this.refreshExcelMappableFields();
+
       // Trigger change detection
       this.cdr.markForCheck();
     }, 100);
+  }
+
+  /** Excel eşlenebilir alan listesini formFields + Kart grid alanları ile günceller (CustomFieldSettings etiketleri ve hidden dahil). */
+  private refreshExcelMappableFields(): void {
+    const skip = new Set(['SubscriptionCard', 'TotalPrice','Card']);
+    const fromMain = (this.formFields || [])
+      .filter((f) => f.field && !skip.has(f.field) && !f.hidden)
+      .map((f) => ({ value: f.field!, label: f.label || f.text || f.field! }));
+    const cardFields = this.getExcelCardGridFields();
+    const seen = new Set(fromMain.map((x) => x.value));
+    const fromCard = cardFields.filter((x) => !seen.has(x.value) && (seen.add(x.value), true));
+    this.excelMappableFields = [...fromMain, ...fromCard];
+  }
+
+  /** Kart eklerken gerekli alanları (EmployeeCardGrid formFields) Excel eşleme listesi için döndürür. */
+  private getExcelCardGridFields(): { value: string; label: string }[] {
+    const cardTab = this.formTabs.find((tab) => tab.grids?.some((g) => g.id === 'EmployeeCardGrid'));
+    const grid = cardTab?.grids?.find((g) => g.id === 'EmployeeCardGrid');
+    const fields = grid?.formFields;
+    if (!fields || !Array.isArray(fields)) return [];
+    const skip = new Set(['CardID', 'ReferanceID', 'Card']);
+    return fields
+      .filter((f: any) => f.field && !skip.has(f.field) && !f.hidden && f.showInAdd !== false)
+      .map((f: any) => ({ value: f.field, label: f.label || f.text || f.field }));
+  }
+
+  /** Checkbox/boolean alanlarını formFields üzerinden günceller (Excel import açıklamaları için; hidden alanlar hariç). */
+  private refreshExcelBooleanFields(): void {
+    const isBool = (t: ColumnType | string | undefined) => t === 'checkbox' || t === 'boolean';
+    this.excelBooleanFields = (this.formFields || [])
+      .filter((f) => f.field && isBool(f.type as string) && !f.hidden)
+      .map((f) => ({ field: f.field!, label: f.label || f.text || f.field! }));
   }
 
   /**

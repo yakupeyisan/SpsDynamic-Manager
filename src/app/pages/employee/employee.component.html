@@ -1245,6 +1245,161 @@
   </div>
 </ui-modal>
 
+<!-- Excel Import Modal -->
+<ui-modal
+  [show]="showExcelImportModal"
+  [title]="'Excel\'den Toplu Aktarma'"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="true"
+  (showChange)="onExcelImportModalChange($event)">
+  <div class="excel-import-content">
+    <div class="excel-import-file-row">
+      <input #excelFileInput type="file" accept=".xlsx,.xls" class="excel-import-file-input" (change)="onExcelFileSelected($event)">
+      <button type="button" class="cancel-btn cancel-btn-primary" (click)="excelFileInput.click()">
+        <i-tabler name="file-spreadsheet" class="me-2"></i-tabler>
+        Excel Dosyası Seç
+      </button>
+    </div>
+    <div class="excel-import-body row" *ngIf="excelHeaders.length > 0">
+      <div class="excel-import-grid-col col-8">
+        <div class="excel-import-grid-wrap">
+          <ui-data-table
+            [id]="'excel-import-grid'"
+            [columns]="excelImportTableColumns"
+            [data]="excelRows"
+            [recid]="'row'"
+            [getRowClass]="excelImportGetRowClass"
+            [toolbar]="excelImportToolbarConfig"
+            [pagination]="false"
+            [showFooter]="false"
+            [recordHeight]="32"
+            [fixedBody]="true"
+            [height]="'calc(70vh - 120px)'"
+            [advancedFilter]="false"
+            [showRefresh]="false">
+          </ui-data-table>
+        </div>
+      </div>
+      <div class="excel-import-form-col col-4">
+        <div class="excel-import-form">
+          <div class="excel-import-explanations">
+            <div class="excel-import-explanations-title">
+              <i-tabler name="info-square" class="me-2"></i-tabler>
+              Excel formatı ve kurallar
+            </div>
+            <ng-container *ngIf="excelBooleanFields.length > 0">
+              <div class="excel-import-bool-fields">
+                <div class="excel-import-bool-fields-title">Evet/Hayır (checkbox) alanları</div>
+                <p class="excel-import-bool-fields-desc">
+                  Aşağıdaki alanlar için hücrede <strong>1</strong> = Evet, <strong>0</strong> = Hayır. Boş = Hayır.
+                </p>
+                <ul class="excel-import-bool-list">
+                  <li class="excel-import-bool-item" *ngFor="let b of excelBooleanFields">
+                    <strong>{{ b.label }}</strong>: 1 = Evet, 0 = Hayır.
+                  </li>
+                </ul>
+              </div>
+            </ng-container>
+            <div class="excel-import-note-comma-box">
+              <div class="excel-import-note-comma-title">
+                <i-tabler name="list-numbers"></i-tabler>
+                Çoklu değer (virgül)
+              </div>
+              <p class="excel-import-note excel-import-note-comma">
+                Sadece <strong>Departman</strong> ve <strong>Erişim Grubu</strong> alanlarında birden çok değer girebilirsiniz. Bu alanlarda değerleri <strong>virgül (,)</strong> ile ayırın.
+              </p>
+            </div>
+            <div class="excel-import-check-options">
+              <div class="excel-import-check-options-label">Yoksa <span class="excel-import-check-highlight">kontrol edilecek</span> listesine ekle:</div>
+              <label class="excel-import-check-option">
+                <input type="checkbox" [(ngModel)]="excelAddUnknownCompanyToCheck" name="excelAddUnknownCompanyToCheck">
+                <span>Firma yoksa <span class="excel-import-check-highlight">kontrol edilecek</span> firmasına ekle</span>
+              </label>
+              <label class="excel-import-check-option">
+                <input type="checkbox" [(ngModel)]="excelAddUnknownDepartmentToCheck" name="excelAddUnknownDepartmentToCheck">
+                <span>Departman yoksa <span class="excel-import-check-highlight">kontrol edilecek</span> departmanına ekle</span>
+              </label>
+              <label class="excel-import-check-option">
+                <input type="checkbox" [(ngModel)]="excelAddUnknownKadroToCheck" name="excelAddUnknownKadroToCheck">
+                <span>Kadro yoksa <span class="excel-import-check-highlight">kontrol edilecek</span> kadrosuna ekle</span>
+              </label>
+              <label class="excel-import-check-option">
+                <input type="checkbox" [(ngModel)]="excelAddUnknownAccessGroupToCheck" name="excelAddUnknownAccessGroupToCheck">
+                <span>Erişim Grubu yoksa <span class="excel-import-check-highlight">kontrol edilecek</span> grubuna ekle</span>
+              </label>
+            </div>
+            <div class="excel-import-options-label">Geçerli değerleri görmek için:</div>
+            <div class="excel-import-options-buttons">
+              <button type="button" class="cancel-btn cancel-btn-secondary excel-import-options-btn" *ngFor="let opt of excelOptionsOverlayButtonConfig" (click)="openExcelOptionsOverlay(opt.key)">
+                <i-tabler name="list" class="me-2"></i-tabler>
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+          <div class="excel-import-mapping-list">
+            <div class="excel-import-mapping-header">Excel sütunu → Alan eşlemesi</div>
+            <div class="excel-import-mapping-item" *ngFor="let header of excelHeaders">
+              <label class="excel-import-mapping-label">{{ header }}</label>
+              <ui-select
+                class="excel-import-mapping-select"
+                [options]="excelMappingSelectOptions"
+                [ngModel]="excelColumnMapping[header]"
+                (ngModelChange)="excelColumnMapping[header]=$event"
+                placeholder="— Eşleme yok —"
+                searchPlaceholder="Ara..."
+                [searchable]="true">
+              </ui-select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Overlay: Eklenebilecek değerler -->
+  <div class="excel-options-overlay" *ngIf="showExcelOptionsOverlay" (click)="closeExcelOptionsOverlay()">
+    <div class="excel-options-overlay-panel" (click)="$event.stopPropagation()">
+      <div class="excel-options-overlay-header">
+        <span>{{ excelOptionsOverlayTitle }}</span>
+        <button type="button" class="excel-options-overlay-close" (click)="closeExcelOptionsOverlay()">
+          <i-tabler name="x"></i-tabler>
+        </button>
+      </div>
+      <div class="excel-options-overlay-body">
+        <div *ngIf="excelOptionsOverlayLoading" class="excel-options-overlay-loading">Yükleniyor...</div>
+        <div *ngIf="!excelOptionsOverlayLoading" class="excel-options-overlay-sections">
+          <div class="excel-options-section" *ngFor="let key of excelOptionsOverlayKeysToShow" [id]="'excel-options-section-' + key">
+            <div class="excel-options-section-title">{{ key === 'AccessGroup' ? 'Erişim Grubu' : key === 'CafeteriaGroup' ? 'Kafeterya Grubu' : key === 'WebClientAuthorization' ? 'Web İstemci Yetki' : key === 'Authorization' ? 'Yetki' : key }}</div>
+            <ul class="excel-options-list">
+              <li *ngFor="let item of excelOptionsOverlayData[key]">{{ item.text }} <span class="excel-options-id">({{ item.id }})</span></li>
+              <li *ngIf="(excelOptionsOverlayData[key]?.length ?? 0) === 0 && !excelOptionsOverlayLoading" class="excel-options-empty">—</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div slot="footer" class="cancel-modal-footer">
+    <button
+      type="button"
+      class="cancel-btn cancel-btn-secondary"
+      (click)="closeExcelImportModal()"
+      [disabled]="excelImportInProgress">
+      <i-tabler name="x" class="me-1"></i-tabler>
+      Vazgeç
+    </button>
+    <button
+      type="button"
+      class="cancel-btn cancel-btn-primary"
+      (click)="onConfirmExcelImport()"
+      [disabled]="excelImportInProgress || excelRows.length === 0">
+      <span *ngIf="excelImportInProgress" class="cancel-spinner me-2"></span>
+      <i-tabler *ngIf="!excelImportInProgress" name="upload" class="me-1"></i-tabler>
+      {{ excelImportInProgress ? (excelImportProgressText || 'Aktarılıyor...') : 'İçe Aktar' }}
+    </button>
+  </div>
+</ui-modal>
+
 <!-- Bulk SMS Modal -->
 <ui-modal
   [show]="showBulkSmsModal"
