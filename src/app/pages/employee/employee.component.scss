@@ -755,12 +755,15 @@
   color: #fff !important;
 }
 
-// Excel Import Modal (8 birim grid + 4 birim form) – footer'ın modal içinde kalması için
+// Excel Import Modal: dosya yokken kompakt, dosya seçilince büyük (Chrome'da her zaman görünür olsun diye min-height verildi)
 :host ::ng-deep .ui-modal-dialog:has(.excel-import-content) {
   max-height: calc(100vh - 2rem);
-  min-height: 320px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
+  &:has(.excel-import-content.excel-import-has-data) {
+    min-height: 320px;
+  }
 }
 :host ::ng-deep .ui-modal-content:has(.excel-import-content) {
   display: flex;
@@ -773,19 +776,25 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
-  min-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
+  min-height: 140px;
+  &:has(.excel-import-content.excel-import-has-data) {
+    min-height: 200px;
+  }
 }
 
 .excel-import-content {
   padding: 0;
-  min-height: 260px;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
   overflow: visible;
+  min-height: 80px;
+  &.excel-import-has-data {
+    flex: 1 1 auto;
+    min-height: 260px;
+  }
 }
 
 .excel-import-file-row {

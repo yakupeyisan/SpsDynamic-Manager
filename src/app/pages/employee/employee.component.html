@@ -1245,15 +1245,16 @@
   </div>
 </ui-modal>
 
-<!-- Excel Import Modal -->
+<!-- Excel Import Modal: dosya seçilmeden küçük (sm), seçildikten sonra büyük (xl); sidebar açık kalsın -->
 <ui-modal
   [show]="showExcelImportModal"
   [title]="'Excel\'den Toplu Aktarma'"
-  [size]="'xl'"
+  [size]="excelHeaders.length > 0 ? 'xl' : 'sm'"
   [closable]="true"
   [showFooter]="true"
+  [hideSidebarWhenOpen]="false"
   (showChange)="onExcelImportModalChange($event)">
-  <div class="excel-import-content">
+  <div class="excel-import-content" [class.excel-import-has-data]="excelHeaders.length > 0">
     <div class="excel-import-file-row">
       <input #excelFileInput type="file" accept=".xlsx,.xls" class="excel-import-file-input" (change)="onExcelFileSelected($event)">
       <button type="button" class="cancel-btn cancel-btn-primary" (click)="excelFileInput.click()">
