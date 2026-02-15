@@ -615,8 +615,8 @@ export class CardWriteListComponent implements OnInit {
       this.toastr.warning('Yazdırmak için en az bir kart seçin.');
       return;
     }
-    const writedCardIds = selectedData
-      .map((d) => d.CardData?.CardID ?? d.CardData?.CardId)
+    const writedCardWriteListIds = selectedData
+      .map((d) => d.Id ?? d.recid ?? d.id)
       .filter((id) => id != null && id !== '');
     const printHtml = await this.buildPrintHtmlString(selectedData);
     const printWindow = window.open('', '_blank');
@@ -644,9 +644,9 @@ export class CardWriteListComponent implements OnInit {
         disableClose: false
       });
       dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-        if (confirmed && writedCardIds.length > 0) {
+        if (confirmed && writedCardWriteListIds.length > 0) {
           const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
-          this.http.post(`${apiUrl}/api/CardWriteLists/Writed`, { WritedCards: writedCardIds }).subscribe({
+          this.http.post(`${apiUrl}/api/CardWriteLists/Writed`, { WritedCards: writedCardWriteListIds }).subscribe({
             next: () => {
               this.toastr.success('Yazdırılan kartlar kaydedildi.', 'Yazdırma');
             },

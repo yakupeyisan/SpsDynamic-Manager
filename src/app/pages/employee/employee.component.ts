@@ -182,7 +182,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   isUploadingBulkImages = false;
   isReadingBulkImageFiles = false;
   /** İstek gövdesi sunucu limitini (413) aşmaması için parça başına resim sayısı. Base64 büyük olduğu için 25–30 civarı güvenli. */
-  readonly BULK_IMAGE_MAX_PER_REQUEST = 25;
+  readonly BULK_IMAGE_MAX_PER_REQUEST = 10;
   bulkImageUploadProgress = { uploaded: 0, total: 0 };
   /** Her resim için işlem sonucu: pending | success | error (sıra numarası yeşil/kırmızı) */
   bulkImageItemStatuses: ('pending' | 'success' | 'error')[] = [];
@@ -3323,6 +3323,12 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const currentSetting = environment.settings[environment.setting as keyof typeof environment.settings] as { systemType?: string };
+    const isRosslare = currentSetting?.systemType === 'ROSSLARE';
+    const outputGroupField = this.formFields.find(f => f.field === 'OutputGroup');
+    if (outputGroupField) {
+      outputGroupField.hidden = !isRosslare;
+    }
     const skip = new Set(['SubscriptionCard', 'TotalPrice']);
     this.excelMappableFields = (formFields || [])
       .filter((f) => f.field && !skip.has(f.field))

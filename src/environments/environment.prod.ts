@@ -8,6 +8,7 @@ export const environment = {
   // Authentication ayarları
   settings: {
     ordu: {
+      systemType: 'GENERAL',
       apiUrl: '', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
       wsUrl: '', // Boş bırakılırsa apiUrl'den otomatik türetilir, LiveView için 'ws://172.16.1.186:8282' gibi ayarlanabilir
       landingPage: 'login', // 'login' veya '$1'
@@ -21,7 +22,8 @@ export const environment = {
       loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
       newAccountEnabled: true,
     },
-    tskb:{
+    tskb: {
+      systemType: 'ROSSLARE',
       apiUrl: '',
       wsUrl: '',
       landingPage: 'login',
@@ -36,6 +38,7 @@ export const environment = {
       newAccountEnabled: false,
     },
     eureko: {
+      systemType: 'ROSSLARE',
       apiUrl: '',
       wsUrl: '',
       landingPage: 'login',
@@ -50,6 +53,7 @@ export const environment = {
       newAccountEnabled: false,
     },
     development: {
+      systemType: 'ROSSLARE',
       apiUrl: '',
       wsUrl: '',
       landingPage: 'login',

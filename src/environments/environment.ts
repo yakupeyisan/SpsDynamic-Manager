@@ -8,6 +8,7 @@ export const environment = {
   // Authentication ayarları
   settings: {
     ordu: {
+      systemType: 'GENERAL',
       // Proxy kullanmak istiyorsanız boş bırakın: apiUrl: ''
       // Proxy çalışmıyorsa, API URL'inizi buraya yazın (örn: 'http://localhost:5000')
       apiUrl: 'http://localhost', // API'nizin çalıştığı URL'i buraya yazın (port varsa ekleyin: 'http://localhost:5000')
@@ -40,7 +41,8 @@ export const environment = {
       loginImage: 'https://odu.edu.tr/logo/img/2023.jpg',
       newAccountEnabled: true,
     },
-    tskb:{
+    tskb: {
+      systemType: 'ROSSLARE',
       apiUrl: 'http://localhost',
       wsUrl: '',
       landingPage: 'login',
@@ -55,6 +57,7 @@ export const environment = {
       newAccountEnabled: false,
     },
     eureko: {
+      systemType: 'ROSSLARE',
       apiUrl: 'http://localhost',
       wsUrl: '',
       landingPage: 'login',
@@ -69,6 +72,7 @@ export const environment = {
       newAccountEnabled: false,
     },
     development: {
+      systemType: 'ROSSLARE',
       apiUrl: 'http://localhost',
       wsUrl: '',
       landingPage: 'login',

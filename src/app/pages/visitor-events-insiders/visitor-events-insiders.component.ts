@@ -86,6 +86,9 @@ export class VisitorEventsInsidersComponent {
   isLoadingVisitedEmployees = false;
   visitorCardOptions: SelectOption[] = [];
   accessGroupOptions: SelectOption[] = [];
+  outputGroupOptions: SelectOption[] = [];
+  /** Çıkış Grubu alanı sadece SystemType ROSSLARE ise gösterilir */
+  showOutputGroup = false;
 
   entryForm: FormGroup = this.fb.group({
     EmployeeID: [{ value: null, disabled: true }],
@@ -97,6 +100,7 @@ export class VisitorEventsInsidersComponent {
     VisitedEmployeeID: [null],
     Description: [''],
     AccessGroupID: [null],
+    OutputGroupId: [null],
     VisitorCard: [null]
   });
 
@@ -118,6 +122,8 @@ export class VisitorEventsInsidersComponent {
   }
 
   ngOnInit(): void {
+    const currentSetting = environment.settings[environment.setting as keyof typeof environment.settings] as { systemType?: string };
+    this.showOutputGroup = currentSetting?.systemType === 'ROSSLARE';
     // Setup "Visited Employee" search with debounce (like card assignment)
     this.setupVisitedEmployeeSearch();
   }
@@ -297,7 +303,9 @@ export class VisitorEventsInsidersComponent {
     this.loadVisitorCards();
     // Load access groups from API
     this.loadAccessGroups();
-    
+    if (this.showOutputGroup) {
+      this.loadOutputGroups();
+    }
     // Reload visitor grid after modal is rendered
     setTimeout(() => {
       if (this.visitorTable) {
@@ -326,6 +334,9 @@ export class VisitorEventsInsidersComponent {
     this.loadCompaniesIfNeeded();
     this.loadVisitorCards();
     this.loadAccessGroups();
+    if (this.showOutputGroup) {
+      this.loadOutputGroups();
+    }
     setTimeout(() => {
       if (this.visitorTable) {
         this.visitorTable.reload();
@@ -510,6 +521,7 @@ export class VisitorEventsInsidersComponent {
       VisitedEmployeeID: null,
       Description: '',
       AccessGroupID: null,
+      OutputGroupId: null,
       VisitorCard: null
     }, { emitEvent: false });
     
@@ -672,6 +684,31 @@ export class VisitorEventsInsidersComponent {
       )
       .subscribe((opts) => {
         this.accessGroupOptions = opts;
+        this.cdr.markForCheck();
+      });
+  }
+
+  private loadOutputGroups(): void {
+    this.http
+      .post<any>(`${this.apiUrl}/api/Terminals/GetAllOutputGroups`, {})
+      .pipe(
+        map((res) => {
+          const list = res?.data ?? res?.records ?? (Array.isArray(res) ? res : []);
+          return Array.isArray(list) ? list : [];
+        }),
+        map((records: AnyRecord[]) =>
+          records.map((x) => ({
+            value: x['SerialNumber'],
+            label: x['Name'] ?? x['tDesc'] ?? String(x['SerialNumber'])
+          }))
+        ),
+        catchError((error) => {
+          console.error('Load output groups error:', error);
+          return of([] as SelectOption[]);
+        })
+      )
+      .subscribe((opts) => {
+        this.outputGroupOptions = opts;
         this.cdr.markForCheck();
       });
   }

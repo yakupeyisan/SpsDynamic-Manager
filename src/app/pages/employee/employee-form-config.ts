@@ -76,6 +76,19 @@ export const formFields: TableColumn[] = [
       }));
     }
   }},
+  { field: 'OutputGroupId', label: 'Çıkış Grubu', text: 'Çıkış Grubu', type: 'list', hidden: true, load: {
+    url: `${apiUrl}/api/Terminals/GetAllOutputGroups`,
+    injectAuth: true,
+    method: 'POST' as const,
+    data: {},
+    map: (data: any) => {
+      const list = data.data ?? data.records ?? data ?? [];
+      return (Array.isArray(list) ? list : []).map((item: any) => ({
+        label: item.Name ?? item.tDesc ?? String(item.SerialNumber),
+        value: item.SerialNumber
+      }));
+    }
+  }},
   { field: 'WebClient', label: 'Web İstemci', text: 'Web İstemci', type: 'checkbox' },
   { field: 'WebAdmin', label: 'Web Admin', text: 'Web Admin', type: 'checkbox' },
   { field: 'WebClientAuthorizationId', label: 'Web İstemci Yetki', text: 'Web İstemci Yetki', type: 'list', load: {
@@ -370,7 +383,7 @@ export const formTabs: FormTab[] = [
   },
   { 
     label: 'Geçiş Kontrol', 
-    fields: ['Banned', 'Antipassback', 'BannedMsg', 'AccessGroup'],
+    fields: ['Banned', 'Antipassback', 'BannedMsg', 'OutputGroup', 'AccessGroup'],
     grids: [{
       id: 'EmployeeAccessGroupReaders',
       selectable: false,

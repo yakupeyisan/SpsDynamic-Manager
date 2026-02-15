@@ -99,12 +99,12 @@
 
       <form class="entry-form" [formGroup]="entryForm" (ngSubmit)="submitEntry()">
         <div class="entry-form-grid">
-          <ui-input label="Kişi No" formControlName="EmployeeID"></ui-input>
-
-          <ui-input label="Adı" [required]="true" formControlName="Name"></ui-input>
-          <ui-input label="Soyad" [required]="true" formControlName="SurName"></ui-input>
-
-          <ui-input label="Kimlik Numarası" formControlName="IdentificationNumber"></ui-input>
+          <div class="entry-form-row-2">
+            <ui-input label="Kimlik Numarası" formControlName="IdentificationNumber"></ui-input>
+            <ui-input label="Kişi No" formControlName="EmployeeID"></ui-input>
+            <ui-input label="Adı" [required]="true" formControlName="Name"></ui-input>
+            <ui-input label="Soyad" [required]="true" formControlName="SurName"></ui-input>
+          </div>
           <ui-input label="Ziyaretçi Firma" formControlName="Company"></ui-input>
 
           <ui-select
@@ -145,6 +145,14 @@
             [options]="visitorCardOptions"
             formControlName="VisitorCard"
             [placeholder]="'Kart seçiniz...'">
+          </ui-select>
+
+          <ui-select
+            *ngIf="showOutputGroup"
+            [label]="'Çıkış Grubu'"
+            [options]="outputGroupOptions"
+            formControlName="OutputGroupId"
+            [placeholder]="'Çıkış grubu seçiniz...'">
           </ui-select>
         </div>
       </form>
