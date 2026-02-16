@@ -622,15 +622,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         });
       }
       
-      // When visibleColumns is set (e.g. from localStorage), ensure newly added column fields are included so they appear
-      if (this.visibleColumns && this.visibleColumns.length > 0) {
-        const currentFields = newColumns.filter(c => !c.hidden).map(c => c.field);
-        const missing = currentFields.filter(f => !this.visibleColumns.includes(f));
-        if (missing.length > 0) {
-          this.visibleColumns = [...this.visibleColumns, ...missing];
-          this.saveVisibleColumnsToStorage();
-        }
-      }
+      // When visibleColumns is set (e.g. from localStorage), do not auto-add schema columns and save –
+      // that would overwrite user's choice (e.g. only Name/SurName) with all columns.
       
       // Update column visibility based on joins after columns are updated
       this.updateColumnVisibilityForJoins();
@@ -680,16 +673,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       this.loadVisibleColumnsFromStorage();
       this.loadColumnOrderFromStorage();
       this.loadSearchableColumnsFromStorage();
-      // Ensure any column in current definition (e.g. newly added ReferanceID) is in visibleColumns so it appears
-      const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
-      if (this.visibleColumns && this.visibleColumns.length > 0 && cols.length > 0) {
-        const currentFields = cols.filter((c: TableColumn) => !c.hidden).map((c: TableColumn) => c.field);
-        const missing = currentFields.filter((f: string) => !this.visibleColumns.includes(f));
-        if (missing.length > 0) {
-          this.visibleColumns = [...this.visibleColumns, ...missing];
-          this.saveVisibleColumnsToStorage();
-        }
-      }
+      // Do not auto-add schema columns to visibleColumns here – that overwrote localStorage with
+      // all columns (e.g. CustomField04–20) when user had saved only a few (e.g. Name, SurName).
+      setTimeout(() => this.cdr.markForCheck(), 0);
     }
     
     // Update column visibility based on joins on initialization

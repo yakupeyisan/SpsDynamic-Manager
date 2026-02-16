@@ -383,7 +383,7 @@ export const formTabs: FormTab[] = [
   },
   { 
     label: 'Geçiş Kontrol', 
-    fields: ['Banned', 'Antipassback', 'BannedMsg', 'OutputGroup', 'AccessGroup'],
+    fields: ['Banned', 'Antipassback', 'BannedMsg', 'OutputGroupId', 'AccessGroup'],
     grids: [{
       id: 'EmployeeAccessGroupReaders',
       selectable: false,

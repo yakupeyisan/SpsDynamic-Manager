@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'development',
+  setting: 'nurol',
   
   
   // Authentication ayarları
@@ -83,6 +83,21 @@ export const environment = {
       forgotPasswordEnabled: true,
       signUpEnabled: false,
       notificationType: 'sms',
+      loginImage: '',
+      newAccountEnabled: false,
+    },
+    nurol: {
+      systemType: 'ROSSLARE',
+      apiUrl: 'http://localhost',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-nurol.png',
+      logoUrlLogin: '/assets/images/logos/logo-nurol.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
       loginImage: '',
       newAccountEnabled: false,
     }
@@ -190,6 +205,27 @@ export const environment = {
       level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
+    },
+    nurol: {
+      // Primary renk (Ana renk) - Logo Nurol Holding mavisi
+      primary: '#004791',
+      primaryFixedDim: 'rgba(0, 71, 145, 0.15)',
+      // Secondary renk (İkincil renk) - Logo arka plan siyahı
+      secondary: '#000000',
+      secondaryFixedDim: 'rgba(0, 0, 0, 0.15)',
+      error: '#D32F2F',
+      errorFixedDim: 'rgba(211, 47, 47, 0.15)',
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      tertiary: '#f5f5f5',
+      tertiaryFixedDim: 'rgba(245, 245, 245, 0.15)',
+      outlineVariant: '#e0e0e0',
+      level1: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
       level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
     },
     // development (Technolife) - Teknoloji markası: mavi + teal

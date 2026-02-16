@@ -3325,7 +3325,7 @@ export class EmployeeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const currentSetting = environment.settings[environment.setting as keyof typeof environment.settings] as { systemType?: string };
     const isRosslare = currentSetting?.systemType === 'ROSSLARE';
-    const outputGroupField = this.formFields.find(f => f.field === 'OutputGroup');
+    const outputGroupField = this.formFields.find(f => f.field === 'OutputGroupId');
     if (outputGroupField) {
       outputGroupField.hidden = !isRosslare;
     }

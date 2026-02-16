@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'tskb',
+  setting: 'nurol',
   
   
   // Authentication ayarları
@@ -64,6 +64,21 @@ export const environment = {
       forgotPasswordEnabled: true,
       signUpEnabled: false,
       notificationType: 'sms',
+      loginImage: '',
+      newAccountEnabled: false,
+    },
+    nurol: {
+      systemType: 'ROSSLARE',
+      apiUrl: '',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/logo-nurol.png',
+      logoUrlLogin: '/assets/images/logos/logo-nurol.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
       loginImage: '',
       newAccountEnabled: false,
     }
@@ -171,6 +186,40 @@ export const environment = {
       level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
+    },
+    nurol: {
+      // Primary renk (Ana renk) - Logo Nurol Holding mavisi
+      primary: '#004791',
+      primaryFixedDim: 'rgba(0, 71, 145, 0.15)',
+      
+      // Secondary renk (İkincil renk) - Logo arka plan siyahı
+      secondary: '#000000',
+      secondaryFixedDim: 'rgba(0, 0, 0, 0.15)',
+      
+      // Error renk (Hata renkleri)
+      error: '#D32F2F',
+      errorFixedDim: 'rgba(211, 47, 47, 0.15)',
+      
+      // Warning renk (Uyarı renkleri)
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      
+      // Success renk (Başarı renkleri)
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      
+      // Tertiary renk (Üçüncül renk) - Açık gri ton
+      tertiary: '#f5f5f5',
+      tertiaryFixedDim: 'rgba(245, 245, 245, 0.15)',
+      
+      // Outline variant (Border renkleri) - Açık gri
+      outlineVariant: '#e0e0e0',
+      
+      // Shadows (Gölgeler)
+      level1: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
       level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
     },
   }
