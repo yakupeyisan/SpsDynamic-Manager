@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Tester - GetDoors, GetInputs, GetReader, VisitorIn/Out, AvailableCard</title>
+  <style>
+    :root {
+      --bg: #1a1d23;
+      --surface: #252830;
+      --border: #3d424d;
+      --text: #e6e9ef;
+      --muted: #9ca3af;
+      --success: #36c76c;
+      --error: #ef4444;
+      --accent: #3b82f6;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.35rem; margin: 0 0 16px; color: var(--text); }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .section-title { font-weight: 600; margin-bottom: 12px; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; }
+    label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 0.85rem; }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    textarea { min-height: 60px; font-family: ui-monospace, monospace; resize: vertical; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .row > * { flex: 1; min-width: 120px; }
+    .endpoint-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 120px;
+      gap: 8px;
+      align-items: start;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: var(--bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    @media (max-width: 700px) {
+      .endpoint-row { grid-template-columns: 28px 1fr; }
+      .endpoint-row .interval-col { grid-column: 2; }
+      .endpoint-row .body-col { grid-column: 1 / -1; }
+    }
+    .endpoint-row input[type="checkbox"] { margin-top: 10px; width: 18px; height: 18px; cursor: pointer; }
+    .endpoint-row label { margin-bottom: 2px; }
+    .endpoint-row textarea { margin-bottom: 0; min-height: 44px; }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-start { background: var(--success); color: #fff; }
+    .btn-start:hover { filter: brightness(1.1); }
+    .btn-stop { background: var(--error); color: #fff; }
+    .btn-stop:hover { filter: brightness(1.1); }
+    .btn-stop:disabled, .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .stat-box {
+      padding: 12px 16px;
+      background: var(--bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      min-width: 120px;
+    }
+    .stat-box.success:hover { border-color: var(--success); }
+    .stat-box.fail:hover { border-color: var(--error); }
+    .stat-box .value { font-size: 1.5rem; font-weight: 700; }
+    .stat-box.success .value { color: var(--success); }
+    .stat-box.fail .value { color: var(--error); }
+    .stat-box.avg .value { color: var(--accent); }
+    .stat-box .label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .list-panel {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .list-panel h4 { margin: 0; padding: 10px 12px; background: var(--bg); font-size: 0.9rem; }
+    .list-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .list-item:hover { background: rgba(255,255,255,0.04); }
+    .list-item .meta { color: var(--muted); margin-bottom: 4px; }
+    .list-item .detail { display: none; margin-top: 8px; padding: 8px; background: var(--bg); border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+    .list-item.open .detail { display: block; }
+    .list-item .detail .send { color: var(--accent); }
+    .list-item .detail .receive { color: var(--success); margin-top: 6px; }
+    .minmax { margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
+    .minmax span { margin-right: 12px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>API Tester</h1>
+
+  <div class="section">
+    <div class="section-title">Genel Ayarlar</div>
+    <div class="row">
+      <div style="flex: 2; min-width: 200px;">
+        <label>API Base URL</label>
+        <input type="text" id="baseUrl" value="http://localhost" placeholder="http://localhost">
+      </div>
+      <div style="flex: 1; min-width: 160px;">
+        <label>Yetkilendirme (opsiyonel)</label>
+        <input type="text" id="authHeader" placeholder="Bearer token veya boş bırak">
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" id="btnStart" class="btn-start">Başlat</button>
+      <button type="button" id="btnStop" class="btn-stop" disabled>Durdur</button>
+      <button type="button" id="btnClear" style="background: var(--border); color: var(--text);">Temizle</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">İstekler (Aktif et + Tekrarlama süresi ms + Body)</div>
+    <div id="endpoints"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Özet</div>
+    <div class="stats">
+      <div class="stat-box success" id="statSuccess" title="Tıkla: başarılı listesi">
+        <div class="value" id="successCount">0</div>
+        <div class="label">Başarılı</div>
+      </div>
+      <div class="stat-box fail" id="statFail" title="Tıkla: başarısız listesi">
+        <div class="value" id="failCount">0</div>
+        <div class="label">Başarısız</div>
+      </div>
+      <div class="stat-box avg">
+        <div class="value" id="avgTime">-</div>
+        <div class="label">Ort. cevap süresi (ms)</div>
+      </div>
+      <div class="stat-box">
+        <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="showMinMax">
+          <span>En kısa / en uzun süre</span>
+        </label>
+      </div>
+    </div>
+    <div class="minmax hidden" id="minmaxBox">
+      <span>En kısa: <strong id="minTime">-</strong> ms</span>
+      <span>En uzun: <strong id="maxTime">-</strong> ms</span>
+    </div>
+    <div class="list-panel hidden" id="successPanel">
+      <h4>Başarılı istekler (detay için tıkla)</h4>
+      <div id="successList"></div>
+    </div>
+    <div class="list-panel hidden" id="failPanel">
+      <h4>Başarısız istekler (detay için tıkla)</h4>
+      <div id="failList"></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button type="button" id="btnExportJson" style="background: var(--accent); color: #fff;">Rapor İndir (JSON)</button>
+      <button type="button" id="btnExportTxt" style="background: var(--accent); color: #fff;">Rapor İndir (TXT)</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const BASE = 'baseUrl';
+      const AUTH = 'authHeader';
+      const ENDPOINTS = [
+        { id: 'GetDoors', name: 'GetDoors', path: '/api/Terminals/GetAllDoors', defaultBody: '{}' },
+        { id: 'GetInputs', name: 'GetInputs', path: '/api/Terminals/GetAllInputs', defaultBody: '{}' },
+        { id: 'GetReader', name: 'GetReader', path: '/api/Terminals/GetAllReaders', defaultBody: '{}' },
+        { id: 'GetOutputGroups', name: 'GetOutputGroups', path: '/api/Terminals/GetAllOutputGroups', defaultBody: '{}' },
+        { id: 'VisitorIn', name: 'VisitorIn', path: '/api/VisitorEvents/AddVisit', defaultBody: '{"Name":"Test","SurName":"User","CompanyId":null,"VisitedEmployeeID":null,"Description":"","AccessGroupID":null,"OutputGroupId":null,"VisitorCard":null}' },
+        { id: 'VisitorOut', name: 'VisitorOut', path: '/api/VisitorEvents/ExitVisitor', defaultBody: '{"id":1}' },
+        { id: 'SetAvailableCard', name: 'SetAvailableCard', path: '/api/Cards/AvailableCards/setEmployee', defaultBody: '{"EmployeeID":1,"CardID":1}' },
+        { id: 'TakeAvailableCard', name: 'TakeAvailableCard', path: '/api/Cards/UsedAvailableCards/freeAvailable', defaultBody: '{"Selecteds":[1]}' }
+      ];
+
+      let timers = {};
+      let successList = [];
+      let failList = [];
+      let responseTimes = [];
+      let showMinMaxEl, minmaxBox, minTimeEl, maxTimeEl;
+
+      function getBaseUrl() {
+        return (document.getElementById(BASE).value || '').replace(/\/$/, '');
+      }
+      function getAuth() {
+        return (document.getElementById(AUTH).value || '').trim();
+      }
+
+      function renderEndpoints() {
+        const container = document.getElementById('endpoints');
+        container.innerHTML = ENDPOINTS.map(function (ep) {
+          return (
+            '<div class="endpoint-row" data-id="' + ep.id + '">' +
+              '<div><label>&#8203;</label><input type="checkbox" id="chk_' + ep.id + '" aria-label="Aktif"></div>' +
+              '<div class="body-col"><label>' + ep.name + ' — Body (JSON)</label><textarea id="body_' + ep.id + '" placeholder="JSON body">' + escapeHtml(ep.defaultBody) + '</textarea></div>' +
+              '<div class="interval-col"><label>Tekrar (ms)</label><input type="number" id="interval_' + ep.id + '" value="5000" min="500" step="500"></div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function runOne(ep) {
+        const base = getBaseUrl();
+        if (!base) return;
+        const bodyEl = document.getElementById('body_' + ep.id);
+        let bodyObj = {};
+        try {
+          const raw = (bodyEl && bodyEl.value || ep.defaultBody || '{}').trim();
+          bodyObj = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          failList.push({ endpoint: ep.name, send: (bodyEl && bodyEl.value) || '{}', receive: 'JSON parse hatası: ' + e.message, duration: 0, time: new Date().toISOString(), status: null, success: false });
+          updateUI();
+          return;
+        }
+        const url = base + ep.path;
+        const auth = getAuth();
+        const headers = { 'Content-Type': 'application/json' };
+        if (auth) headers['Authorization'] = auth;
+        const sendStr = JSON.stringify(bodyObj, null, 2);
+        const start = performance.now();
+        fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(bodyObj) })
+          .then(function (res) {
+            const duration = Math.round(performance.now() - start);
+            return res.text().then(function (text) {
+              let receiveStr = text;
+              try { receiveStr = JSON.stringify(JSON.parse(text), null, 2); } catch (_) {}
+              responseTimes.push(duration);
+              if (res.ok) {
+                successList.push({ endpoint: ep.name, send: sendStr, receive: receiveStr, duration: duration, time: new Date().toISOString(), status: res.status, success: true });
+              } else {
+                failList.push({ endpoint: ep.name, send: sendStr, receive: receiveStr + ' [HTTP ' + res.status + ']', duration: duration, time: new Date().toISOString(), status: res.status, success: false });
+              }
+              updateUI();
+            });
+          })
+          .catch(function (err) {
+            const duration = Math.round(performance.now() - start);
+            failList.push({ endpoint: ep.name, send: sendStr, receive: 'Hata: ' + (err.message || String(err)), duration: duration, time: new Date().toISOString(), status: null, success: false });
+            responseTimes.push(duration);
+            updateUI();
+          });
+      }
+
+      function updateUI() {
+        document.getElementById('successCount').textContent = successList.length;
+        document.getElementById('failCount').textContent = failList.length;
+        var avg = responseTimes.length ? (responseTimes.reduce(function (a, b) { return a + b; }, 0) / responseTimes.length).toFixed(0) : '-';
+        document.getElementById('avgTime').textContent = avg === '-' ? '-' : avg + ' ms';
+        if (document.getElementById('showMinMax').checked) {
+          minmaxBox.classList.remove('hidden');
+          if (responseTimes.length) {
+            minTimeEl.textContent = Math.min.apply(null, responseTimes);
+            maxTimeEl.textContent = Math.max.apply(null, responseTimes);
+          } else {
+            minTimeEl.textContent = '-';
+            maxTimeEl.textContent = '-';
+          }
+        } else {
+          minmaxBox.classList.add('hidden');
+        }
+        renderSuccessList();
+        renderFailList();
+      }
+
+      function renderSuccessList() {
+        var html = successList.map(function (item, i) {
+          return (
+            '<div class="list-item" data-index="' + i + '" data-list="success">' +
+              '<div class="meta">' + escapeHtml(item.time) + ' | ' + item.endpoint + ' | ' + item.duration + ' ms</div>' +
+              '<div class="detail"><span class="send">send:</span>\n' + escapeHtml(item.send) + '\n<span class="receive">receive:</span>\n' + escapeHtml(item.receive) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+        document.getElementById('successList').innerHTML = html || '<div class="list-item">Henüz kayıt yok</div>';
+      }
+
+      function renderFailList() {
+        var html = failList.map(function (item, i) {
+          return (
+            '<div class="list-item" data-index="' + i + '" data-list="fail">' +
+              '<div class="meta">' + escapeHtml(item.time) + ' | ' + item.endpoint + ' | ' + item.duration + ' ms</div>' +
+              '<div class="detail"><span class="send">send:</span>\n' + escapeHtml(item.send) + '\n<span class="receive">receive:</span>\n' + escapeHtml(item.receive) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+        document.getElementById('failList').innerHTML = html || '<div class="list-item">Henüz kayıt yok</div>';
+      }
+
+      function startAll() {
+        var base = getBaseUrl();
+        if (!base) { alert('Lütfen API Base URL girin.'); return; }
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnStop').disabled = false;
+        ENDPOINTS.forEach(function (ep) {
+          var chk = document.getElementById('chk_' + ep.id);
+          if (!chk || !chk.checked) return;
+          var interval = Math.max(500, parseInt(document.getElementById('interval_' + ep.id).value, 10) || 5000);
+          runOne(ep);
+          timers[ep.id] = setInterval(function () { runOne(ep); }, interval);
+        });
+      }
+
+      function stopAll() {
+        Object.keys(timers).forEach(function (id) { clearInterval(timers[id]); });
+        timers = {};
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnStop').disabled = true;
+      }
+
+      function clearStats() {
+        successList = [];
+        failList = [];
+        responseTimes = [];
+        updateUI();
+        document.getElementById('successPanel').classList.add('hidden');
+        document.getElementById('failPanel').classList.add('hidden');
+      }
+
+      function buildReportData() {
+        var all = [];
+        successList.forEach(function (item) { all.push({ index: all.length + 1, success: true, endpoint: item.endpoint, time: item.time, durationMs: item.duration, httpStatus: item.status != null ? item.status : '-', send: item.send, receive: item.receive }); });
+        failList.forEach(function (item) { all.push({ index: all.length + 1, success: false, endpoint: item.endpoint, time: item.time, durationMs: item.duration, httpStatus: item.status != null ? item.status : '-', send: item.send, receive: item.receive }); });
+        all.sort(function (a, b) { return new Date(a.time) - new Date(b.time); });
+        all.forEach(function (e, i) { e.index = i + 1; });
+        var avg = responseTimes.length ? (responseTimes.reduce(function (a, b) { return a + b; }, 0) / responseTimes.length) : null;
+        var summary = {
+          exportDate: new Date().toISOString(),
+          baseUrl: getBaseUrl(),
+          totalRequests: successList.length + failList.length,
+          successCount: successList.length,
+          failCount: failList.length,
+          avgResponseMs: avg != null ? Math.round(avg) : null,
+          minResponseMs: responseTimes.length ? Math.min.apply(null, responseTimes) : null,
+          maxResponseMs: responseTimes.length ? Math.max.apply(null, responseTimes) : null
+        };
+        return { summary: summary, requests: all };
+      }
+
+      function downloadFile(filename, contentType, content) {
+        var blob = new Blob([content], { type: contentType });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function exportReportJson() {
+        var data = buildReportData();
+        downloadFile('api-tester-rapor-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.json', 'application/json', JSON.stringify(data, null, 2));
+      }
+
+      function exportReportTxt() {
+        var data = buildReportData();
+        var s = 'API TESTER RAPOR\n';
+        s += '================\n';
+        s += 'Dışa aktarma: ' + data.summary.exportDate + '\n';
+        s += 'Base URL: ' + data.summary.baseUrl + '\n';
+        s += 'Toplam istek: ' + data.summary.totalRequests + '\n';
+        s += 'Başarılı: ' + data.summary.successCount + ' | Başarısız: ' + data.summary.failCount + '\n';
+        s += 'Ort. süre (ms): ' + (data.summary.avgResponseMs != null ? data.summary.avgResponseMs : '-') + '\n';
+        s += 'En kısa (ms): ' + (data.summary.minResponseMs != null ? data.summary.minResponseMs : '-') + ' | En uzun (ms): ' + (data.summary.maxResponseMs != null ? data.summary.maxResponseMs : '-') + '\n\n';
+        data.requests.forEach(function (r) {
+          s += '--- İstek #' + r.index + ' | ' + r.time + ' | ' + r.endpoint + ' | ' + (r.success ? 'BAŞARILI' : 'BAŞARISIZ') + ' | ' + r.durationMs + ' ms | HTTP ' + r.httpStatus + '\n';
+          s += 'send:\n' + r.send + '\n';
+          s += 'receive:\n' + r.receive + '\n\n';
+        });
+        downloadFile('api-tester-rapor-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.txt', 'text/plain;charset=utf-8', '\uFEFF' + s);
+      }
+
+      function togglePanel(panelId, show) {
+        var panel = document.getElementById(panelId);
+        if (panel) panel.classList.toggle('hidden', !show);
+      }
+
+      function init() {
+        renderEndpoints();
+        showMinMaxEl = document.getElementById('showMinMax');
+        minmaxBox = document.getElementById('minmaxBox');
+        minTimeEl = document.getElementById('minTime');
+        maxTimeEl = document.getElementById('maxTime');
+
+        document.getElementById('btnStart').addEventListener('click', startAll);
+        document.getElementById('btnStop').addEventListener('click', stopAll);
+        document.getElementById('btnClear').addEventListener('click', clearStats);
+        document.getElementById('btnExportJson').addEventListener('click', exportReportJson);
+        document.getElementById('btnExportTxt').addEventListener('click', exportReportTxt);
+        showMinMaxEl.addEventListener('change', function () { updateUI(); });
+        document.getElementById('statSuccess').addEventListener('click', function () {
+          togglePanel('successPanel', true);
+          togglePanel('failPanel', false);
+        });
+        document.getElementById('statFail').addEventListener('click', function () {
+          togglePanel('failPanel', true);
+          togglePanel('successPanel', false);
+        });
+        document.getElementById('successList').addEventListener('click', function (e) {
+          var item = e.target.closest('.list-item[data-index]');
+          if (item) item.classList.toggle('open');
+        });
+        document.getElementById('failList').addEventListener('click', function (e) {
+          var item = e.target.closest('.list-item[data-index]');
+          if (item) item.classList.toggle('open');
+        });
+      }
+      init();
+    })();
+  </script>
+</body>
+</html>

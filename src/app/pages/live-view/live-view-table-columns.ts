@@ -1,6 +1,26 @@
 // LiveView table columns configuration
 import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
 
+/**
+ * Aynı resim için sürekli istek oluşmasın diye cache-busting parametrelerini kaldırır.
+ * Böylece tarayıcı aynı URL'yi önbellekten sunar.
+ */
+function normalizedImageUrl(url: string): string {
+  if (!url || typeof url !== 'string') return url;
+  try {
+    const idx = url.indexOf('?');
+    if (idx === -1) return url;
+    const base = url.slice(0, idx);
+    const params = new URLSearchParams(url.slice(idx + 1));
+    // Cache-busting parametrelerini kaldır (t, v, _, timestamp)
+    ['t', 'v', '_', 'timestamp', 'cb'].forEach(p => params.delete(p));
+    const remaining = params.toString();
+    return remaining ? `${base}?${remaining}` : base;
+  } catch {
+    return url;
+  }
+}
+
 export const tableColumns: TableColumn[] = [
   { 
     field: 'Id', 
@@ -33,7 +53,8 @@ export const tableColumns: TableColumn[] = [
       if (typeof record.PictureID === 'string' && record.PictureID.includes('<img')) {
         return record.PictureID;
       }
-      return `<img src="${record.PictureID}" style="${imgStyle}" onerror="this.onerror=null;this.src='${crashImageSrc}'" />`;
+      const imgUrl = normalizedImageUrl(String(record.PictureID));
+      return `<img src="${imgUrl}" style="${imgStyle}" onerror="this.onerror=null;this.src='${crashImageSrc}'" />`;
     }
   },
   { 

@@ -7,7 +7,9 @@ import {
   ViewEncapsulation,
   OnInit,
   OnDestroy,
+  ViewChild,
 } from '@angular/core';
+import { MatMenuTrigger } from '@angular/material/menu';
 import { CoreService } from 'src/app/services/core.service';
 import { MatDialog } from '@angular/material/dialog';
 import { navItems } from '../sidebar/sidebar-data';
@@ -98,6 +100,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Alarm popup (WS isPopUp mesajları)
   alarmPopupList: AlarmPopupItem[] = [];
   private alarmPopupSub?: Subscription;
+
+  @ViewChild('wsContextMenuTrigger') wsContextMenuTrigger!: MatMenuTrigger;
 
   toggleCollpase() {
     this.isCollapse = !this.isCollapse; // Toggle visibility
@@ -192,6 +196,27 @@ export class HeaderComponent implements OnInit, OnDestroy {
   onWebSocketReconnect(): void {
     this.wsService.reconnect();
     this.toastr.info('WebSocket yeniden bağlanıyor...', 'Bağlantı');
+  }
+
+  /** Sunucuya GET /api/Websocket/Restart atıp ardından istemci WebSocket'i yeniden bağlar */
+  restartWebSocketViaApi(): void {
+    const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Websocket/Restart`;
+    this.http.get(url).pipe(
+      catchError(err => {
+        this.toastr.error(err.error?.message || err.message || 'Restart isteği başarısız', 'WebSocket');
+        return of(null);
+      })
+    ).subscribe(() => {
+      this.toastr.success('WebSocket yeniden başlatıldı. Ortalama 1 dakika içinde bağlantı kurulacaktır.', 'Başarılı');
+    });
+  }
+
+  /** Sağ tık: bağlı iken sadece "WebSocket'i yeniden başlat" menüsünü göster */
+  onWsStatusContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    if (this.wsConnected && this.wsContextMenuTrigger) {
+      this.wsContextMenuTrigger.openMenu();
+    }
   }
 
   openPendingClaimsDialog(): void {

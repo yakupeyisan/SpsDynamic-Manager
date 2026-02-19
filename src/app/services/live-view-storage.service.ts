@@ -54,7 +54,27 @@ export class LiveViewStorageService {
     this.isActive = true;
     this.isActive$.next(true);
 
-    this.wsSubscription = this.wsService.getMessages().subscribe((data: any) => {
+    this.subscribeToLiveMessages();
+
+    this.connectionStatusSubscription = this.wsService.getLiveConnectionStatus().subscribe((connected: boolean) => {
+      if (!connected && this.isActive) {
+        this.isActive = false;
+        this.isActive$.next(false);
+        this.stopLiveMessagesSubscription();
+        this.toastr.warning('WebSocket bağlantısı kesildi. Canlı izleme durduruldu.', 'Bağlantı Hatası');
+      } else if (connected && this.currentReaderList.length > 0 && !this.isActive) {
+        this.isActive = true;
+        this.isActive$.next(true);
+        this.subscribeToLiveMessages();
+      }
+    });
+  }
+
+  private subscribeToLiveMessages(): void {
+    if (this.wsSubscription) {
+      this.wsSubscription.unsubscribe();
+    }
+    this.wsSubscription = this.wsService.getLiveMessages().subscribe((data: any) => {
       if (data?.Type !== 'live' || !data?.Data) return;
 
       const d = data.Data;
@@ -72,15 +92,13 @@ export class LiveViewStorageService {
       }
       this.storedRecords$.next([...this.storedRecords]);
     });
+  }
 
-    this.connectionStatusSubscription = this.wsService.getConnectionStatus().subscribe((connected: boolean) => {
-      if (!connected && this.isActive) {
-        this.isActive = false;
-        this.isActive$.next(false);
-        this.stopLiveViewSubscriptions();
-        this.toastr.warning('WebSocket bağlantısı kesildi. Canlı izleme durduruldu.', 'Bağlantı Hatası');
-      }
-    });
+  private stopLiveMessagesSubscription(): void {
+    if (this.wsSubscription) {
+      this.wsSubscription.unsubscribe();
+      this.wsSubscription = undefined;
+    }
   }
 
   /**
@@ -93,10 +111,7 @@ export class LiveViewStorageService {
   }
 
   private stopLiveViewSubscriptions(): void {
-    if (this.wsSubscription) {
-      this.wsSubscription.unsubscribe();
-      this.wsSubscription = undefined;
-    }
+    this.stopLiveMessagesSubscription();
     if (this.connectionStatusSubscription) {
       this.connectionStatusSubscription.unsubscribe();
       this.connectionStatusSubscription = undefined;

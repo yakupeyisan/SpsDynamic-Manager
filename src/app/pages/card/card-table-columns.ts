@@ -163,8 +163,61 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
+    field: 'EmployeeCompany', 
+    searchField: 'Employee.Company.PdksCompanyID',
+    exportDisplayField: 'Employee.Company.PdksCompanyName',
+    label: 'Kişi Firması', 
+    text: 'Kişi Firması',
+    type: 'enum' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'enum',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/PdksCompanys`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return data.records.map((item: any) => ({
+          id: item.PdksCompanyID,
+          text: item.PdksCompanyName
+        }));
+      }
+    },
+    render: (record: any) => {
+      if (record.Employee && record.Employee.Company) {
+        return record.Employee.Company.PdksCompanyName || '';
+      }
+      return '';
+    },
+    joinTable: 'Employee.Company'
+  },
+  { 
+    field: 'EmployeeIdentificationNumber', 
+    searchField: 'Employee.IdentificationNumber',
+    exportDisplayField: 'Employee.IdentificationNumber',
+    label: 'Kişi Kimlik Numarası', 
+    text: 'Kişi Kimlik Numarası',
+    type: 'text' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'text',
+    resizable: true,
+    render: (record: any) => {
+      if (record.Employee) {
+        return record.Employee.IdentificationNumber || '';
+      }
+      return '';
+    },
+    joinTable: 'Employee'
+  },
+  { 
     field: 'EmployeeName', 
     searchField: 'Employee.Name',
+    exportDisplayField: 'Employee.Name',
     label: 'Kişi Adı', 
     text: 'Kişi Adı',
     type: 'text' as ColumnType, 
@@ -184,6 +237,7 @@ export const tableColumns: TableColumn[] = [
   { 
     field: 'EmployeeSurName', 
     searchField: 'Employee.SurName',
+    exportDisplayField: 'Employee.SurName',
     label: 'Kişi Soyadı', 
     text: 'Kişi Soyadı',
     type: 'text' as ColumnType, 

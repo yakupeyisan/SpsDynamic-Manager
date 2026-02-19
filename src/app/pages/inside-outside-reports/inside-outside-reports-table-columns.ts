@@ -55,16 +55,16 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Company', 
-    searchField: 'Company.PdksCompanyName',
+    searchField: 'Company.PdksCompanyID',
     exportDisplayField: 'Company.PdksCompanyName',
     label: 'Firma', 
     text: 'Firma',
-    type: 'list' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false, 
     width: '180px', 
     size: '180px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
     tooltip: 'Company',
     joinTable: 'Company',
@@ -89,16 +89,16 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Kadro', 
-    searchField: 'Kadro.Name',
+    searchField: 'Kadro.ID',
     exportDisplayField: 'Kadro.Name',
     label: 'Kadro', 
     text: 'Kadro',
-    type: 'list' as ColumnType,
+    type: 'enum' as ColumnType,
     sortable: false, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
     tooltip: 'Kadro',
     joinTable: 'Kadro',
@@ -123,16 +123,16 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'EmployeeDepartments', 
-    searchField: 'EmployeeDepartments.Department.DepartmentName',
+    searchField: 'EmployeeDepartments.Department.DepartmentID',
     exportDisplayField: 'EmployeeDepartments.Department.DepartmentName',
     label: 'Departman', 
     text: 'Departman',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: false, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
     render: (record: TableRow) => {
       if (record['EmployeeDepartments'] && Array.isArray(record['EmployeeDepartments']) && record['EmployeeDepartments'].length > 0) {
@@ -208,13 +208,28 @@ export const tableColumns: TableColumn[] = [
     field: 'EmployeeLastAccessEvent.Location', 
     label: 'Son Geçiş Konumu', 
     text: 'Son Geçiş Konumu',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: {
+        limit: -1,
+        offset: 0
+      },
+      map: (data: any) => {
+        return data.records.map((item: any) => ({
+          id: item.ReaderName,
+          text: item.ReaderName
+        }));
+      }
+    },
     render: (record: TableRow) => {
       const lastEvent = record['EmployeeLastAccessEvent'];
       return lastEvent?.Location || '';
