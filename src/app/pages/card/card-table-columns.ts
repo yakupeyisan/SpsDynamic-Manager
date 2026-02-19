@@ -86,20 +86,51 @@ export const tableColumns: TableColumn[] = [
     }
   },
   { 
-    field: 'Company', 
+    field: 'EmployeeCompany', 
     searchField: 'Employee.Company.PdksCompanyID',
+    exportDisplayField: 'Employee.Company.PdksCompanyName',
     label: 'Kişi Firması', 
     text: 'Kişi Firması',
+    type: 'enum' as ColumnType, 
+    sortable: false, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'enum',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/PdksCompanys`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        return data.records.map((item: any) => ({
+          id: item.PdksCompanyID,
+          text: item.PdksCompanyName
+        }));
+      }
+    },
+    render: (record: any) => {
+      if (record.Employee && record.Employee.Company) {
+        return record.Employee.Company.PdksCompanyName || '';
+      }
+      return '';
+    }
+  },
+  { 
+    field: 'Kadro', 
+    searchField: 'Employee.Kadro.ID',
+    exportDisplayField: 'Employee.Kadro.Name',
+    label: 'Kadro', 
+    text: 'Kadro',
     type: 'enum' as ColumnType, 
     sortable: false, 
     width: '180px', 
     size: '180px',
     searchable: 'enum',
     resizable: true,
-    tooltip: 'Company',
-    joinTable: 'Employee',
+    tooltip: 'Kadro',
     load: {
-      url: `${apiUrl}/api/PdksCompanys`,
+      url: `${apiUrl}/api/PdksStaffs`,
       injectAuth: true,
       method: 'POST' as const,
       data: {
@@ -111,14 +142,14 @@ export const tableColumns: TableColumn[] = [
           return [];
         }
         return data.records.map((item: any) => ({
-          id: item.PdksCompanyID,
-          text: item.PdksCompanyName
+          id: item.ID,
+          text: item.Name
         }));
       }
     },
     render: (record: any) => {
-      if (record.Employee && record.Employee.Company) {
-        return record.Employee.Company.PdksCompanyName || '';
+      if (record.Employee && record.Employee.Kadro) {
+        return record.Employee.Kadro.Name || '';
       }
       return '';
     }
@@ -161,38 +192,6 @@ export const tableColumns: TableColumn[] = [
       }
       return '';
     }
-  },
-  { 
-    field: 'EmployeeCompany', 
-    searchField: 'Employee.Company.PdksCompanyID',
-    exportDisplayField: 'Employee.Company.PdksCompanyName',
-    label: 'Kişi Firması', 
-    text: 'Kişi Firması',
-    type: 'enum' as ColumnType, 
-    sortable: false, 
-    width: '120px', 
-    size: '120px',
-    searchable: 'enum',
-    resizable: true,
-    load: {
-      url: `${apiUrl}/api/PdksCompanys`,
-      injectAuth: true,
-      method: 'POST' as const,
-      data: { limit: -1, offset: 0 },
-      map: (data: any) => {
-        return data.records.map((item: any) => ({
-          id: item.PdksCompanyID,
-          text: item.PdksCompanyName
-        }));
-      }
-    },
-    render: (record: any) => {
-      if (record.Employee && record.Employee.Company) {
-        return record.Employee.Company.PdksCompanyName || '';
-      }
-      return '';
-    },
-    joinTable: 'Employee.Company'
   },
   { 
     field: 'EmployeeIdentificationNumber', 
