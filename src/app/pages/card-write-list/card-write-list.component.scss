@@ -156,6 +156,12 @@
     border-radius: 8px;
     box-sizing: border-box;
     position: relative;
+
+    /* QR ve kişi resimleri orantılı ölçeklensin */
+    img {
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
   }
 }
 
@@ -223,5 +229,24 @@
 
   &:hover:not(:disabled) {
     background-color: var(--mat-sys-surface-container, #e2e8f0);
+  }
+}
+
+/* Yazıcı dialogunda "Kart" veya "Custom" boyut seçeneği yoksa */
+@media print {
+  @page {
+    size: 85.60mm 53.98mm portrait;
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Kenar boşlukları kaldır */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

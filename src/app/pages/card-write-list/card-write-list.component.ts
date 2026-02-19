@@ -276,6 +276,9 @@ export class CardWriteListComponent implements OnInit {
     this.isLoadingPreview = true;
     this.showPreviewModal = true;
     this.previewData = [];
+    this.previewCardHtmls = [];
+    this.previewPrintSelection = [];
+    this.previewWritedAtFilled = [];
     this.cdr.markForCheck();
     
     const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
@@ -502,7 +505,10 @@ export class CardWriteListComponent implements OnInit {
         this.toastr.error('Önizleme yüklenirken hata oluştu.');
         this.isLoadingPreview = false;
         this.showPreviewModal = false;
+        this.previewData = [];
         this.previewCardHtmls = [];
+        this.previewPrintSelection = [];
+        this.previewWritedAtFilled = [];
         this.cdr.markForCheck();
       }
     });
@@ -675,47 +681,178 @@ export class CardWriteListComponent implements OnInit {
     }, 300);
   }
 
-  /**
-   * Yazdırma için HTML: Her kart için önce ön yüz (sayfa), sonra arka yüz (sayfa).
-   * Önlü arkalı yazdırmada yazıcıda "çift taraflı" seçilince doğru sırada basılır.
-   */
-  private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
-    if (!selectedData || selectedData.length === 0) return '';
-    const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
-    let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kart Yazdır</title>';
-    html += '<style>body{ margin:0; padding:10px; font-family:\'Open Sans\',sans-serif; }';
-    html += '.print-page{ page-break-after:always; display:flex; justify-content:center; align-items:center; min-height:100vh; box-sizing:border-box; }';
-    html += '.print-page:last-child{ page-break-after:auto; }';
-    if (this.previewPrintWithTemplate) {
-      html += '*{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }';
-    }
-    html += '</style></head><body>';
-    for (const data of selectedData) {
-      if (!data.TemplateData) continue;
-      if (data.TemplateData.FRONT) {
-        html += '<div class="print-page">' + (await this.buildCardSideHtml(data, 'FRONT', apiUrl)) + '</div>';
-      }
-      if (data.TemplateData.BACK) {
-        html += '<div class="print-page">' + (await this.buildCardSideHtml(data, 'BACK', apiUrl)) + '</div>';
-      }
-    }
-    html += '</body></html>';
-    return html;
-  }
+/**
+ * Yazdırma için HTML: Her kart için önce ön yüz (sayfa), sonra arka yüz (sayfa).
+ * CR80 boyutları: 85.60mm x 53.98mm (standart ID kart)
+ */
+private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
+  if (!selectedData || selectedData.length === 0) return '';
+  
+  const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+  
+  // CR80 standart boyutları
+  const CR80_WIDTH = 85.60;  // mm
+  const CR80_HEIGHT = 53.98; // mm
+  
+  // Template'deki koordinatları CR80'a ölçekle
+  // Template 171mm ise, scale = 85.60/171 = 0.5
+  const TEMPLATE_BASE_WIDTH = 171; // Template'in varsayılan genişliği
+  const SCALE_FACTOR = CR80_WIDTH / TEMPLATE_BASE_WIDTH; // ~0.5
 
-  /** Tek yüz (FRONT veya BACK) HTML üretir; önizleme ve yazdırma için ortak */
-  private async buildCardSideHtml(data: any, side: 'FRONT' | 'BACK', apiUrl: string): Promise<string> {
+  let html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kart Yazdır</title>
+  <style>
+    @page {
+      size: ${CR80_WIDTH}mm ${CR80_HEIGHT}mm; /* Kart boyutu sayfa olarak */
+      margin: 0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    .print-page {
+      width: ${CR80_WIDTH}mm;
+      height: ${CR80_HEIGHT}mm;
+      page-break-after: always;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .print-page:last-child {
+      page-break-after: auto;
+    }
+
+    /* Kart container - template ölçeklenmiş */
+    .card-container {
+      position: relative;
+      width: ${CR80_WIDTH}mm;
+      height: ${CR80_HEIGHT}mm;
+      transform-origin: top left;
+      /* Ölçekleme: Template koordinatlarını CR80'a sığdır */
+      transform: scale(${SCALE_FACTOR.toFixed(4)});
+    }
+
+    /* Template içeriği - orijinal boyutları koru */
+    .card-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: ${TEMPLATE_BASE_WIDTH}mm;
+      height: ${(TEMPLATE_BASE_WIDTH * CR80_HEIGHT / CR80_WIDTH).toFixed(2)}mm; /* Oran koru */
+    }
+    
+    ${this.previewPrintWithTemplate ? `
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    ` : ''}
+  </style>
+</head>
+<body>`;
+
+  for (const data of selectedData) {
+    if (!data.TemplateData) continue;
+    
+    // Ön yüz
+    if (data.TemplateData.FRONT) {
+      html += `<div class="print-page">
+        <div class="card-container">
+          <div class="card-content">
+            ${await this.buildCardSideHtml(data, 'FRONT', apiUrl, SCALE_FACTOR)}
+          </div>
+        </div>
+      </div>`;
+    }
+    
+    // Arka yüz
+    if (data.TemplateData.BACK) {
+      html += `<div class="print-page">
+        <div class="card-container">
+          <div class="card-content">
+            ${await this.buildCardSideHtml(data, 'BACK', apiUrl, SCALE_FACTOR)}
+          </div>
+        </div>
+      </div>`;
+    }
+  }
+  
+  html += '</body></html>';
+  console.log('Print HTML:', html.substring(0, 2000) + '...');
+  return html;
+}
+
+  /** Tek yüz (FRONT veya BACK) HTML üretir; scaleFactor ile ölçekleme desteği */
+  private async buildCardSideHtml(
+    data: any, 
+    side: 'FRONT' | 'BACK', 
+    apiUrl: string,
+    scaleFactor: number = 1
+  ): Promise<string> {
     const face = data.TemplateData[side];
     if (!face) return '';
+    
+    // Orijinal template boyutlarını koru (ölçekleme CSS'te yapılacak)
+    const originalWidth = face.width ? parseFloat(face.width) : 171;
+    const originalHeight = face.height ? parseFloat(face.height) : 108;
+    
     const bgStyle = face.background && face.background !== 'transparent'
       ? `background: url('${face.background}'); background-repeat: no-repeat; background-size: cover;`
       : 'background: white;';
-    let html = `<div class="preview-card-${side.toLowerCase()}" data-type="${side}" style="position: relative; width: ${face.width}; height: ${face.height}; ${bgStyle} border: none; border-radius: 8px; box-sizing: border-box; overflow: hidden;">`;
+    
+    // Kart container - orijinal template boyutunda
+    let html = `<div class="preview-card-${side.toLowerCase()}" 
+      data-type="${side}" 
+      style="position: relative; 
+            width: ${originalWidth}mm; 
+            height: ${originalHeight}mm; 
+            ${bgStyle} 
+            border: none; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            overflow: hidden;">`;
+    
     const items = face.items ? (Array.isArray(face.items) ? face.items : Object.values(face.items)) : [];
+    
     for (const item of items) {
+      // Koordinatları ölçekleme (opsiyonel - eğer template zaten doğruysa)
+      const top = (item.top || 0);
+      const left = (item.left || 0);
+      const width = item.lwidth || item.width || '50';
+      const height = item.height || '20';
+      const fontSize = item.fontsize || 12;
+      
       if (item.type === 'fix') {
         const fixText = this.textTransform(item.field || '', item.textTransform);
-        html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fixText}</label>`;
+        html += `<label style="position: absolute; 
+          color: ${item.color || '#000'}; 
+          font-size: ${fontSize}mm; 
+          font-family: ${item.fontFamily || 'Arial'}; 
+          font-weight: ${item.fontWeight || '400'}; 
+          line-height: ${fontSize + 2}mm; 
+          top: ${top + 1}mm; 
+          left: ${left + 1}mm; 
+          width: ${width}mm; 
+          text-align: ${item.textAlign || 'left'}; 
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis;">${fixText}</label>`;
+          
       } else if (item.type === 'label' && item.field) {
         const field = item.field.split('-')[0];
         let value = '';
@@ -724,39 +861,113 @@ export class CardWriteListComponent implements OnInit {
         } else {
           value = this.getFieldValue(data.CardData, field);
         }
-        html += `<label style="position: absolute; color: ${item.color || '#000'}; font-size: ${item.fontsize || 12}mm; font-family: ${item.fontFamily || 'Arial'}; font-weight: ${item.fontWeight || '400'}; line-height: ${(item.fontsize || 12) + 2}mm; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.lwidth || '50'}mm; text-align: ${item.textAlign || 'left'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
+        
+        html += `<label style="position: absolute; 
+          color: ${item.color || '#000'}; 
+          font-size: ${fontSize}mm; 
+          font-family: ${item.fontFamily || 'Arial'}; 
+          font-weight: ${item.fontWeight || '400'}; 
+          line-height: ${fontSize + 2}mm; 
+          top: ${top + 1}mm; 
+          left: ${left + 1}mm; 
+          width: ${width}mm; 
+          text-align: ${item.textAlign || 'left'}; 
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis;">${this.textTransform(value, item.textTransform)}</label>`;
+          
       } else if (item.type === 'image' && item.field) {
         const field = item.field.split('-')[0];
         let pictureId = '';
+        
         if (data.CardData && data.CardData[field] !== undefined && data.CardData[field] !== null) {
           const v = data.CardData[field];
           pictureId = typeof v === 'object' ? '' : String(v);
-        } else if (data.CardData && data.CardData.PictureID !== undefined && data.CardData.PictureID !== null) {
+        } else if (data.CardData?.PictureID !== undefined && data.CardData.PictureID !== null) {
           pictureId = String(data.CardData.PictureID);
         } else {
           pictureId = this.getFieldValue(data.CardData, 'PictureID') || this.getFieldValue(data.CardData, 'PictureId');
         }
+        
         const avatarUrl = '/assets/images/profile/avaatar.png';
         const imageUrl = pictureId ? `${apiUrl}/images/${pictureId}?v=${Date.now()}` : avatarUrl;
-        html += `<img src="${imageUrl}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" onerror="this.src='${avatarUrl}'" />`;
+        const wMm = (typeof width === 'number' ? width : parseFloat(String(width))) || 50;
+        const hMm = (typeof height === 'number' ? height : parseFloat(String(height))) || 20;
+        
+        html += `<img src="${imageUrl}" 
+          style="position: absolute; 
+                top: ${top + 1}mm; 
+                left: ${left + 1}mm; 
+                width: ${wMm}mm; 
+                height: ${hMm}mm; 
+                max-width: ${wMm}mm; 
+                max-height: ${hMm}mm; 
+                display: block; 
+                border-radius: ${item.borderRadius || '0'}; 
+                object-fit: ${item.objectFit || 'cover'}; 
+                object-position: center;" 
+          onerror="this.src='${avatarUrl}'" />`;
+          
       } else if (item.type === 'imagefix' && item.src) {
-        html += `<img src="${item.src}" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border-radius: ${item.borderRadius || '0'}; object-fit: ${item.objectFit || 'cover'};" />`;
+        const wMm = (typeof width === 'number' ? width : parseFloat(String(width))) || 50;
+        const hMm = (typeof height === 'number' ? height : parseFloat(String(height))) || 20;
+        html += `<img src="${item.src}" 
+          style="position: absolute; 
+                top: ${top + 1}mm; 
+                left: ${left + 1}mm; 
+                width: ${wMm}mm; 
+                height: ${hMm}mm; 
+                max-width: ${wMm}mm; 
+                max-height: ${hMm}mm; 
+                display: block; 
+                border-radius: ${item.borderRadius || '0'}; 
+                object-fit: ${item.objectFit || 'cover'}; 
+                object-position: center;" />`;
+                
       } else if (item.type === 'barcode' && item.field) {
         const field = item.field.split('-')[0];
         const value = this.getFieldValue(data.CardData, field) || field;
         const textToEncode = (value || ' ').toString().trim() || ' ';
+        const wMm = (typeof width === 'number' ? width : parseFloat(String(width))) || 50;
+        const hMm = (typeof height === 'number' ? height : parseFloat(String(height))) || 20;
+        
         try {
-          const qrDataUrl = await QRCode.toDataURL(textToEncode, { margin: 1, width: 200, errorCorrectionLevel: 'M' });
-          html += `<img src="${qrDataUrl}" alt="QR" style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; object-fit: contain;" />`;
+          const qrDataUrl = await QRCode.toDataURL(textToEncode, { 
+            margin: 1, 
+            width: 200, 
+            errorCorrectionLevel: 'M' 
+          });
+          html += `<img src="${qrDataUrl}" alt="QR" 
+            style="position: absolute; 
+                  top: ${top + 1}mm; 
+                  left: ${left + 1}mm; 
+                  width: ${wMm}mm; 
+                  height: ${hMm}mm; 
+                  max-width: ${wMm}mm; 
+                  max-height: ${hMm}mm; 
+                  display: block; 
+                  object-fit: contain; 
+                  object-position: center;" />`;
         } catch {
-          html += `<div style="position: absolute; top: ${(item.top || 0) + 1}mm; left: ${(item.left || 0) + 1}mm; width: ${item.width || '20mm'}; height: ${item.height || '20mm'}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; background: white;">QR: ${textToEncode}</div>`;
+          html += `<div style="position: absolute; 
+            top: ${top + 1}mm; 
+            left: ${left + 1}mm; 
+            width: ${width}mm; 
+            height: ${height}mm; 
+            border: 1px dashed #ccc; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 10px; 
+            color: #999; 
+            background: white;">QR: ${textToEncode}</div>`;
         }
       }
     }
+    
     html += '</div>';
     return html;
   }
-
   /** Tek kart satırı için önizleme HTML string (checkbox solunda göstermek için) */
   private async buildSingleCardPreviewHtmlString(data: any): Promise<string> {
     if (!data?.TemplateData) return '';
