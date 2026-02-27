@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
     <div class="global-loading-overlay" *ngIf="isLoading">
       <div class="global-loading-spinner">
         <div class="spinner"></div>
+        <p class="global-loading-message" *ngIf="loadingMessage">{{ loadingMessage }}</p>
       </div>
     </div>
   `,
@@ -31,8 +32,10 @@ import { Subscription } from 'rxjs';
 
     .global-loading-spinner {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1rem;
     }
 
     .global-loading-spinner .spinner {
@@ -42,6 +45,14 @@ import { Subscription } from 'rxjs';
       border-top-color: var(--ui-primary);
       border-radius: 50%;
       animation: spinner-rotate 0.8s linear infinite;
+    }
+
+    .global-loading-message {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--ui-gray-700, #374151);
+      text-align: center;
+      max-width: 320px;
     }
 
     @keyframes spinner-rotate {
@@ -54,7 +65,9 @@ import { Subscription } from 'rxjs';
 })
 export class LoadingSpinnerComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
+  loadingMessage: string | null = null;
   private subscription?: Subscription;
+  private messageSubscription?: Subscription;
 
   constructor(
     public loadingService: LoadingService,
@@ -67,11 +80,14 @@ export class LoadingSpinnerComponent implements OnInit, OnDestroy {
       this.isLoading = isLoading;
       this.cdr.markForCheck();
     });
+    this.messageSubscription = this.loadingService.loadingMessage$.subscribe(msg => {
+      this.loadingMessage = msg;
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+    this.subscription?.unsubscribe();
+    this.messageSubscription?.unsubscribe();
   }
 }

@@ -93,6 +93,17 @@ export const tableColumns: TableColumn[] = [
     resizable: true
   },
   { 
+    field: 'MinDay', 
+    label: 'Minimum Gün', 
+    text: 'Minimum Gün',
+    type: 'int' as ColumnType, 
+    sortable: true, 
+    width: '120px', 
+    size: '120px',
+    searchable: 'int',
+    resizable: true
+  },
+  { 
     field: 'Status', 
     label: 'Durum', 
     text: 'Durum',

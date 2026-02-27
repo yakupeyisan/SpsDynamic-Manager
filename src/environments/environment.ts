@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'nurol',
+  setting: 'development', // 'ordu' | 'tskb' | 'eureko' | 'nurol' | 'development'
   
   
   // Authentication ayarları
@@ -72,7 +72,7 @@ export const environment = {
       newAccountEnabled: false,
     },
     development: {
-      systemType: 'ROSSLARE',
+      systemType: 'GENERAL',
       apiUrl: 'http://localhost',
       wsUrl: '',
       landingPage: 'login',

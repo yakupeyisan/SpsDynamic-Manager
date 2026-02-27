@@ -5,7 +5,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Observable, of, Subscription } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
+import { tap, catchError, map, finalize } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { DataService } from '../../services/data.service';
 import { MaterialModule } from '../../material.module';
@@ -23,6 +23,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import { ButtonComponent } from '../button/button.component';
 import { ToastrService } from 'ngx-toastr';
+import { LoadingService } from '../../services/loading.service';
 import { environment } from '../../../environments/environment';
 import { buildSerializableLoadConfig } from '../../utils/report-load-config';
 import { formatFilterDateValueForApi } from '../../utils/date-format-api.util';
@@ -528,7 +529,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     private http: HttpClient,
     private dataService: DataService,
     public translate: TranslateService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private loadingService: LoadingService
   ) {
     this.currentLimit = this.limit;
     
@@ -3157,11 +3159,16 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       Grid: cfg?.grid || this.id || 'default'
     };
 
+    // Show loading message for export (global loader is shown by HTTP interceptor)
+    this.loadingService.setMessage('İşleminiz devam ediyor. Lütfen işlem tamamlanana kadar bekleyiniz');
+
     // Send to Exports endpoint with blob response type
     this.http.post(`${apiUrl}/api/Exports`, exportPayload, { 
       responseType: 'blob',
       observe: 'response'
-    }).subscribe({
+    }).pipe(
+      finalize(() => this.loadingService.setMessage(null))
+    ).subscribe({
       next: (response: any) => {
         // Get file extension based on report type
         const fileExtension = this.exportReportType === 'pdf' ? 'pdf' : 
