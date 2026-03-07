@@ -1,5 +1,78 @@
 // SubscriptionPackages table columns configuration
 import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
+
+// Haftanın günleri: 0=Pazar, 1=Pazartesi, 2=Salı, 3=Çarşamba, 4=Perşembe, 5=Cuma, 6=Cumartesi
+const DAY_NAMES: Record<number, string> = {
+  0: 'Pazar',
+  1: 'Pazartesi',
+  2: 'Salı',
+  3: 'Çarşamba',
+  4: 'Perşembe',
+  5: 'Cuma',
+  6: 'Cumartesi'
+};
+
+function renderDayOfWeek(record: any, _index: number, column: TableColumn): string {
+  const fieldName = column?.field || 'DayOfWeek';
+  const raw = record?.[fieldName] ?? record?.DayOfWeek ?? record?.dayOfWeek;
+  if (raw == null || raw === '') return '';
+  let arr: any[];
+  if (Array.isArray(raw)) {
+    arr = raw;
+  } else if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (s.startsWith('[')) {
+      try {
+        arr = JSON.parse(s) as any[];
+      } catch {
+        arr = s ? s.split(',').map((x: string) => x.trim()) : [];
+      }
+    } else {
+      arr = s ? s.split(',').map((x: string) => x.trim()) : [s];
+    }
+  } else {
+    arr = [raw];
+  }
+  const toDayNum = (n: number): number =>
+    (n === 7 ? 0 : n);
+  const names = arr
+    .map((v: any) => (typeof v === 'string' ? parseInt(v, 10) : Number(v)))
+    .filter((n: number) => !Number.isNaN(n) && n >= 0 && n <= 7)
+    .map((n: number) => toDayNum(n))
+    .filter((n: number) => n >= 0 && n <= 6)
+    .sort((a, b) => a - b)
+    .map((n: number) => DAY_NAMES[n] ?? '')
+    .filter(Boolean);
+  return names.join(', ') || '';
+}
+
+// Durum: 0 = Pasif, 1 = Aktif
+function renderStatus(record: any, _index: number, column: TableColumn): string {
+  const v = record?.[column?.field ?? 'Status'];
+  if (v == null || v === '') return '';
+  const n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
+  return n === 1 ? 'Aktif' : 'Pasif';
+}
+
+// Başlangıç Kuralı: 0 = Ön Tanımlı, 1 = Esnek
+function renderStartRule(record: any, _index: number, column: TableColumn): string {
+  const v = record?.[column?.field ?? 'StartRule'];
+  if (v == null || v === '') return '';
+  const n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
+  return n === 1 ? 'Esnek' : 'Ön Tanımlı';
+}
+
+// Başlangıç Günü: sayı -> gün adı (form ile aynı: 0 Pazar, 1 Pazartesi, ... 6 Cumartesi)
+function renderStartDay(record: any, _index: number, column: TableColumn): string {
+  const v = record?.[column?.field ?? 'StartDay'];
+  if (v == null || v === '') return '';
+  const n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
+  if (Number.isNaN(n) || n < 0 || n > 6) return String(v);
+  return DAY_NAMES[n] ?? '';
+}
 
 export const tableColumns: TableColumn[] = [
   { 
@@ -24,18 +97,35 @@ export const tableColumns: TableColumn[] = [
     searchable: 'text',
     resizable: true
   },
-  { 
-    field: 'ApplicationName', 
-    label: 'Uygulama', 
+  {
+    field: 'ApplicationID',
+    label: 'Uygulama',
     text: 'Uygulama',
-    type: 'text' as ColumnType, 
-    sortable: false, 
-    width: '200px', 
+    type: 'enum' as ColumnType,
+    sortable: false,
+    width: '200px',
     size: '200px',
-    searchable: false,
+    searchable: 'enum' as ColumnType,
     resizable: true,
-    render: (record: any) => record.Application?.Name || record.Application?.ApplicationName || '',
-    joinTable: 'Application'
+    render: (record: any) =>
+      record?.CafeteriaApplication?.ApplicationName ??
+      record?.Application?.Name ??
+      record?.Application?.ApplicationName ??
+      '',
+    joinTable: 'Application',
+    load: {
+      url: `${apiUrl}/api/CafeteriaApplications`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        if (!data?.records || !Array.isArray(data.records)) return [];
+        return data.records.map((item: any) => ({
+          label: item.Name ?? item.ApplicationName ?? `ID: ${item.Id ?? item.CafeteriaApplicationID}`,
+          value: item.Id ?? item.CafeteriaApplicationID ?? item.ApplicationID
+        }));
+      }
+    }
   },
   { 
     field: 'Name', 
@@ -57,7 +147,8 @@ export const tableColumns: TableColumn[] = [
     width: '150px', 
     size: '150px',
     searchable: 'text',
-    resizable: true
+    resizable: true,
+    render: renderDayOfWeek
   },
   { 
     field: 'HowManyDays', 
@@ -112,7 +203,8 @@ export const tableColumns: TableColumn[] = [
     width: '120px', 
     size: '120px',
     searchable: 'text',
-    resizable: true
+    resizable: true,
+    render: renderStatus
   },
   { 
     field: 'StartRule', 
@@ -123,7 +215,8 @@ export const tableColumns: TableColumn[] = [
     width: '150px', 
     size: '150px',
     searchable: 'text',
-    resizable: true
+    resizable: true,
+    render: renderStartRule
   },
   { 
     field: 'StartDay', 
@@ -134,12 +227,13 @@ export const tableColumns: TableColumn[] = [
     width: '130px', 
     size: '130px',
     searchable: 'int',
-    resizable: true
+    resizable: true,
+    render: renderStartDay
   },
   { 
     field: 'MinOrderDay', 
-    label: 'Min Sipariş Günü', 
-    text: 'Min Sipariş Günü',
+    label: 'En Son Sipariş Günü', 
+    text: 'En Son Sipariş Günü',
     type: 'int' as ColumnType, 
     sortable: true, 
     width: '140px', 

@@ -92,8 +92,8 @@ export const formFields: TableColumn[] = [
     type: 'list' as ColumnType,
     fullWidth: false,
     options: [
-      { label: 'KAPALI', value: 0 },
-      { label: 'AÇIK', value: 1 }
+      { label: 'Pasif', value: 0 },
+      { label: 'Aktif', value: 1 }
     ]
   },
   {
@@ -103,8 +103,8 @@ export const formFields: TableColumn[] = [
     type: 'radio' as ColumnType,
     fullWidth: false,
     options: [
-      { label: 'Haftanın başlangıç günü itibariyle', value: 0 },
-      { label: 'Kullanıcı tanımlı (Esnek)', value: 1 }
+      { label: 'Ön Tanımlı', value: 0 },
+      { label: 'Esnek', value: 1 }
     ]
   },
   {
@@ -184,12 +184,64 @@ export const formLoadRequest = (recid: any) => ({
 
 // Form data mapper - maps API response to form data
 export const formDataMapper = (apiRecord: any) => {
-  const formData: any = { ...apiRecord };
-  
+  // API bazen { record: { Id, ApplicationID, ... } } döndürüyor; asıl veriyi kullan
+  const record = apiRecord?.record && typeof apiRecord.record === 'object'
+    ? apiRecord.record
+    : apiRecord;
+  const formData: any = { ...record };
+
   // Map nested Application object to ApplicationID field
-  if (apiRecord.Application && (apiRecord.Application.Id || apiRecord.Application.ApplicationID)) {
-    formData['ApplicationID'] = apiRecord.Application.Id || apiRecord.Application.ApplicationID;
+  const app = record?.Application ?? apiRecord?.Application;
+  if (app && (app.Id != null || app.ApplicationID != null)) {
+    formData['ApplicationID'] = app.Id ?? app.ApplicationID;
   }
-  
+
+  // DayOfWeek: API'den gelen dizi (string veya number) form select için sayı dizisine çevir (0-6; 7 -> 0 Pazar)
+  const rawDayOfWeek =
+    record?.DayOfWeek ??
+    record?.dayOfWeek ??
+    apiRecord?.DayOfWeek ??
+    apiRecord?.dayOfWeek;
+  if (rawDayOfWeek != null && rawDayOfWeek !== '') {
+    let arr: any[];
+    if (Array.isArray(rawDayOfWeek)) {
+      arr = rawDayOfWeek;
+    } else if (typeof rawDayOfWeek === 'string') {
+      const s = rawDayOfWeek.trim();
+      if (s.startsWith('[')) {
+        try {
+          arr = JSON.parse(s) as any[];
+        } catch {
+          arr = s ? s.split(',').map((x: string) => x.trim()) : [];
+        }
+      } else {
+        arr = s ? s.split(',').map((x: string) => x.trim()) : [];
+      }
+    } else {
+      arr = [rawDayOfWeek];
+    }
+    formData['DayOfWeek'] = arr
+      .map((v: any) => (typeof v === 'string' ? parseInt(v, 10) : Number(v)))
+      .filter((n: number) => !Number.isNaN(n) && n >= 0 && n <= 7)
+      .map((n: number) => (n === 7 ? 0 : n));
+  } else {
+    formData['DayOfWeek'] = [];
+  }
+
+  // MinDay, Status, StartRule, StartDay: sayıya çevir; list/radio için yoksa 0 (seçim boş kalmasın)
+  const num = (v: any): number | null => {
+    if (v == null || v === '') return null;
+    const n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
+    return Number.isNaN(n) ? null : n;
+  };
+  const minDayVal = num(formData['MinDay'] ?? record?.MinDay ?? record?.minDay);
+  const statusVal = num(formData['Status'] ?? record?.Status ?? record?.status);
+  const startRuleVal = num(formData['StartRule'] ?? record?.StartRule ?? record?.startRule);
+  const startDayVal = num(formData['StartDay'] ?? record?.StartDay ?? record?.startDay);
+  if (minDayVal != null) formData['MinDay'] = minDayVal;
+  formData['Status'] = statusVal ?? 0;
+  formData['StartRule'] = startRuleVal ?? 0;
+  formData['StartDay'] = startDayVal ?? 0;
+
   return formData;
 };

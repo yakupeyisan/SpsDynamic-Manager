@@ -3702,6 +3702,27 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       }
     });
   }
+
+  /**
+   * Re-apply enum multi-select form fields with a new array reference so ui-select
+   * receives writeValue again and displays the selected options (fixes bound value not showing).
+   */
+  private patchEnumArrayFormFields(): void {
+    const columns = this.getEditableColumns();
+    let patched = false;
+    for (const col of columns) {
+      if (col.type === 'enum' && col.field) {
+        const v = this.formData[col.field];
+        if (Array.isArray(v) && v.length > 0) {
+          this.formData[col.field] = [...v];
+          patched = true;
+        }
+      }
+    }
+    if (patched) {
+      this.cdr.detectChanges();
+    }
+  }
   
   /**
    * Initialize form data with empty values for all editable columns
@@ -3828,7 +3849,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
             }
           } else {
             // Fallback to record data if API doesn't return record or has error
-            this.formData = { ...record };
+            this.formData = this.formDataMapper ? this.formDataMapper(record) : { ...record };
           }
 
           // Ensure record id fields are present even if API doesn't return them
@@ -3867,7 +3888,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
               });
             }
           }, 150);
-          
+
+          // Re-apply enum multi-select array fields with new reference so ui-select receives writeValue (fixes bound value not showing)
+          setTimeout(() => this.patchEnumArrayFormFields(), 200);
+
           this.cdr.markForCheck();
           
           // Set image preview if imageField exists
@@ -3894,8 +3918,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
           this.isLoading = false;
           console.error('Error loading form data:', error);
           
-          // Fallback to record data on error
-          this.formData = { ...record };
+          // Fallback to record data on error (apply formDataMapper so enum/array fields are normalized)
+          this.formData = this.formDataMapper ? this.formDataMapper(record) : { ...record };
 
           // Ensure record id fields are present even on fallback
           const idField = this.recid || 'recid';

@@ -451,8 +451,11 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
       ? (Array.isArray(value) ? value : (value != null ? [value] : []))
       : (value ?? null);
     
-    // Check if value actually changed
-    if (this.valuesAreEqual(this.value, newValue)) {
+    // Always update when multiple select goes from empty to non-empty (fixes form load not showing selection)
+    const emptyToFilled = this.multiple && Array.isArray(newValue) && newValue.length > 0 &&
+      (!Array.isArray(this.value) || this.value.length === 0);
+    const valueChanged = !this.valuesAreEqual(this.value, newValue);
+    if (!emptyToFilled && !valueChanged) {
       return; // Value hasn't changed, no need to update
     }
     
