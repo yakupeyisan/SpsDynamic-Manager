@@ -301,6 +301,10 @@ export const navItems: NavItem[] = [
             displayName: 'Departman Bazlı Yükleme Raporu',
             route: '/DepartmentBasedPaymentReports',
           },
+          {
+            displayName: 'Grup Bazlı Kafeterya Kullanım Sayıları',
+            route: '/GroupBasedCafeteriaUsedCountReports',
+          },
         ],
       },
       {
@@ -312,15 +316,11 @@ export const navItems: NavItem[] = [
           },
           {
             displayName: 'Bölge Bazlı Yemek Sayıları',
-            route: '/SubscriptionEventBasedZoneReports',
+            route: '/ZoneBasedSubscriptionEventReports',
           },
           {
             displayName: 'Paket Bazlı Satış Raporu',
-            route: '/SubscriptionEventBasedPackageSalesReports',
-          },
-          {
-            displayName: 'Grup Bazlı Turnike Geçiş Raporu',
-            route: '/CafeteriaEventDailyNumberOfMealsByGroups',
+            route: '/PackageBasedSubscriptionSalesReports',
           },
         ],
       },

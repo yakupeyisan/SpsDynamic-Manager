@@ -352,6 +352,66 @@ export const tableColumns: TableColumn[] = [
       return String(eventTime || '');
     }
   },
+  {
+    field: 'Day',
+    label: 'Gün',
+    text: 'Gün',
+    type: 'date' as ColumnType,
+    sortable: true,
+    width: '110px',
+    size: '110px',
+    min: 20,
+    searchable: 'date' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const raw = record['Day'] ?? record['EventTime'];
+      if (raw == null) return '';
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) return String(raw ?? '');
+      return date.toLocaleDateString('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+  },
+  {
+    field: 'Time',
+    label: 'Saat',
+    text: 'Saat',
+    type: 'time' as ColumnType,
+    sortable: true,
+    width: '90px',
+    size: '90px',
+    min: 20,
+    searchable: 'time' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const raw = record['Time'] ?? record['EventTime'];
+      if (raw == null) return '';
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) return String(raw ?? '');
+      return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+  },
+  {
+    field: 'DayName',
+    label: 'Gün Adı',
+    text: 'Gün Adı',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '100px',
+    size: '100px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const raw = record['DayName'];
+      if (raw != null && raw !== '') return String(raw);
+      const eventTime = record['EventTime'];
+      if (eventTime == null) return '';
+      const date = new Date(eventTime);
+      if (isNaN(date.getTime())) return '';
+      const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+      return days[date.getDay()] ?? '';
+    }
+  },
   { 
     field: 'RecordTime', 
     label: 'Kayıt Zamanı', 

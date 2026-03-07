@@ -452,6 +452,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   isLoading: boolean = false; // Loading state for data source
   internalData: TableRow[] = []; // Internal data storage (from dataSource)
   internalTotal: number = 0; // Internal total count (from dataSource)
+  /** Summary rows from API response (GridResponse.summary), rendered at bottom of grid with distinct style */
+  internalSummary: TableRow[] = [];
   private dataSourceSubscription?: Subscription; // Subscription for dataSource
   private formLoadSubscription?: Subscription; // Subscription for form load
   private imageUploadSubscription?: Subscription; // Subscription for image upload
@@ -760,10 +762,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     if (response.status === 'success') {
       this.internalData = response.records || [];
       this.internalTotal = response.total !== undefined ? response.total : this.internalData.length;
-      
-      // Handle summary if provided
-      // (Summary can be handled separately if needed)
-      
+      const rawSummary = response.summary || [];
+      this.internalSummary = rawSummary.map((s: TableRow, i: number) => ({
+        ...s,
+        _recid: (s as any)._recid ?? `summary_${i}`,
+        _isSummaryRow: true,
+      }));
+
       if (this.scrollToTopOnReload) {
         this.scrollToTop();
       }
@@ -784,8 +789,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     } else {
       this.internalData = [];
       this.internalTotal = 0;
+      this.internalSummary = [];
       this.cdr.detectChanges();
-      
+
       if (this.showLoadingOnReload) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
@@ -797,6 +803,27 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         this.cdr.markForCheck();
       }
     }
+  }
+
+  /** Tablo gövdesinde gösterilecek satırlar (sadece veri; özet scroll dışında sabit panelde) */
+  get tableBodyRows(): TableRow[] {
+    return this.filteredData;
+  }
+
+  /** Özet paneli görünsün mü (grid altında sabit, scroll dışında) */
+  showSummaryPanel = true;
+
+  toggleSummaryPanel(): void {
+    this.showSummaryPanel = !this.showSummaryPanel;
+    this.cdr.markForCheck();
+  }
+
+  /** Özet satırındaki hücre değeri (summary panel tablosu için) */
+  getSummaryCellValue(row: TableRow, column: TableColumn, rowIndex: number): any {
+    const val = column.render && typeof column.render === 'function'
+      ? column.render(row, rowIndex, column)
+      : (row[column.field!] ?? (column.searchField && row[column.searchField]));
+    return val != null ? val : '—';
   }
 
   /**
@@ -1083,8 +1110,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       }
     }
     
-    // Get searchable columns based on search type (default behavior)
-    const searchableColumns = this.displayColumns.filter(col => {
+    // Get searchable columns (include hidden so filter-only columns like Day are searchable)
+    const allCols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+    const searchableColumns = allCols.filter(col => {
       // Check if column is searchable
       // searchable can: true, false, undefined, or a ColumnType string (e.g., "text", "int", "enum")
       // Only false means not searchable, everything else means searchable
@@ -3351,9 +3379,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   }
 
   get columnOptions(): TableColumn[] {
-    // Use displayColumns to match grid visible columns with search fields
-    // Only return searchable columns that are visible in the grid
-    return this.displayColumns.filter(col => col.searchable !== false);
+    // Return all searchable columns (including hidden) so filter/aramada list includes columns like Day that are hidden in grid but used for filtering
+    const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
+    return cols.filter(col => col.searchable !== false);
   }
 
   // Toolbar methods (w2ui style)
@@ -6191,9 +6219,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
    * Get all searchable columns for searchable columns panel
    */
   getAllSearchableColumnsForPanel(): TableColumn[] {
-    // Get all columns that are searchable (excluding hidden ones)
+    // Get all searchable columns (including hidden) so "aramada yer alacak kolonlar" includes filter-only columns like Day
     const cols = this.internalColumns.length > 0 ? this.internalColumns : this.columns;
-    return cols.filter(col => !col.hidden && col.searchable !== false);
+    return cols.filter(col => col.searchable !== false);
   }
 
   /**

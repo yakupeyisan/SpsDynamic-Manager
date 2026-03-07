@@ -17,6 +17,7 @@ export interface SerializableLoadConfig {
  * API path'ine göre id/text alan eşlemesi (tüm sayfalar için ortak)
  */
 const API_FIELD_MAP: Array<{ pattern: RegExp | string; idField: string; textField: string }> = [
+  { pattern: /\/api\/AccessZones/i, idField: 'Id', textField: 'ZoneName' },
   { pattern: /\/api\/Departments/i, idField: 'DepartmentID', textField: 'DepartmentName' },
   { pattern: /\/api\/PdksCompanys/i, idField: 'PdksCompanyID', textField: 'PdksCompanyName' },
   { pattern: /\/api\/PdksStaffs/i, idField: 'ID', textField: 'Name' },

@@ -478,6 +478,50 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'SubscriptionEvents',
+        loadComponent: () =>
+          import('./pages/subscription-events/subscription-events.component').then(
+            (m) => m.SubscriptionEventsComponent
+          ),
+        data: {
+          title: 'Abone Kayıtları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'ZoneBasedSubscriptionEventReports',
+        loadComponent: () =>
+          import('./pages/zone-based-subscription-event-reports/zone-based-subscription-event-reports.component').then(
+            (m) => m.ZoneBasedSubscriptionEventReportsComponent
+          ),
+        data: {
+          title: 'Bölge Bazlı Yemek Sayıları',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'PackageBasedSubscriptionSalesReports',
+        loadComponent: () =>
+          import('./pages/package-based-subscription-sales-reports/package-based-subscription-sales-reports.component').then(
+            (m) => m.PackageBasedSubscriptionSalesReportsComponent
+          ),
+        data: {
+          title: 'Paket Bazlı Satış Raporu',
+          breadcrumb: false,
+        },
+      },
+      {
+        path: 'GroupBasedCafeteriaUsedCountReports',
+        loadComponent: () =>
+          import('./pages/group-based-cafeteria-used-count-reports/group-based-cafeteria-used-count-reports.component').then(
+            (m) => m.GroupBasedCafeteriaUsedCountReportsComponent
+          ),
+        data: {
+          title: 'Grup Bazlı Kafeterya Kullanım Sayıları',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'CafeteriaSummary',
         loadComponent: () =>
           import('./pages/cafeteria-summary/cafeteria-summary.component').then(

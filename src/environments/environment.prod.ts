@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'nurol',
+  setting: 'gatement',
   
   
   // Authentication ayarları
@@ -74,6 +74,21 @@ export const environment = {
       landingPage: 'login',
       logoUrl: '/assets/images/logos/logo-nurol.png',
       logoUrlLogin: '/assets/images/logos/logo-nurol.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
+      loginImage: '',
+      newAccountEnabled: false,
+    },
+    gatement: {
+      systemType: 'GENERAL',
+      apiUrl: 'http://37.247.99.93:8212',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/gatement-logo.png',
+      logoUrlLogin: '/assets/images/logos/gatement-logo.png',
       googleLoginEnabled: false,
       cloudflareEnabled: false,
       forgotPasswordEnabled: true,
@@ -220,6 +235,40 @@ export const environment = {
       level1: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
       level2: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
       level3: '0px 2px 4px -1px rgba(0, 71, 145, 0.2)',
+      level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
+    },
+    gatement: {
+      // Primary renk (Ana renk) - Logo siyah alan
+      primary: '#000000',
+      primaryFixedDim: 'rgba(0, 0, 0, 0.15)',
+      
+      // Secondary renk (İkincil renk) - Logo açık nane yeşili (EDU kutusu)
+      secondary: '#80e8af',
+      secondaryFixedDim: 'rgba(128, 232, 175, 0.15)',
+      
+      // Error renk (Hata renkleri)
+      error: '#D32F2F',
+      errorFixedDim: 'rgba(211, 47, 47, 0.15)',
+      
+      // Warning renk (Uyarı renkleri)
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      
+      // Success renk (Başarı renkleri) - Logo yeşili ile uyumlu
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      
+      // Tertiary renk (Üçüncül renk) - Açık nane tonu
+      tertiary: '#e8f8ef',
+      tertiaryFixedDim: 'rgba(232, 248, 239, 0.15)',
+      
+      // Outline variant (Border renkleri)
+      outlineVariant: '#c8e6d4',
+      
+      // Shadows (Gölgeler) - Siyah tonları
+      level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
     },
   }

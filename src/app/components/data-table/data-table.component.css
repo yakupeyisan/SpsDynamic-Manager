@@ -1387,6 +1387,90 @@
   flex: 0 0 auto;
 }
 
+/* Özet paneli: grid içinde absolute, yapıyı bozmaz; footer üstünde sabit */
+.ui-table-summary-panel {
+  position: absolute;
+  bottom: 32px; /* footer yüksekliği */
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--ui-border-color);
+  background-color: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  min-height: 0px;
+}
+
+/* Özet varken (gizli/göster) table-wrapper alt boşluk; grid yapısı bozulmaz */
+.ui-table-wrapper.ui-table-wrapper-has-summary {
+  padding-bottom: 50px; /* sadece buton çubuğu açıkken */
+}
+.ui-table-wrapper.ui-table-wrapper-summary-visible {
+  padding-bottom: 260px; /* özet tablosu açıkken */
+}
+
+.ui-table-summary-toggle {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  right: 20px;
+  bottom: 45px;
+  background: var(--ui-primary, #5d87ff);
+  border: 1px solid var(--ui-primary, #5d87ff);
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  gap: 6px;
+}
+
+.ui-table-summary-toggle-icon {
+  flex-shrink: 0;
+  opacity: 0.95;
+  stroke: currentColor;
+}
+
+.ui-table-summary-toggle:hover {
+  background: var(--ui-primary-dark, #4a6cf7);
+  border-color: var(--ui-primary-dark, #4a6cf7);
+  color: #fff;
+}
+
+.ui-table-summary-content {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.ui-table-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ui-table-summary-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  vertical-align: middle;
+}
+
+.ui-table-summary-row {
+  background-color: rgba(0, 0, 0, 0.04);
+  font-weight: 500;
+}
+
+.ui-table-summary-select-cell {
+  width: 40px;
+  min-width: 40px;
+  padding: 4px !important;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
 /* Load More Row (w2ui style) */
 .ui-table-load-more {
   display: table-row;

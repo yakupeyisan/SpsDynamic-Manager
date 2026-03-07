@@ -93,21 +93,13 @@ export class FilterPanelComponent implements OnInit {
       { label: this.translate.instant('filter.any'), value: 'OR' }
     ];
     
+    // Parent (data-table) passes columnOptions = all searchable columns including hidden (e.g. Day for filter-only)
     this.fieldOptions = this.columns
       .filter(col => {
-        // Filter out hidden columns (same logic as displayColumns in data-table)
-        if (col.hidden === true) {
-          return false;
-        }
-        // Only show searchable columns
-        if (col.searchable === false) {
-          return false;
-        }
-        // If searchableColumns is set and not empty, filter by it
+        if (col.searchable === false) return false;
         if (this.searchableColumns && this.searchableColumns.length > 0) {
           return this.searchableColumns.includes(col.field);
         }
-        // If searchableColumns is empty, show all searchable columns
         return true;
       })
       .map(col => {
@@ -128,11 +120,8 @@ export class FilterPanelComponent implements OnInit {
         };
       });
     
-    // Set default selected field for add (exclude hidden columns)
-    const searchableColumns = this.columns.filter(col => {
-      if (col.hidden === true) return false;
-      return col.searchable !== false;
-    });
+    // Set default selected field for add (include all searchable columns, e.g. hidden filter-only columns)
+    const searchableColumns = this.columns.filter(col => col.searchable !== false);
     this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
 
     if (this.filter) {
@@ -315,11 +304,6 @@ export class FilterPanelComponent implements OnInit {
         const column = this.getColumnForField(field);
         if (!column) continue; // Skip if column not found
         
-        // Skip hidden columns (same logic as displayColumns in data-table)
-        if (column.hidden === true) {
-          continue;
-        }
-        
         // Check if field is enum or list type and has load configuration
         const columnType = this.getColumnType(field);
         const isListOrEnum = columnType === 'list' || columnType === 'enum' || columnType === 'select';
@@ -365,21 +349,7 @@ export class FilterPanelComponent implements OnInit {
 
   addCondition() {
     if (!this.selectedFieldForAdd) {
-      const searchableColumns = this.columns.filter(col => {
-        if (col.hidden === true) return false;
-        return col.searchable !== false;
-      });
-      this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
-    }
-    
-    // Check if selected field is hidden
-    const selectedColumn = this.getColumnForField(this.selectedFieldForAdd);
-    if (selectedColumn && selectedColumn.hidden === true) {
-      // If selected field is hidden, find first non-hidden searchable column
-      const searchableColumns = this.columns.filter(col => {
-        if (col.hidden === true) return false;
-        return col.searchable !== false;
-      });
+      const searchableColumns = this.columns.filter(col => col.searchable !== false);
       this.selectedFieldForAdd = searchableColumns[0]?.field || this.columns[0]?.field || '';
     }
     

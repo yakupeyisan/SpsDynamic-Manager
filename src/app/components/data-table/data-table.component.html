@@ -483,6 +483,8 @@
   </div>
 
   <div #tableWrapper class="ui-table-wrapper" 
+       [class.ui-table-wrapper-has-summary]="internalSummary.length > 0"
+       [class.ui-table-wrapper-summary-visible]="internalSummary.length > 0 && showSummaryPanel"
        [style.height]="fixedBody ? (height || 'calc(100vh - 300px)') : null"
        [style.padding-bottom]="showFooter ? '0px' : null"
        [attr.tabindex]="keyboard ? (tabIndex ?? 0) : null"
@@ -549,7 +551,7 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let row of filteredData; let i = index"
+          *ngFor="let row of tableBodyRows; let i = index"
           [attr.index]="i"
           [style.height]="getRowHeight(row, i) + 'px'"
           [style.min-height]="getRowHeight(row, i) + 'px'"
@@ -596,7 +598,7 @@
             }
           </td>
         </tr>
-        <!-- Empty message row -->
+        <!-- Empty message row (no data rows; summary alone does not count) -->
         <tr *ngIf="filteredData.length === 0 && emptyRowsCount === 0" class="ui-table-empty">
           <td [attr.colspan]="displayColumns.length + (selectable ? 1 : 0)" class="ui-table-empty-cell">
             {{ emptyMessage || translate.instant('table.noDataAvailable') }}
@@ -622,6 +624,28 @@
         
       </tbody>
     </table>
+  </div>
+  <button *ngIf="internalSummary.length > 0" type="button" class="ui-table-summary-toggle" (click)="toggleSummaryPanel()" [attr.title]="showSummaryPanel ? 'Özeti gizle' : 'Özeti göster'">
+    <svg *ngIf="!showSummaryPanel" class="ui-table-summary-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 15l-6-6-6 6"/>
+    </svg>
+    <svg *ngIf="showSummaryPanel" class="ui-table-summary-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+  </button>
+  <!-- Özet paneli: gridin altında sabit, scroll dışında; solunda Göster/Gizle -->
+  <div *ngIf="internalSummary.length > 0" class="ui-table-summary-panel">
+
+    <div *ngIf="showSummaryPanel" class="ui-table-summary-content">
+      <table class="ui-table-summary-table" [style.min-width]="tableMinWidth">
+        <tbody>
+          <tr *ngFor="let row of internalSummary; let ri = index" class="ui-table-summary-row">
+            <td *ngIf="selectable" class="ui-table-summary-select-cell" [style.height]="effectiveRecordHeight + 'px'"></td>
+            <td *ngFor="let column of displayColumns" [class]="getAlignmentClass(column.align)" [style.width]="column.width" [style.min-width]="(column.min ?? 100) + 'px'">{{ getSummaryCellValue(row, column, ri) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
   
   <!-- Footer (w2ui style) -->

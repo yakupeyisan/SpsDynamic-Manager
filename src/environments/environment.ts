@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'development', // 'ordu' | 'tskb' | 'eureko' | 'nurol' | 'development'
+  setting: 'development', // 'ordu' | 'tskb' | 'eureko' | 'nurol' | 'gatement' | 'development'
   
   
   // Authentication ayarları
@@ -93,6 +93,21 @@ export const environment = {
       landingPage: 'login',
       logoUrl: '/assets/images/logos/logo-nurol.png',
       logoUrlLogin: '/assets/images/logos/logo-nurol.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
+      loginImage: '',
+      newAccountEnabled: false,
+    },
+    gatement: {
+      systemType: 'gatement',
+      apiUrl: 'http://37.247.99.93:8212',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/gatement-logo.png',
+      logoUrlLogin: '/assets/images/logos/gatement-logo.png',
       googleLoginEnabled: false,
       cloudflareEnabled: false,
       forgotPasswordEnabled: true,
@@ -243,6 +258,26 @@ export const environment = {
       tertiary: '#f5f5f5',
       tertiaryFixedDim: 'rgba(245, 245, 245, 0.15)',
       outlineVariant: '#e0e0e0',
+      level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
+      level4: '0 15px 30px rgba(0, 0, 0, 0.15)',
+    },
+    // GateMent EDU - Siyah + açık nane yeşili logo
+    gatement: {
+      primary: '#000000',
+      primaryFixedDim: 'rgba(0, 0, 0, 0.15)',
+      secondary: '#80e8af',
+      secondaryFixedDim: 'rgba(128, 232, 175, 0.15)',
+      error: '#D32F2F',
+      errorFixedDim: 'rgba(211, 47, 47, 0.15)',
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      tertiary: '#e8f8ef',
+      tertiaryFixedDim: 'rgba(232, 248, 239, 0.15)',
+      outlineVariant: '#c8e6d4',
       level1: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level2: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
       level3: '0px 2px 4px -1px rgba(0, 0, 0, 0.2)',
