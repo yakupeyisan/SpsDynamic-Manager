@@ -99,8 +99,8 @@ export const tableColumns: TableColumn[] = [
   },
   {
     field: 'ApplicationID',
-    label: 'Uygulama',
-    text: 'Uygulama',
+    label: 'Zaman Dilimi',
+    text: 'Zaman Dilimi',
     type: 'enum' as ColumnType,
     sortable: false,
     width: '200px',

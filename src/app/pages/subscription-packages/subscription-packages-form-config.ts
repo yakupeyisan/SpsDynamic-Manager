@@ -28,8 +28,8 @@ export const formFields: TableColumn[] = [
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
         return data.records.map((item: any) => ({
-          id: item.Id || item.ApplicationID,
-          text: item.Name || item.ApplicationName || `ID: ${item.Id || item.ApplicationID}`
+          id: item.Id || item.CafeteriaApplicationID,
+          text: item.Name || item.ApplicationName || `ID: ${item.Id || item.CafeteriaApplicationID}`
         }));
       }
     }
