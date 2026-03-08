@@ -55,3 +55,85 @@
     </div>
   </div>
 </div>
+
+<!-- Kafeterya Grup Ayarları Modal (aktarım gridi) -->
+<ui-modal
+  [title]="'Kafeterya Grup Ayarları'"
+  [show]="showCafeteriaGroupsModal"
+  [size]="'xl'"
+  [closable]="true"
+  [showFooter]="false"
+  (showChange)="showCafeteriaGroupsModal = $event"
+  (closed)="closeCafeteriaGroupsModal()"
+  (onResize)="onCafeteriaGroupsModalResize($event)">
+  <div class="permissions-transfer-container" [style.height]="gridHeight">
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçilmemiş Kafeterya Grupları</h4>
+        <button class="transfer-btn" (click)="transferCafeteriaGroupsToSelected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #unselectedCafeteriaGroupsTable
+          [id]="'unselected-cafeteria-groups-grid'"
+          [columns]="cafeteriaGroupsTableColumns"
+          [dataSource]="unselectedCafeteriaGroupsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'CafeteriaGroupID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="cafeteriaGroupsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedUnselectedCafeteriaGroups = $event">
+        </ui-data-table>
+      </div>
+    </div>
+    <div class="transfer-panel">
+      <div class="transfer-panel-header">
+        <h4 class="transfer-panel-title">Seçili Kafeterya Grupları</h4>
+        <button class="transfer-btn" (click)="transferCafeteriaGroupsToUnselected()" title="Aktar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 4l-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Aktar</span>
+        </button>
+      </div>
+      <div class="transfer-panel-body">
+        <ui-data-table
+          #selectedCafeteriaGroupsTable
+          [id]="'selected-cafeteria-groups-grid'"
+          [columns]="cafeteriaGroupsTableColumns"
+          [dataSource]="selectedCafeteriaGroupsDataSource"
+          [selectable]="true"
+          [pagination]="true"
+          [pageSize]="100"
+          [height]="gridHeight"
+          [recid]="'CafeteriaGroupID'"
+          [selectType]="'row'"
+          [multiSelect]="true"
+          [showRefresh]="true"
+          [searchable]="true"
+          [advancedFilter]="true"
+          [showFooter]="true"
+          [toolbar]="cafeteriaGroupsTableToolbarConfig"
+          [searchPlaceholder]="'Ara Tüm Alanlar'"
+          (rowSelect)="selectedSelectedCafeteriaGroups = $event">
+        </ui-data-table>
+      </div>
+    </div>
+  </div>
+</ui-modal>

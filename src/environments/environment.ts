@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'development', // 'ordu' | 'afyon' | 'tskb' | 'eureko' | 'nurol' | 'gatement' | 'development'
+  setting: 'afyon', // 'ordu' | 'afyon' | 'tskb' | 'eureko' | 'nurol' | 'gatement' | 'development'
   
   
   // Authentication ayarları

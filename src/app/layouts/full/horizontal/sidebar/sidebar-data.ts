@@ -129,6 +129,10 @@ export const navItems: NavItem[] = [
         displayName: 'Paket Tanımları',
         route: '/SubscriptionPackages',
       },
+      {
+        displayName: 'Kafeterya Grup Ayarları',
+        route: '/SubscriptionPackages',
+      },
     ],
   },
   {

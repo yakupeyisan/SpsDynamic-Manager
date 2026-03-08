@@ -75,8 +75,11 @@ export const formFields: TableColumn[] = [
     field: 'Amount',
     label: 'Tutar',
     text: 'Tutar',
-    type: 'float' as ColumnType,
-    fullWidth: false
+    type: 'currency' as ColumnType,
+    fullWidth: false,
+    currencyPrefix: '',
+    currencySuffix: ' ₺',
+    currencyPrecision: 2
   },
   {
     field: 'MinDay',
@@ -226,6 +229,13 @@ export const formDataMapper = (apiRecord: any) => {
       .map((n: number) => (n === 7 ? 0 : n));
   } else {
     formData['DayOfWeek'] = [];
+  }
+
+  // Amount: API kuruş cinsinden geliyorsa TL göstermek için /100
+  const rawAmount = formData['Amount'] ?? record?.Amount ?? record?.amount;
+  if (rawAmount != null && rawAmount !== '') {
+    const n = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+    formData['Amount'] = Number.isNaN(n) ? 0 : n / 100;
   }
 
   // MinDay, Status, StartRule, StartDay: sayıya çevir; list/radio için yoksa 0 (seçim boş kalmasın)
