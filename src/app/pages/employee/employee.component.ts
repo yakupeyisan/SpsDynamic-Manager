@@ -562,6 +562,19 @@ export class EmployeeComponent implements OnInit, OnDestroy {
     const url = `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/Employees/form`;
     const recid = data.EmployeeID || data.recid || null;
     const { EmployeeID, recid: _, ...record } = data;
+
+    // Safety: strip any leftover nested objects/arrays that the backend doesn't expect.
+    // formDataMapper already removes known ones, but this guards against API
+    // response changes introducing new navigation properties.
+    const nestedKeys = [
+      'Authorization', 'WebClientAuthorization',
+      'EmployeeDepartments', 'EmployeeAccessGroups',
+      'CustomField', 'Cards', 'EmployeeHistories',
+    ];
+    for (const key of nestedKeys) {
+      delete record[key];
+    }
+
     return this.http.post(url, {
       request: {
         action: 'save',

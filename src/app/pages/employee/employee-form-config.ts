@@ -589,6 +589,20 @@ export const formDataMapper = (apiRecord: any) => {
   if (apiRecord.Authorization && apiRecord.Authorization.Id) {
     formData['AuthorizationId'] = apiRecord.Authorization.Id;
   }
+
+  // Map CafeteriaAccount nested object to ID
+  if (apiRecord.CafeteriaAccount && apiRecord.CafeteriaAccount.ID) {
+    formData['CafeteriaAccount'] = apiRecord.CafeteriaAccount.ID;
+  }
+  
+  // Remove nested objects so only flat/mapped fields are sent to the API on save.
+  // Keeping them would cause the backend to read stale nested values instead of
+  // the updated flat fields (AuthorizationId, Department, AccessGroup, etc.).
+  delete formData['Authorization'];
+  delete formData['WebClientAuthorization'];
+  delete formData['EmployeeDepartments'];
+  delete formData['EmployeeAccessGroups'];
+  delete formData['CustomField'];
   
   return formData;
 };
