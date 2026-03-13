@@ -4637,9 +4637,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
             }, 0);
           } else {
             // Keep form open on error so user can fix and retry
-            // Show error message from response
-            const errorMessage = response?.message || 'Kayıt sırasında bir hata oluştu.';
-            this.toastr.error(errorMessage, 'Hata');
+            // Show error message from response (translate if key exists, e.g. Validation.xxx)
+            const rawMessage = response?.message || 'Kayıt sırasında bir hata oluştu.';
+            const errorMessage = this.translate.instant(rawMessage);
+            this.toastr.error(errorMessage, this.translate.instant('common.error'));
           }
         },
         error: (error) => {
@@ -4652,9 +4653,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
             status: error?.status,
             url: error?.url 
           });
-          // Show error message
-          const errorMessage = error?.error?.message || error?.message || 'Kayıt sırasında bir hata oluştu.';
-          this.toastr.error(errorMessage, 'Hata');
+          // Show error message (translate if key exists, e.g. Validation.xxx)
+          const rawMessage = error?.error?.message || error?.message || 'Kayıt sırasında bir hata oluştu.';
+          const errorMessage = this.translate.instant(rawMessage);
+          this.toastr.error(errorMessage, this.translate.instant('common.error'));
           // Keep form open on error so user can fix and retry
         }
       });

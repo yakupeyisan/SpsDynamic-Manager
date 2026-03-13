@@ -96,6 +96,12 @@
     "welcomeTo": "Welcome to SpsDynamic",
     "description": "SpsDynamic helps developers to build organized and well coded dashboards full of beautiful and rich modules."
   },
+  "common": {
+    "error": "Error"
+  },
+  "Validation": {
+    "rosslare_facility_card_unique": "This facility card is already registered. Please enter a unique card number."
+  },
   "Login": "Login",
   "Side Login": "Side Login",
   "Boxed Login": "Boxed Login",

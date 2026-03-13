@@ -92,6 +92,9 @@
   "Two Steps": "Zwei schritte",
   "Side Two Steps": "Seite zwei Schritte",
   "Boxed Two Steps": "Verpackt zwei Schritte",
+  "Validation": {
+    "rosslare_facility_card_unique": "Diese Anlagenkarte ist bereits registriert. Bitte geben Sie eine eindeutige Kartennummer ein."
+  },
   "Error": "Fehler",
   "Maintenance": "Wartung",
   "Menu Level": "Menüebene",

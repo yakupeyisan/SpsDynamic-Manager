@@ -57,6 +57,9 @@
     "deleteError": "Silme işlemi sırasında bir hata oluştu.",
     "deleteConfirm": "Seçili kayıtları silmek istediğinize emin misiniz?"
   },
+  "Validation": {
+    "rosslare_facility_card_unique": "Bu tesis kartı zaten kayıtlı. Lütfen benzersiz bir kart numarası girin."
+  },
   "toolbar": {
     "reload": "Yenile",
     "reloadTooltip": "Verileri yenile",

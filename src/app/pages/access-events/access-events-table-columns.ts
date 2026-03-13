@@ -160,6 +160,7 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Employee.EmployeeDepartments.Department.DepartmentName',
+    exportDisplayField: 'Employee.EmployeeDepartments.Department.DepartmentName',
     label: 'Departman',
     text: 'Departman',
     type: 'enum' as ColumnType,
@@ -168,7 +169,7 @@ export const tableColumns: TableColumn[] = [
     size: '180px',
     min: 20,
     searchable: 'enum' as ColumnType,
-    searchField: 'Employee.EmployeeDepartments.Department.DepartmentID',
+    searchField: 'Employee.EmployeeDepartments.DepartmentID',
     resizable: true,
     load: {
       url: `${apiUrl}/api/Departments`,

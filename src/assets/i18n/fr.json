@@ -92,6 +92,9 @@
   "Two Steps": "Deux étapes",
   "Side Two Steps": "Côté deux étapes",
   "Boxed Two Steps": "Deux étapes en boîte",
+  "Validation": {
+    "rosslare_facility_card_unique": "Cette carte d'installation est déjà enregistrée. Veuillez saisir un numéro de carte unique."
+  },
   "Error": "Erreur",
   "Maintenance": "Entretien",
   "Menu Level": "Niveau menu",
