@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "prestart": "node scripts/copy-favicon.js dev",
     "build": "ng build",
+    "prebuild": "node scripts/copy-favicon.js prod",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

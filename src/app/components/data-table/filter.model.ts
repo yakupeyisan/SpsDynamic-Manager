@@ -100,13 +100,13 @@ export const W2UI_OPERATORS: Record<OperatorType, Array<FilterOperator | { oper:
 
 // Default operators for each type (w2ui compatible)
 export const DEFAULT_OPERATORS: Record<OperatorType, FilterOperator> = {
-  'text': 'startsWith',
+  'text': 'contains',
   'number': 'equals',
   'date': 'equals',
   'list': 'equals',
   'enum': 'in',
-  'hex': 'startsWith',
-  'color': 'startsWith'
+  'hex': 'contains',
+  'color': 'contains'
 };
 
 // Operator labels mapping

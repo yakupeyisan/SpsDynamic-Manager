@@ -1094,7 +1094,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         
         const condition = {
           field: filterField,
-          operator: isNumberType ? 'equals' as FilterOperator : 'startsWith' as FilterOperator,
+          operator: isNumberType ? 'equals' as FilterOperator : 'contains' as FilterOperator,
           value: searchValue,
           type: conditionType
         };
@@ -1141,8 +1141,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     
     
     // Build filter conditions
-    // For text columns: use 'startsWith' (maps to 'begins' in w2ui)
-    // For number columns: use 'equals' (maps to '=' in w2ui) - but we'll search in text columns for "contains" behavior
+    // For text columns: use 'contains' (search anywhere in value)
+    // For number columns: use 'equals' (maps to '=' in w2ui)
     // For enum/list columns: use searchField if available (for nested fields like Company.PdksCompanyName)
     const conditions = searchableColumns.map(col => {
       const isNumberType = col.type && numberTypes.includes(col.type);
@@ -1156,10 +1156,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         : (col.searchField || col.field!);
       
       // For number type columns, use 'equals' (exact match)
-      // For text/enum/list type columns, use 'startsWith' (begins with)
+      // For text/enum/list type columns, use 'contains' (search anywhere in value)
       const condition = {
         field: filterField,
-        operator: isNumberType ? 'equals' as FilterOperator : 'startsWith' as FilterOperator,
+        operator: isNumberType ? 'equals' as FilterOperator : 'contains' as FilterOperator,
         value: searchValue,
         type: conditionType
       };

@@ -25,7 +25,7 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico","src/ordu-fav.ico", "src/assets", "src/web.config"],
+            "assets": ["src/favicon.ico", "src/favicons", "src/assets", "src/web.config"],
             "styles": [
               "src/styles.scss",
               "src/assets/scss/style.scss",
@@ -105,7 +105,7 @@
             "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico","src/ordu-fav.ico", "src/assets"],
+            "assets": ["src/favicon.ico", "src/favicons", "src/assets"],
             "styles": ["src/styles.scss"],
             "scripts": []
           }
