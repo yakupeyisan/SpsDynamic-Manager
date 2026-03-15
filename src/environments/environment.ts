@@ -2,9 +2,20 @@ export const environment = {
   production: false,
   
   // Aktif ayar adı
-  setting: 'afyon', // 'ordu' | 'afyon' | 'tskb' | 'eureko' | 'nurol' | 'gatement' | 'development'
-  
-  
+  setting: 'tau', // 'ordu' | 'afyon' | 'turkAlman' | 'tskb' | 'eureko' | 'nurol' | 'gatement' | 'development'
+
+  // Favicon dosya adları (src/favicons/ altında). Build/serve öncesi aktif ayara göre favicon.ico oluşturulur.
+  favicons: {
+    ordu: 'ordu.ico',
+    afyon: 'afyon.ico',
+    tau: 'tau.ico',
+    tskb: 'tskb.ico',
+    eureko: 'eureko.ico',
+    nurol: 'nurol.ico',
+    gatement: 'gatement.ico',
+    development: 'default.ico',
+  },
+
   // Authentication ayarları
   settings: {
     ordu: {
@@ -53,6 +64,21 @@ export const environment = {
       forgotPasswordEnabled: true,
       signUpEnabled: false,
       notificationType: 'sms',
+      loginImage: '',
+      newAccountEnabled: true,
+    },
+    tau: {
+      systemType: 'GENERAL',
+      apiUrl: 'http://localhost',
+      wsUrl: '',
+      landingPage: 'login',
+      logoUrl: '/assets/images/logos/turk-alman-logo.png',
+      logoUrlLogin: '/assets/images/logos/turk-alman-logo.png',
+      googleLoginEnabled: false,
+      cloudflareEnabled: false,
+      forgotPasswordEnabled: true,
+      signUpEnabled: false,
+      notificationType: 'mail',
       loginImage: '',
       newAccountEnabled: true,
     },
@@ -189,6 +215,29 @@ export const environment = {
       level1: '0px 2px 4px -1px rgba(10, 59, 139, 0.2)',
       level2: '0px 2px 4px -1px rgba(10, 59, 139, 0.2)',
       level3: '0px 2px 4px -1px rgba(10, 59, 139, 0.2)',
+      level4: '0 15px 30px rgba(0,0,0,0.12)',
+    },
+    // Türk-Alman Üniversitesi - Logo: teal accent + koyu gri (monogram ve metin)
+    tau: {
+      // Primary renk (Ana renk) - Logo turkuaz/teal (#00B4BD - TÜRK-ALMAN metni ve yaprak vurgusu)
+      primary: '#00B4BD',
+      primaryFixedDim: 'rgba(0, 180, 189, 0.15)',
+      // Secondary renk (İkincil renk) - Logo koyu gri (#383B40 - monogram ve TÜRKISCH-DEUTSCHE metni)
+      secondary: '#383B40',
+      secondaryFixedDim: 'rgba(56, 59, 64, 0.15)',
+      error: 'rgb(255, 102, 146)',
+      errorFixedDim: 'rgba(255, 102, 146, 0.15)',
+      warning: '#f8c20a',
+      warningFixedDim: '#f8c20a26',
+      success: '#36c76c',
+      successFixedDim: '#36c76c26',
+      // Tertiary renk - Açık turkuaz/gri arka plan tonu
+      tertiary: '#E8F6F7',
+      tertiaryFixedDim: 'rgba(232, 246, 247, 0.15)',
+      outlineVariant: '#c5d9dc',
+      level1: '0px 2px 4px -1px rgba(0, 180, 189, 0.2)',
+      level2: '0px 2px 4px -1px rgba(0, 180, 189, 0.2)',
+      level3: '0px 2px 4px -1px rgba(0, 180, 189, 0.2)',
       level4: '0 15px 30px rgba(0,0,0,0.12)',
     },
     tskb: {
