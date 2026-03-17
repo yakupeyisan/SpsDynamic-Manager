@@ -575,6 +575,19 @@ export class EmployeeComponent implements OnInit, OnDestroy {
       delete record[key];
     }
 
+    // Backend beklediği için CustomField01-20 alanlarını tek bir CustomField objesi altında topla
+    const customField: any = {};
+    for (let i = 1; i <= 20; i++) {
+      const fieldName = `CustomField${String(i).padStart(2, '0')}`;
+      if (Object.prototype.hasOwnProperty.call(record, fieldName)) {
+        customField[fieldName] = record[fieldName];
+        delete record[fieldName];
+      }
+    }
+    if (Object.keys(customField).length > 0) {
+      (record as any).CustomField = customField;
+    }
+
     return this.http.post(url, {
       request: {
         action: 'save',
