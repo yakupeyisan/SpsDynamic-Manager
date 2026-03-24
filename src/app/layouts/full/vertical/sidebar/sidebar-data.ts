@@ -243,7 +243,6 @@ export const navItems: NavItem[] = [
           {
             displayName: 'Günlük Yoklama',
             route: '/DailyAttendanceReports',
-            disabled: true,
           },
           {
             displayName: 'Geçis Yetki Raporu',

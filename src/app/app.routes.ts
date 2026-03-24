@@ -88,6 +88,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'DailyAttendanceReports',
+        loadComponent: () =>
+          import('./pages/daily-attendance-reports/daily-attendance-reports.component').then(
+            (m) => m.DailyAttendanceReportsComponent
+          ),
+        data: {
+          title: 'Günlük Yoklama',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'AccessDetails',
         loadComponent: () =>
           import('./pages/access-details/access-details.component').then(

@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   
   // Aktif ayar adı
-  setting: 'eureko',
+  setting: 'tskb',
 
   // Favicon dosya adları (src/favicons/ altında). Build/serve öncesi aktif ayara göre favicon.ico oluşturulur.
   favicons: {
