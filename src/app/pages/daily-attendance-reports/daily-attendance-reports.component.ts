@@ -48,6 +48,12 @@ export class DailyAttendanceReportsComponent implements OnInit {
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
 
+  /** Excel/PDF export — /api/Exports için veri kaynağı URL (dataSource toString ile çıkarılamaz). */
+  reportConfig = {
+    grid: 'daily-attendance-reports-grid',
+    url: `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessEvents/PersonalDailyAttendence`
+  };
+
   private readonly apiUrl =
     `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessEvents/PersonalDailyAttendence`;
 
