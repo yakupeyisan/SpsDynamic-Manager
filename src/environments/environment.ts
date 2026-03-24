@@ -69,7 +69,7 @@ export const environment = {
     },
     tau: {
       systemType: 'GENERAL',
-      apiUrl: 'http://localhost',
+      apiUrl: 'http://localhost:8080',
       wsUrl: '',
       landingPage: 'login',
       logoUrl: '/assets/images/logos/turk-alman-logo.png',
