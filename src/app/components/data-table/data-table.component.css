@@ -1025,6 +1025,38 @@
   opacity: 0.6;
 }
 
+/* Tree (nested `childeren` / `children`) display */
+.ui-tree-indent {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.ui-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0 6px 0 0;
+  background: transparent;
+  border: none;
+  color: var(--ui-gray-700, #374151);
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.ui-tree-toggle svg {
+  transition: transform 0.15s ease;
+  transform-origin: center;
+}
+
+.ui-tree-toggle-expanded svg {
+  transform: rotate(90deg);
+}
+
 .ui-table-header:hover .ui-table-column-resizer {
   background-color: var(--ui-gray-300);
 }

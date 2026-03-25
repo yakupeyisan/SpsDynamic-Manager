@@ -1,5 +1,8 @@
 // CafeteriaEvents table columns configuration
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 // TransactionType enum mapping
 const getTransactionTypeText = (value: any): string => {
@@ -80,16 +83,29 @@ export const tableColumns: TableColumn[] = [
   },
   { 
     field: 'Employee.EmployeeDepartments', 
-    searchField: 'Employee.EmployeeDepartments.Department.DepartmentName',
+    searchField: 'Employee.EmployeeDepartments.DepartmentID',
     label: 'Departman', 
     text: 'Departman',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: false, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
+    searchable: 'enum' as ColumnType,
     resizable: true,
+    load: {
+      url: `${apiUrl}/api/Departments`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => ({
+          id: String(item?.DepartmentID ?? item?.ID ?? item?.id ?? ''),
+          text: String(item?.DepartmentName ?? item?.Name ?? '(boş)')
+        }));
+      }
+    },
     render: (record: TableRow) => {
       const employee = record['Employee'];
       if (employee?.EmployeeDepartments && Array.isArray(employee.EmployeeDepartments) && employee.EmployeeDepartments.length > 0) {
@@ -249,49 +265,107 @@ export const tableColumns: TableColumn[] = [
     field: 'ProductName', 
     label: 'Ürün Adı', 
     text: 'Ürün Adı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'ProductName',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/CafeteriaProducts`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const name = item?.ProductName ?? item?.Name ?? '';
+          return { id: String(name), text: String(name || '(boş)') };
+        });
+      }
+    }
   },
   { 
     field: 'ApplicationName', 
     label: 'Uygulama Adı', 
     text: 'Uygulama Adı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'ApplicationName',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/CafeteriaApplications`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const name = item?.ApplicationName ?? item?.Name ?? '';
+          return { id: String(name), text: String(name || '(boş)') };
+        });
+      }
+    }
   },
   { 
     field: 'Location', 
     label: 'Konum', 
     text: 'Konum',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'Location',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const readerName = item?.ReaderName ?? item?.Name ?? item?.DoorName ?? '';
+          return { id: String(readerName), text: String(readerName || '(boş)') };
+        });
+      }
+    }
   },
   { 
     field: 'DeviceSerial', 
     label: 'Cihaz Seri No', 
     text: 'Cihaz Seri No',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '150px', 
     size: '150px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'DeviceSerial',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/Terminals`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const serial = item?.SerialNumber ?? item?.DeviceSerial ?? item?.Serial ?? '';
+          const readerName = item?.ReaderName ?? item?.Name ?? '';
+          const text = readerName ? `${serial} (${readerName})` : String(serial || '(boş)');
+          return { id: String(serial), text };
+        });
+      }
+    }
   },
   { 
     field: 'EventTime', 

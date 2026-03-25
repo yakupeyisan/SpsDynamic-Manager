@@ -51,7 +51,7 @@ export class DailyAttendanceReportsComponent implements OnInit {
   /** Excel/PDF export — /api/Exports için veri kaynağı URL (dataSource toString ile çıkarılamaz). */
   reportConfig = {
     grid: 'daily-attendance-reports-grid',
-    url: `${environment.settings[environment.setting as keyof typeof environment.settings].apiUrl}/api/AccessEvents/PersonalDailyAttendence`
+    url: `/api/AccessEvents/PersonalDailyAttendence`
   };
 
   private readonly apiUrl =

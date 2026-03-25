@@ -58,6 +58,7 @@ export const ROUTE_ORDER: string[] = [
   '/SubscriptionEvents',
   '/SubscriptionEventBasedZoneReports',
   '/SubscriptionEventBasedPackageSalesReports',
+  '/StaffBasedUsedCountReports',
   '/CafeteriaEventDailyNumberOfMealsByGroups',
   '/Logs',
   '/TerminalLogs',

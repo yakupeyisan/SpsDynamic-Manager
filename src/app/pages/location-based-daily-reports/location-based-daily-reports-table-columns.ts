@@ -54,11 +54,16 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        // Terminal listesini SerialNumber (DeviceSerial) ve ReaderName ile map'le
-        return (data.records || []).map((item: any) => ({
-          id: item.ReaderName,
-          text: item.ReaderName
-        }));
+        // Filtre value DeviceSerial olmalı, ekranda ReaderName görünmeli
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const deviceSerial = item?.SerialNumber ?? item?.DeviceSerial ?? item?.Serial ?? '';
+          const readerName = item?.ReaderName ?? item?.TerminalName ?? item?.Name ?? String(deviceSerial);
+          return {
+            id: String(deviceSerial),
+            text: String(readerName || '(boş)')
+          };
+        });
       }
     }
   },
@@ -81,10 +86,11 @@ export const tableColumns: TableColumn[] = [
       method: 'POST' as const,
       data: { limit: -1, offset: 0 },
       map: (data: any) => {
-        // CafeteriaGroups listesini CafeteriaGroupID ve CafeteriaGroupName ile map'le
-        return (data.records || []).map((item: any) => ({
-          id: item.CafeteriaGroupName,
-          text: item.CafeteriaGroupName
+        // Filtre value CafeteriaGroupID olmalı, ekranda grup adı görünmeli
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => ({
+          id: String(item?.CafeteriaGroupID ?? item?.ID ?? item?.id ?? ''),
+          text: String(item?.CafeteriaGroupName ?? item?.Name ?? '(boş)')
         }));
       }
     }

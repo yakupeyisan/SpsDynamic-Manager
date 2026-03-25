@@ -690,14 +690,12 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
   
   const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
   
-  // CR80 standart boyutları
-  const CR80_WIDTH = 85.60;  // mm
-  const CR80_HEIGHT = 53.98; // mm
-  
-  // Template'deki koordinatları CR80'a ölçekle
-  // Template 171mm ise, scale = 85.60/171 = 0.5
-  const TEMPLATE_BASE_WIDTH = 171; // Template'in varsayılan genişliği
-  const SCALE_FACTOR = CR80_WIDTH / TEMPLATE_BASE_WIDTH; // ~0.5
+  // CR80 standart boyutları (yatay)
+  const CR80_LANDSCAPE_WIDTH = 85.60;  // mm
+  const CR80_LANDSCAPE_HEIGHT = 53.98; // mm
+  const isPortrait = this.isTemplatePortrait(selectedData);
+  const pageWidth = isPortrait ? CR80_LANDSCAPE_HEIGHT : CR80_LANDSCAPE_WIDTH;
+  const pageHeight = isPortrait ? CR80_LANDSCAPE_WIDTH : CR80_LANDSCAPE_HEIGHT;
 
   let html = `<!DOCTYPE html>
 <html>
@@ -706,7 +704,7 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
   <title>Kart Yazdır</title>
   <style>
     @page {
-      size: ${CR80_WIDTH}mm ${CR80_HEIGHT}mm; /* Kart boyutu sayfa olarak */
+      size: ${pageWidth}mm ${pageHeight}mm;
       margin: 0;
     }
     
@@ -723,8 +721,8 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
     }
 
     .print-page {
-      width: ${CR80_WIDTH}mm;
-      height: ${CR80_HEIGHT}mm;
+      width: ${pageWidth}mm;
+      height: ${pageHeight}mm;
       page-break-after: always;
       display: flex;
       justify-content: center;
@@ -740,20 +738,17 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
     /* Kart container - template ölçeklenmiş */
     .card-container {
       position: relative;
-      width: ${CR80_WIDTH}mm;
-      height: ${CR80_HEIGHT}mm;
-      transform-origin: top left;
-      /* Ölçekleme: Template koordinatlarını CR80'a sığdır */
-      transform: scale(${SCALE_FACTOR.toFixed(4)});
+      width: ${pageWidth}mm;
+      height: ${pageHeight}mm;
+      overflow: hidden;
     }
 
-    /* Template içeriği - orijinal boyutları koru */
+    /* Template içeriği - ölçekleme inline style'da verilir */
     .card-content {
       position: absolute;
       top: 0;
       left: 0;
-      width: ${TEMPLATE_BASE_WIDTH}mm;
-      height: ${(TEMPLATE_BASE_WIDTH * CR80_HEIGHT / CR80_WIDTH).toFixed(2)}mm; /* Oran koru */
+      transform-origin: top left;
     }
     
     ${this.previewPrintWithTemplate ? `
@@ -774,7 +769,7 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
       html += `<div class="print-page">
         <div class="card-container">
           <div class="card-content">
-            ${await this.buildCardSideHtml(data, 'FRONT', apiUrl, SCALE_FACTOR)}
+            ${await this.buildCardSideHtml(data, 'FRONT', apiUrl, pageWidth, pageHeight)}
           </div>
         </div>
       </div>`;
@@ -785,7 +780,7 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
       html += `<div class="print-page">
         <div class="card-container">
           <div class="card-content">
-            ${await this.buildCardSideHtml(data, 'BACK', apiUrl, SCALE_FACTOR)}
+            ${await this.buildCardSideHtml(data, 'BACK', apiUrl, pageWidth, pageHeight)}
           </div>
         </div>
       </div>`;
@@ -802,25 +797,33 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
     data: any, 
     side: 'FRONT' | 'BACK', 
     apiUrl: string,
-    scaleFactor: number = 1
+    pageWidthMm?: number,
+    pageHeightMm?: number
   ): Promise<string> {
     const face = data.TemplateData[side];
     if (!face) return '';
     
-    // Orijinal template boyutlarını koru (ölçekleme CSS'te yapılacak)
+    // Orijinal template boyutlarını koru
     const originalWidth = face.width ? parseFloat(face.width) : 171;
     const originalHeight = face.height ? parseFloat(face.height) : 108;
+    const targetWidth = pageWidthMm ?? originalWidth;
+    const targetHeight = pageHeightMm ?? originalHeight;
+    const scaleX = targetWidth / originalWidth;
+    const scaleY = targetHeight / originalHeight;
+    const scale = Math.min(scaleX, scaleY);
     
     const bgStyle = face.background && face.background !== 'transparent'
       ? `background: url('${face.background}'); background-repeat: no-repeat; background-size: cover;`
       : 'background: white;';
     
-    // Kart container - orijinal template boyutunda
+    // Kart içeriğini yazdırma sayfasına sığdırmak için ölçekle
     let html = `<div class="preview-card-${side.toLowerCase()}" 
       data-type="${side}" 
       style="position: relative; 
             width: ${originalWidth}mm; 
             height: ${originalHeight}mm; 
+            transform: scale(${scale.toFixed(4)});
+            transform-origin: top left;
             ${bgStyle} 
             border: none; 
             border-radius: 8px; 
@@ -1115,5 +1118,20 @@ private async buildPrintHtmlString(selectedData: any[]): Promise<string> {
       default:
         return str;
     }
+  }
+
+  private isTemplatePortrait(selectedData: any[]): boolean {
+    for (const data of selectedData) {
+      const front = data?.TemplateData?.FRONT;
+      const back = data?.TemplateData?.BACK;
+      const candidate = front || back;
+      if (!candidate) continue;
+      const w = candidate.width ? parseFloat(candidate.width) : 171;
+      const h = candidate.height ? parseFloat(candidate.height) : 108;
+      if (Number.isFinite(w) && Number.isFinite(h)) {
+        return h > w;
+      }
+    }
+    return false;
   }
 }

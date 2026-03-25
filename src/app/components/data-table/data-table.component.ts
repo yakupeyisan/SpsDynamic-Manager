@@ -500,6 +500,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
   effectiveRecordHeight: number = 40;
   /** Per-row heights - key: row index in current filteredData (single-row resize only) */
   private rowHeightsByIndex: Map<number, number> = new Map();
+
+  // Tree (nested array) display state
+  private expandedTreeNodeKeys: Set<string> = new Set();
+  private readonly treeIndentPx = 16;
+  private readonly treeChildrenFieldOrder = ['childeren', 'children'];
   
   // Picture overlay state
   showPictureOverlay = false;
@@ -632,6 +637,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       // Update column visibility based on joins after columns are updated
       this.updateColumnVisibilityForJoins();
     }
+
+    // Reset tree expansion when input data changes (static `data` mode).
+    if (changes['data']) {
+      this.expandedTreeNodeKeys.clear();
+    }
   }
 
   onCellCheckboxChange($event: Event,_t231: TableRow,_t240: TableColumn,_t232: number,_t241: number) {
@@ -762,6 +772,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     if (response.status === 'success') {
       this.internalData = response.records || [];
       this.internalTotal = response.total !== undefined ? response.total : this.internalData.length;
+
+      // Reset tree state when new records are loaded from API.
+      this.expandedTreeNodeKeys.clear();
+
       const rawSummary = response.summary || [];
       this.internalSummary = rawSummary.map((s: TableRow, i: number) => ({
         ...s,
@@ -790,6 +804,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
       this.internalData = [];
       this.internalTotal = 0;
       this.internalSummary = [];
+
+      // Reset tree state on error.
+      this.expandedTreeNodeKeys.clear();
+
       this.cdr.detectChanges();
 
       if (this.showLoadingOnReload) {
@@ -807,7 +825,91 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
 
   /** Tablo gövdesinde gösterilecek satırlar (sadece veri; özet scroll dışında sabit panelde) */
   get tableBodyRows(): TableRow[] {
-    return this.filteredData;
+    const baseRows = this.filteredData;
+    if (!baseRows || baseRows.length === 0) return baseRows;
+
+    const hasAnyTree = baseRows.some(r => this.getTreeChildrenArray(r).length > 0);
+    if (!hasAnyTree) return baseRows;
+
+    return this.buildTreeRows(baseRows, 0, 'root');
+  }
+
+  /** Tree helpers for template + flattening */
+  private getTreeChildrenArray(row: TableRow): TableRow[] {
+    const anyRow = row as any;
+    for (const key of this.treeChildrenFieldOrder) {
+      const val = anyRow?.[key];
+      if (Array.isArray(val)) return val as TableRow[];
+    }
+    return [];
+  }
+
+  private buildTreeRows(nodes: TableRow[], depth: number, parentKey: string): TableRow[] {
+    const result: TableRow[] = [];
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const nodeKey = `${parentKey}/${i}`;
+      const children = this.getTreeChildrenArray(node);
+      const hasChildren = children.length > 0;
+
+      // Store tree metadata on row object (safe because TableRow is `[key: string]: any`).
+      // `getRowId()` will ignore these fields, so selection won't break.
+      (node as any)._treeDepth = depth;
+      (node as any)._treeNodeKey = nodeKey;
+      (node as any)._treeHasChildren = hasChildren;
+
+      result.push(node);
+
+      if (hasChildren) {
+        if (this.expandedTreeNodeKeys.has(nodeKey)) {
+          result.push(...this.buildTreeRows(children, depth + 1, nodeKey));
+        }
+      }
+    }
+
+    return result;
+  }
+
+  getTreeDepth(row: TableRow): number {
+    return (row as any)?._treeDepth ?? 0;
+  }
+
+  getTreeIndentPx(row: TableRow): number {
+    return this.getTreeDepth(row) * this.treeIndentPx;
+  }
+
+  hasTreeChildren(row: TableRow): boolean {
+    const meta = (row as any)?._treeHasChildren;
+    if (typeof meta === 'boolean') return meta;
+    return this.getTreeChildrenArray(row).length > 0;
+  }
+
+  private getTreeNodeKey(row: TableRow): string | null {
+    const key = (row as any)?._treeNodeKey;
+    return key != null ? String(key) : null;
+  }
+
+  isTreeExpanded(row: TableRow): boolean {
+    const key = this.getTreeNodeKey(row);
+    if (!key) return false;
+    return this.expandedTreeNodeKeys.has(key);
+  }
+
+  toggleTreeRow(row: TableRow, event?: MouseEvent) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    const key = this.getTreeNodeKey(row);
+    if (!key) return;
+
+    if (this.expandedTreeNodeKeys.has(key)) {
+      this.expandedTreeNodeKeys.delete(key);
+    } else {
+      this.expandedTreeNodeKeys.add(key);
+    }
+
+    this.cdr.markForCheck();
   }
 
   /** Özet paneli görünsün mü (grid altında sabit, scroll dışında) */
@@ -995,7 +1097,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     const theadHeight = 50;
     const availableHeight = Math.max(0, heightValue - theadHeight);
     const rowsThatFit = Math.ceil(availableHeight / this.effectiveRecordHeight);
-    const actualRows = this.filteredData.length;
+    const actualRows = this.tableBodyRows.length;
     
     // Return number of empty rows needed to fill the space
     return Math.max(0, rowsThatFit - actualRows);
@@ -1374,8 +1476,55 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
         return idxA - idxB;
       });
     }
+
+    // Auto-add Name column when tree children carry a Name field and grid does not define it.
+    if (this.shouldAutoAddTreeNameColumn(visibleCols)) {
+      const nameCol: TableColumn = {
+        field: 'Name',
+        label: 'Name',
+        text: 'Name',
+        type: 'text',
+        sortable: true,
+        searchable: 'text',
+        width: '220px',
+        size: '220px',
+        min: 100,
+        resizable: true
+      };
+      const insertIndex = Math.min(1, visibleCols.length);
+      visibleCols = [...visibleCols.slice(0, insertIndex), nameCol, ...visibleCols.slice(insertIndex)];
+    }
     
     return visibleCols;
+  }
+
+  private shouldAutoAddTreeNameColumn(currentVisibleCols: TableColumn[]): boolean {
+    if (currentVisibleCols.some(col => col.field === 'Name')) return false;
+    if (!this.hasTreeChildrenWithNonEmptyName()) return false;
+    // Respect explicit visibleColumns selection if provided.
+    if (this.visibleColumns && this.visibleColumns.length > 0 && !this.visibleColumns.includes('Name')) {
+      return false;
+    }
+    return true;
+  }
+
+  private hasTreeChildrenWithNonEmptyName(): boolean {
+    const sourceData = this.dataSource ? this.internalData : this.data;
+    const queue: TableRow[] = Array.isArray(sourceData) ? [...sourceData] : [];
+
+    while (queue.length > 0) {
+      const row = queue.shift()!;
+      const children = this.getTreeChildrenArray(row);
+      for (const child of children) {
+        const nameValue = (child as any)?.Name;
+        if (nameValue != null && String(nameValue).trim() !== '') {
+          return true;
+        }
+        queue.push(child);
+      }
+    }
+
+    return false;
   }
 
   /** Total min-width for table - sum of column widths so overflow scroll grows when columns are resized */
@@ -2407,7 +2556,12 @@ export class DataTableComponent implements OnInit, AfterViewInit, DoCheck, OnCha
     const id = row['recid'] ?? row[recidField] ?? row['id'] ?? row['_id'];
     if (id != null) return id;
     if (index != null) return `__idx_${index}`;
-    return JSON.stringify(row);
+    // Ignore tree metadata when falling back to stringify (otherwise selection breaks after render).
+    const replacer = (key: string, value: any) => {
+      if (key && key.startsWith('_tree')) return undefined;
+      return value;
+    };
+    return JSON.stringify(row, replacer);
   }
 
   private emitSelection() {

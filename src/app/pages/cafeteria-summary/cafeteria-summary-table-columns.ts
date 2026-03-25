@@ -1,5 +1,8 @@
 // CafeteriaSummary table columns configuration
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
+import { environment } from 'src/environments/environment';
+
+const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 export const tableColumns: TableColumn[] = [
   { 
@@ -19,25 +22,53 @@ export const tableColumns: TableColumn[] = [
     field: 'ApplicationName', 
     label: 'Uygulama Adı', 
     text: 'Uygulama Adı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'ApplicationName',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/CafeteriaApplications`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const name = item?.ApplicationName ?? item?.Name ?? '';
+          return { id: String(name), text: String(name || '(boş)') };
+        });
+      }
+    }
   },
   { 
     field: 'CafeteriaGroupName', 
     label: 'Kafeterya Grup Adı', 
     text: 'Kafeterya Grup Adı',
-    type: 'text' as ColumnType, 
+    type: 'enum' as ColumnType, 
     sortable: true, 
     width: '200px', 
     size: '200px',
     min: 20,
-    searchable: 'text' as ColumnType,
-    resizable: true
+    searchable: 'enum' as ColumnType,
+    searchField: 'CafeteriaGroupName',
+    resizable: true,
+    load: {
+      url: `${apiUrl}/api/CafeteriaGroups`,
+      injectAuth: true,
+      method: 'POST' as const,
+      data: { limit: -1, offset: 0 },
+      map: (data: any) => {
+        const records = data?.records ?? data?.data ?? (Array.isArray(data) ? data : []);
+        return (records || []).map((item: any) => {
+          const name = item?.CafeteriaGroupName ?? item?.Name ?? '';
+          return { id: String(name), text: String(name || '(boş)') };
+        });
+      }
+    }
   },
   { 
     field: 'Subscription', 

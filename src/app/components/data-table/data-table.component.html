@@ -581,6 +581,24 @@
             [style.min-width]="(column.min ?? 100) + 'px'"
             (click)="onCellClick($event, row, column, i, colIndex)"
             (dblclick)="onCellDblClick($event, row, column)">
+            @if (colIndex === 0 && getTreeDepth(row) > 0) {
+            <span
+              class="ui-tree-indent"
+              [style.width]="getTreeIndentPx(row) + 'px'"></span>
+            }
+            @if (colIndex === 0 && hasTreeChildren(row)) {
+            <button
+              type="button"
+              class="ui-tree-toggle"
+              [class.ui-tree-toggle-expanded]="isTreeExpanded(row)"
+              (click)="toggleTreeRow(row, $event)"
+              (mousedown)="$event.stopPropagation()"
+              [attr.aria-label]="isTreeExpanded(row) ? 'Collapse' : 'Expand'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+            }
             <ng-container *ngIf="column.template; else defaultCell">
               <ng-container *ngTemplateOutlet="column.template; context: { $implicit: row, column: column }"></ng-container>
             </ng-container>
@@ -599,7 +617,7 @@
           </td>
         </tr>
         <!-- Empty message row (no data rows; summary alone does not count) -->
-        <tr *ngIf="filteredData.length === 0 && emptyRowsCount === 0" class="ui-table-empty">
+        <tr *ngIf="tableBodyRows.length === 0 && emptyRowsCount === 0" class="ui-table-empty">
           <td [attr.colspan]="displayColumns.length + (selectable ? 1 : 0)" class="ui-table-empty-cell">
             {{ emptyMessage || translate.instant('table.noDataAvailable') }}
           </td>
@@ -611,13 +629,13 @@
           [style.height]="effectiveRecordHeight + 'px'"
           [style.min-height]="effectiveRecordHeight + 'px'"
           [style.max-height]="effectiveRecordHeight + 'px'"
-          [class.ui-table-row-even]="(filteredData.length + i) % 2 === 0"
-          [class.ui-table-row-odd]="(filteredData.length + i) % 2 === 1"
+          [class.ui-table-row-even]="(tableBodyRows.length + i) % 2 === 0"
+          [class.ui-table-row-odd]="(tableBodyRows.length + i) % 2 === 1"
           class="ui-table-empty-row">
           <td *ngIf="selectable" class="ui-table-select-cell"></td>
           <td *ngFor="let column of displayColumns; let colIndex = index" [class]="getAlignmentClass(column.align)" [class.ui-table-cell-with-row-resizer]="colIndex === 0" [style.width]="column.width" [style.min-width]="(column.min ?? 100) + 'px'">
             @if (colIndex === 0) {
-            <div class="ui-table-row-resizer" (mousedown)="onRowResizeStart($event, null, filteredData.length + i)" [attr.title]="'Resize row height (Ctrl: all rows)'"></div>
+            <div class="ui-table-row-resizer" (mousedown)="onRowResizeStart($event, null, tableBodyRows.length + i)" [attr.title]="'Resize row height (Ctrl: all rows)'"></div>
             }
           </td>
         </tr>

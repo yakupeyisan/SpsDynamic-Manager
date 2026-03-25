@@ -1,0 +1,53 @@
+// StaffBasedUsedCountReports table columns configuration
+import { TableColumn, ColumnType } from 'src/app/components/data-table/data-table.component';
+
+export const tableColumns: TableColumn[] = [
+  {
+    field: 'ID',
+    label: 'ID',
+    text: 'ID',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '80px',
+    size: '80px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+  },
+  {
+    field: 'Name',
+    label: 'Kadro',
+    text: 'Kadro',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '250px',
+    size: '250px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+  },
+  {
+    field: 'SaleCount',
+    label: 'Satış Sayısı',
+    text: 'Satış Sayısı',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '140px',
+    size: '140px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+  },
+  {
+    field: 'UsedCount',
+    label: 'Kullanım Sayısı',
+    text: 'Kullanım Sayısı',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '140px',
+    size: '140px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+  },
+];

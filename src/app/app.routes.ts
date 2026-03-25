@@ -522,6 +522,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'StaffBasedUsedCountReports',
+        loadComponent: () =>
+          import('./pages/staff-based-used-count-reports/staff-based-used-count-reports.component').then(
+            (m) => m.StaffBasedUsedCountReportsComponent
+          ),
+        data: {
+          title: 'Kadro Bazlı Kullanım Raporu',
+          breadcrumb: false,
+        },
+      },
+      {
         path: 'GroupBasedCafeteriaUsedCountReports',
         loadComponent: () =>
           import('./pages/group-based-cafeteria-used-count-reports/group-based-cafeteria-used-count-reports.component').then(

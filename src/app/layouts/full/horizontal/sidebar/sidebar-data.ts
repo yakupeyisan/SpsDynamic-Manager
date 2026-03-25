@@ -322,6 +322,10 @@ export const navItems: NavItem[] = [
             displayName: 'Paket Bazlı Satış Raporu',
             route: '/PackageBasedSubscriptionSalesReports',
           },
+          {
+            displayName: 'Kadro Bazlı Kullanım Raporu',
+            route: '/StaffBasedUsedCountReports',
+          },
         ],
       },
       {
