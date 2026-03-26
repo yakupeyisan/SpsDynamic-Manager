@@ -284,6 +284,49 @@ export class ReportsComponent implements OnInit {
       .filter((x: SelectOption | null): x is SelectOption => x !== null);
   }
 
+  private extractOptionValueFromObject(raw: any, field?: ReportField): any {
+    if (raw == null || typeof raw !== 'object') return raw;
+
+    const terminalSerial =
+      raw?.DeviceSerial ??
+      raw?.SerialNumber ??
+      raw?.serialNumber ??
+      raw?.Serial ??
+      raw?.serial;
+
+    if (terminalSerial !== null && terminalSerial !== undefined && String(terminalSerial).trim() !== '') {
+      return terminalSerial;
+    }
+
+    const genericValue = raw?.value ?? raw?.id ?? raw?.Id ?? raw?.ID;
+    if (genericValue !== null && genericValue !== undefined && String(genericValue).trim() !== '') {
+      return genericValue;
+    }
+
+    const displayText = raw?.text ?? raw?.label ?? raw?.Name;
+    if (displayText && field) {
+      const matched = this.getListEnumOptions(field).find((opt) => opt.label === displayText);
+      if (matched && matched.value !== null && matched.value !== undefined) {
+        return matched.value;
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeEnumListValues(field: ReportField, state: TaskFieldState): any[] {
+    const fromStateValues = Array.isArray(state.values) ? state.values : [];
+    const rawValues = fromStateValues.length > 0
+      ? fromStateValues
+      : (typeof state.value === 'string' && state.value.trim()
+        ? state.value.split(',').map((x) => x.trim()).filter(Boolean)
+        : []);
+
+    return rawValues
+      .map((v) => (typeof v === 'object' ? this.extractOptionValueFromObject(v, field) : v))
+      .filter((v) => v !== null && v !== undefined && String(v).trim() !== '');
+  }
+
   private initTaskFieldStates(fields: ReportField[]): TaskFieldState[] {
     return fields.map((f) => {
       const type = f.Type;
@@ -453,7 +496,16 @@ export class ReportsComponent implements OnInit {
         const textF = cfg.textField ?? 'Name';
         f.Options = {
           items: records.map((r: any) => ({
-            id: r?.[idF] ?? r?.id ?? r?.Id ?? r?.ID,
+            id:
+              r?.[idF] ??
+              r?.DeviceSerial ??
+              r?.SerialNumber ??
+              r?.serialNumber ??
+              r?.Serial ??
+              r?.serial ??
+              r?.id ??
+              r?.Id ??
+              r?.ID,
             text: r?.[textF] ?? r?.Name ?? r?.text ?? r?.label ?? String(r?.[idF] ?? r?.id ?? '')
           }))
         };
@@ -484,16 +536,13 @@ export class ReportsComponent implements OnInit {
       const state = this.taskFieldStates[idx];
 
       if (f.Type === 'list' || f.Type === 'enum') {
-        const valuesFromInput =
-          typeof state.value === 'string' && state.value.trim()
-            ? state.value.split(',').map((x) => x.trim()).filter(Boolean)
-            : [];
+        const normalizedValues = this.normalizeEnumListValues(f, state);
 
         return {
           field: baseField,
           type: f.Type,
           operator: state.operator,
-          values: Array.isArray(state.values) && state.values.length > 0 ? state.values : valuesFromInput,
+          value: normalizedValues,
         };
       }
 
