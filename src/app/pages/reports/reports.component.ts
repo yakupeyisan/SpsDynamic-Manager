@@ -276,10 +276,9 @@ export class ReportsComponent implements OnInit {
     return items
       .map((item: any) => {
         // common shapes: {id,text} or {value,label}
-        const value = item?.id ?? item?.value ?? item?.Id ?? item?.ID;
+        const value = item?.id ?? item?.value ?? item?.Id ?? item?.ID ?? item;
         const label = item?.text ?? item?.label ?? item?.Name ?? String(value ?? '');
-        // Never allow object as select value; backend expects primitive(s)
-        if (value == null || typeof value === 'object') return null;
+        if (value == null) return null;
         return { label, value } as SelectOption;
       })
       .filter((x: SelectOption | null): x is SelectOption => x !== null);
@@ -457,8 +456,7 @@ export class ReportsComponent implements OnInit {
     const options = this.getListEnumOptions(field);
     return selectedValues
       .map((v) => this.normalizeEnumValueItem(v, options))
-      .filter((v) => v != null && v !== '')
-      .map((v) => String(v));
+      .filter((v) => v != null && v !== '');
   }
 
   /** loadConfig ile generic option yükleme - tüm sayfalara uyumlu */
@@ -479,10 +477,7 @@ export class ReportsComponent implements OnInit {
         const arr = recordsPath ? (resp?.[recordsPath] ?? resp?.data) : resp;
         const records = Array.isArray(arr) ? arr : [];
 
-        // Backward-compat: old saved templates may still carry TerminalID/ReaderName mapping.
-        // For report scheduler filters we must send terminal serial in value.
-        const isTerminalsApi = /\/api\/Terminals/i.test(String(cfg.url));
-        const idF = isTerminalsApi ? 'DeviceSerial' : (cfg.idField ?? 'id');
+        const idF = cfg.idField ?? 'id';
         const textF = cfg.textField ?? 'Name';
         f.Options = {
           items: records.map((r: any) => ({
