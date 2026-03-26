@@ -431,6 +431,34 @@ export class ReportsComponent implements OnInit {
     return this.normalizeOptionsToSelectOptions(parsed);
   }
 
+  /** Convert ui-select values/objects to primitive ids expected by backend */
+  private normalizeEnumValueItem(raw: any, options: SelectOption[]): any {
+    if (raw == null) return null;
+    if (typeof raw !== 'object') return raw;
+
+    const direct =
+      raw.value ??
+      raw.id ??
+      raw.DeviceSerial ??
+      raw.SerialNumber ??
+      raw.Serial ??
+      raw.TerminalID;
+    if (direct != null && direct !== '') return direct;
+
+    // Fallback: object may only contain display text (e.g. { text: "Morfoloji 1" })
+    const text = raw.text ?? raw.label ?? raw.Name ?? null;
+    if (text == null || text === '') return null;
+    const byLabel = options.find((o) => String(o.label) === String(text));
+    return byLabel?.value ?? null;
+  }
+
+  private normalizeEnumValues(field: ReportField, selectedValues: any[]): any[] {
+    const options = this.getListEnumOptions(field);
+    return selectedValues
+      .map((v) => this.normalizeEnumValueItem(v, options))
+      .filter((v) => v != null && v !== '');
+  }
+
   /** loadConfig ile generic option yükleme - tüm sayfalara uyumlu */
   private async loadOptionsFromLoadConfig(): Promise<void> {
     for (const f of this.taskFields) {
@@ -489,13 +517,14 @@ export class ReportsComponent implements OnInit {
             ? state.value.split(',').map((x) => x.trim()).filter(Boolean)
             : [];
         const selectedValues = Array.isArray(state.values) && state.values.length > 0 ? state.values : valuesFromInput;
+        const normalizedValues = this.normalizeEnumValues(f, selectedValues);
 
         return {
           field: baseField,
           type: f.Type,
           operator: state.operator,
           // Expected search structure uses "value" for enum/list (array payload)
-          value: selectedValues,
+          value: normalizedValues,
         };
       }
 
