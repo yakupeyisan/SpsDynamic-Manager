@@ -488,12 +488,14 @@ export class ReportsComponent implements OnInit {
           typeof state.value === 'string' && state.value.trim()
             ? state.value.split(',').map((x) => x.trim()).filter(Boolean)
             : [];
+        const selectedValues = Array.isArray(state.values) && state.values.length > 0 ? state.values : valuesFromInput;
 
         return {
           field: baseField,
           type: f.Type,
           operator: state.operator,
-          values: Array.isArray(state.values) && state.values.length > 0 ? state.values : valuesFromInput,
+          // Expected search structure uses "value" for enum/list (array payload)
+          value: selectedValues,
         };
       }
 
