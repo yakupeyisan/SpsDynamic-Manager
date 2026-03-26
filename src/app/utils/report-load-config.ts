@@ -23,7 +23,8 @@ const API_FIELD_MAP: Array<{ pattern: RegExp | string; idField: string; textFiel
   { pattern: /\/api\/PdksStaffs/i, idField: 'ID', textField: 'Name' },
   { pattern: /\/api\/AccessGroups/i, idField: 'AccessGroupID', textField: 'AccessGroupName' },
   { pattern: /\/api\/Authorizations/i, idField: 'Id', textField: 'Name' },
-  { pattern: /\/api\/Terminals/i, idField: 'TerminalID', textField: 'ReaderName' },
+  // Report task params must carry terminal serial values, not terminal IDs/names.
+  { pattern: /\/api\/Terminals/i, idField: 'DeviceSerial', textField: 'ReaderName' },
   { pattern: /\/api\/CafeteriaAccounts/i, idField: 'CafeteriaAccountID', textField: 'AccountName' },
   { pattern: /\/api\/CafeteriaGroups/i, idField: 'CafeteriaGroupID', textField: 'Name' },
   { pattern: /\/api\/CardTypes/i, idField: 'CardTypeID', textField: 'Name' },
