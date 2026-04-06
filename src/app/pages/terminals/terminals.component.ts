@@ -11,7 +11,7 @@ import { catchError, map } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { joinOptions } from './terminals-config';
 import { tableColumns } from './terminals-table-columns';
-import { formFields, formLoadUrl, formLoadRequest, formDataMapper } from './terminals-form-config';
+import { formFields, formTabs as defaultTerminalFormTabs, formLoadUrl, formLoadRequest, formDataMapper, applyReaderTypeSelectFlags } from './terminals-form-config';
 import { DataTableComponent, TableColumn, ToolbarConfig, ToolbarItem, GridResponse, JoinOption, FormTab, TableRow, ColumnType } from 'src/app/components/data-table/data-table.component';
 import { ModalComponent } from 'src/app/components/modal/modal.component';
 
@@ -29,7 +29,11 @@ export class TerminalsComponent implements OnInit {
   tableColumns: TableColumn[] = tableColumns;
   joinOptions: JoinOption[] = joinOptions;
   formFields: TableColumn[] = formFields;
-  formTabs: FormTab[] = []; // Will be initialized in ngOnInit from API
+  /** Start with config tabs so öğün sekmeleri are available before CafeteriaApplications loads. */
+  formTabs: FormTab[] = defaultTerminalFormTabs.map((t) => ({
+    ...t,
+    fields: t.fields ? [...t.fields] : undefined
+  }));
   formLoadUrl = formLoadUrl;
   formLoadRequest = formLoadRequest;
   formDataMapper = formDataMapper;
@@ -106,29 +110,18 @@ export class TerminalsComponent implements OnInit {
     );
   };
 
-  onFormChange = (formData: any) => {
-    if (formData && formData.hasOwnProperty('ReaderTypeSelect')) {
-      const readerType = formData['ReaderTypeSelect'];
-      
-      // Reset all three checkbox fields
-      formData['isAccess'] = false;
-      formData['isCafeteria'] = false;
-      formData['isLocal'] = false;
-      
-      // Set the selected one to true
-      if (readerType === 'isAccess') {
-        formData['isAccess'] = true;
-      } else if (readerType === 'isCafeteria') {
-        formData['isCafeteria'] = true;
-      } else if (readerType === 'isLocal') {
-        formData['isLocal'] = true;
-      }
-      
-      // Trigger change detection if dataTableComponent is available
-      if (this.dataTableComponent) {
-        this.cdr.markForCheck();
-      }
+  /**
+   * Data-table onFormChange receives only the delta object (changed keys), not full form state.
+   * Mutating that delta does not update the grid form; patch dataTableComponent.formData instead.
+   */
+  onFormChange = (delta: any) => {
+    if (!delta || !Object.prototype.hasOwnProperty.call(delta, 'ReaderTypeSelect')) {
+      return;
     }
+    const full = this.dataTableComponent?.formData;
+    if (!full) return;
+    applyReaderTypeSelectFlags(full);
+    this.cdr.markForCheck();
   };
   constructor(private http: HttpClient, private toastr: ToastrService, public translate: TranslateService, private cdr: ChangeDetectorRef) {}
   ngOnInit(): void {

@@ -4,6 +4,19 @@ import { TableColumn, ColumnType, FormTab } from 'src/app/components/data-table/
 
 const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
+/** SQL / .NET time strings (e.g. 11:00:00.0000000) are invalid for HTML input[type=time]; normalize to HH:mm:ss or HH:mm. */
+export function normalizeSqlTimeForHtmlTimeInput(raw: unknown): string {
+  if (raw == null || raw === '') return '00:00';
+  const s = String(raw).trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?/);
+  if (!m) return '00:00';
+  const hh = m[1].padStart(2, '0');
+  const mm = m[2];
+  const ss = m[3];
+  if (ss !== undefined) return `${hh}:${mm}:${ss}`;
+  return `${hh}:${mm}`;
+}
+
 // Custom form fields for add/edit form
 export const formFields: TableColumn[] = [
   { 
@@ -447,18 +460,25 @@ export const formLoadRequest = (recid: any) => ({
   name: 'EditTerminal'
 });
 
+/** Radio (ReaderTypeSelect) ile isAccess / isCafeteria / isLocal tek seçim ve karşılıklı dışlayıcı olmalı. */
+export function applyReaderTypeSelectFlags(formData: any): void {
+  if (!formData) return;
+  const rt = formData.ReaderTypeSelect;
+  if (rt !== 'isAccess' && rt !== 'isCafeteria' && rt !== 'isLocal') return;
+  formData.isAccess = rt === 'isAccess';
+  formData.isCafeteria = rt === 'isCafeteria';
+  formData.isLocal = rt === 'isLocal';
+}
+
 // Form data mapper - maps API response to form data
 export const formDataMapper = (apiRecord: any) => {
   const formData: any = { ...apiRecord };
-  // Set default values for time fields if not present
-  if (!formData.App1Start) formData.App1Start = '00:00';
-  if (!formData.App2Start) formData.App2Start = '00:00';
-  if (!formData.App3Start) formData.App3Start = '00:00';
-  if (!formData.App4Start) formData.App4Start = '00:00';
-  if (!formData.App1End) formData.App1End = '00:00';
-  if (!formData.App2End) formData.App2End = '00:00';
-  if (!formData.App3End) formData.App3End = '00:00';
-  if (!formData.App4End) formData.App4End = '00:00';
+  const appTimeFields = [
+    'App1Start', 'App1End', 'App2Start', 'App2End', 'App3Start', 'App3End', 'App4Start', 'App4End'
+  ] as const;
+  for (const f of appTimeFields) {
+    formData[f] = normalizeSqlTimeForHtmlTimeInput(formData[f]);
+  }
   if (!formData.NodeId) formData.NodeId = 1;
   
   // Set ReaderTypeSelect based on checkbox values (for edit mode)
@@ -469,6 +489,8 @@ export const formDataMapper = (apiRecord: any) => {
   } else if (formData.isLocal === true || formData.isLocal === 1 || formData.isLocal === '1') {
     formData.ReaderTypeSelect = 'isLocal';
   }
+
+  applyReaderTypeSelectFlags(formData);
   
   return formData;
 };

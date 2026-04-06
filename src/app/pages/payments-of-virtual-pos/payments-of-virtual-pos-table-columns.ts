@@ -1,8 +1,5 @@
 // PaymentsOfVirtualPos table columns configuration
 import { TableColumn, ColumnType, TableRow } from 'src/app/components/data-table/data-table.component';
-import { environment } from 'src/environments/environment';
-
-const apiUrl = environment.settings[environment.setting as keyof typeof environment.settings].apiUrl;
 
 export const tableColumns: TableColumn[] = [
   { 
@@ -16,6 +13,171 @@ export const tableColumns: TableColumn[] = [
     min: 20,
     searchable: 'int' as ColumnType,
     resizable: true
+  },
+  {
+    field: 'Payment.AccountId',
+    searchField: 'Payment.AccountId',
+    label: 'Hesap ID',
+    text: 'Hesap ID',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '100px',
+    size: '100px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      const v = payment?.AccountId;
+      return v !== undefined && v !== null ? String(v) : '';
+    }
+  },
+  {
+    field: 'Payment.Amount',
+    searchField: 'Payment.Amount',
+    label: 'Ödeme Tutarı',
+    text: 'Ödeme Tutarı',
+    type: 'float' as ColumnType,
+    sortable: true,
+    width: '120px',
+    size: '120px',
+    min: 20,
+    searchable: 'float' as ColumnType,
+    resizable: true,
+    align: 'right',
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      if (payment?.Amount !== undefined && payment?.Amount !== null) {
+        const amountInTL = Number(payment.Amount) / 100;
+        return amountInTL.toLocaleString('tr-TR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + ' ₺';
+      }
+      return '';
+    }
+  },
+  {
+    field: 'Payment.PaymentType',
+    searchField: 'Payment.PaymentType',
+    label: 'Ödeme Türü',
+    text: 'Ödeme Türü',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '100px',
+    size: '100px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      const v = payment?.PaymentType;
+      return v !== undefined && v !== null ? String(v) : '';
+    }
+  },
+  {
+    field: 'Payment.PayeeId',
+    searchField: 'Payment.PayeeId',
+    label: 'Ödeme Ayarı (Payee)',
+    text: 'Ödeme Ayarı (Payee)',
+    type: 'int' as ColumnType,
+    sortable: true,
+    width: '120px',
+    size: '120px',
+    min: 20,
+    searchable: 'int' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      const v = payment?.PayeeId;
+      return v !== undefined && v !== null ? String(v) : '';
+    }
+  },
+  {
+    field: 'Payment.ResultStatus',
+    searchField: 'Payment.ResultStatus',
+    label: 'Ödeme Sonucu',
+    text: 'Ödeme Sonucu',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '120px',
+    size: '120px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      const raw = payment?.ResultStatus;
+      if (raw === undefined || raw === null || raw === '') return '';
+      if (raw === 1 || raw === '1' || raw === true) return 'Başarılı';
+      if (raw === 0 || raw === '0' || raw === false) return 'Başarısız / bekliyor';
+      return String(raw);
+    }
+  },
+  {
+    field: 'Payment.Description',
+    searchField: 'Payment.Description',
+    label: 'Ödeme Açıklaması',
+    text: 'Ödeme Açıklaması',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '220px',
+    size: '220px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      return payment?.Description != null ? String(payment.Description) : '';
+    }
+  },
+  {
+    field: 'Payment.MeansOfPayment',
+    searchField: 'Payment.MeansOfPayment',
+    label: 'Ödeme Aracı',
+    text: 'Ödeme Aracı',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '110px',
+    size: '110px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      return payment?.MeansOfPayment != null ? String(payment.MeansOfPayment) : '';
+    }
+  },
+  {
+    field: 'Payment.IsCancel',
+    searchField: 'Payment.IsCancel',
+    label: 'Ödeme İptal',
+    text: 'Ödeme İptal',
+    type: 'checkbox' as ColumnType,
+    sortable: true,
+    width: '110px',
+    size: '110px',
+    min: 20,
+    searchable: 'checkbox' as ColumnType,
+    resizable: true,
+    align: 'center'
+  },
+  {
+    field: 'Payment.TransactionId',
+    searchField: 'Payment.TransactionId',
+    label: 'İşlem No (Payment)',
+    text: 'İşlem No (Payment)',
+    type: 'text' as ColumnType,
+    sortable: true,
+    width: '140px',
+    size: '140px',
+    min: 20,
+    searchable: 'text' as ColumnType,
+    resizable: true,
+    render: (record: TableRow) => {
+      const payment = record['Payment'];
+      return payment?.TransactionId != null ? String(payment.TransactionId) : '';
+    }
   },
   { 
     field: 'Employee.IdentificationNumber', 

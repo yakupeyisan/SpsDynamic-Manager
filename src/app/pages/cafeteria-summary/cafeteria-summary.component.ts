@@ -110,7 +110,8 @@ export class CafeteriaSummaryComponent implements OnInit {
           return {
             status: 'success' as const,
             total: totalValue,
-            records: response.records || []
+            records: response.records || [],
+            summary: Array.isArray(response.summary) ? response.summary : []
           } as GridResponse;
         } else {
           return { status: 'error' as const, total: 0, records: [] } as GridResponse;
